@@ -1,0 +1,762 @@
+// ============================================================
+// SERVICE OFFICIAL — Global TypeScript Types
+// ============================================================
+
+// ── Enums ────────────────────────────────────────────────────
+
+export type IndustryType =
+  | 'roofing' | 'general_contractor' | 'electrical' | 'plumbing' | 'hvac'
+  | 'landscaping' | 'painting' | 'flooring' | 'concrete' | 'masonry'
+  | 'framing' | 'insulation' | 'windows_doors' | 'solar' | 'other'
+
+export type SubscriptionTier = 'solo' | 'team' | 'growth' | 'enterprise'
+export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled' | 'paused'
+
+export type UserRole =
+  | 'owner' | 'admin' | 'office_manager' | 'estimator'
+  | 'project_manager' | 'foreman' | 'technician' | 'dispatcher'
+  | 'subcontractor' | 'viewer'
+
+export type ProjectStatus =
+  | 'lead' | 'estimating' | 'proposal_sent' | 'approved' | 'in_progress'
+  | 'on_hold' | 'punch_list' | 'completed' | 'invoiced' | 'paid' | 'canceled' | 'warranty'
+
+export type JobStatus =
+  | 'unscheduled' | 'scheduled' | 'en_route' | 'on_site' | 'in_progress'
+  | 'completed' | 'needs_follow_up' | 'canceled'
+
+export type LeadStatus =
+  | 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiating'
+  | 'won' | 'lost' | 'unqualified'
+
+export type EstimateStatus =
+  | 'draft' | 'sent' | 'viewed' | 'approved' | 'declined' | 'expired' | 'converted'
+
+export type InvoiceStatus =
+  | 'draft' | 'sent' | 'viewed' | 'partial' | 'paid' | 'overdue' | 'voided' | 'refunded'
+
+export type PaymentMethod = 'card' | 'ach' | 'check' | 'cash' | 'zelle' | 'venmo' | 'other'
+export type PaymentStatus = 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded'
+
+export type ExpenseCategory =
+  | 'materials' | 'labor' | 'equipment' | 'fuel' | 'permits' | 'subcontractor'
+  | 'tools' | 'dump_fees' | 'insurance' | 'overhead' | 'other'
+
+export type FileType =
+  | 'image' | 'pdf' | 'blueprint' | 'contract' | 'permit' | 'inspection'
+  | 'warranty' | 'invoice' | 'estimate' | 'material_list' | 'safety' | 'other'
+
+export type NotificationType =
+  | 'job_assigned' | 'job_status_update' | 'estimate_approved' | 'estimate_declined'
+  | 'invoice_paid' | 'invoice_overdue' | 'message_received' | 'project_update'
+  | 'timeline_milestone' | 'expense_submitted' | 'rfi_submitted' | 'change_order_approved'
+  | 'weather_alert' | 'safety_incident' | 'inspection_scheduled' | 'payment_received'
+  | 'client_message' | 'task_assigned' | 'task_overdue' | 'document_uploaded'
+
+export type MessageChannel = 'sms' | 'email' | 'in_app' | 'push'
+export type MessageDirection = 'inbound' | 'outbound'
+export type PhaseStatus = 'not_started' | 'in_progress' | 'completed' | 'on_hold'
+export type MilestoneStatus = 'pending' | 'in_progress' | 'completed' | 'missed'
+export type RFIStatus = 'open' | 'submitted' | 'under_review' | 'answered' | 'closed'
+export type ChangeOrderStatus = 'draft' | 'submitted' | 'approved' | 'declined' | 'void'
+export type SubmittalStatus = 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'resubmit'
+export type TakeoffStatus = 'pending' | 'processing' | 'review' | 'approved' | 'exported'
+
+// ── Base Types ───────────────────────────────────────────────
+
+export interface BaseRecord {
+  id: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Address {
+  address_line1?: string
+  address_line2?: string
+  city?: string
+  state?: string
+  zip?: string
+  country?: string
+}
+
+export interface Coordinates {
+  lat: number
+  lng: number
+}
+
+// ── Organization ─────────────────────────────────────────────
+
+export interface Organization extends BaseRecord {
+  name: string
+  slug: string
+  industry: IndustryType
+  logo_url?: string
+  website?: string
+  phone?: string
+  email?: string
+  address_line1?: string
+  city?: string
+  state?: string
+  zip?: string
+  timezone: string
+  currency: string
+  primary_color: string
+  secondary_color: string
+  settings: Record<string, unknown>
+  subscription_tier: SubscriptionTier
+  subscription_status: SubscriptionStatus
+  stripe_customer_id?: string
+  trial_ends_at?: string
+}
+
+// ── User / Profile ───────────────────────────────────────────
+
+export interface Profile extends BaseRecord {
+  organization_id: string
+  role: UserRole
+  first_name: string
+  last_name: string
+  full_name: string
+  email: string
+  phone?: string
+  avatar_url?: string
+  title?: string
+  employee_id?: string
+  hourly_rate?: number
+  is_active: boolean
+  notify_sms: boolean
+  notify_email: boolean
+  notify_push: boolean
+}
+
+// ── Customer ─────────────────────────────────────────────────
+
+export interface Customer extends BaseRecord, Address {
+  organization_id: string
+  type: 'residential' | 'commercial' | 'property_manager' | 'hoa' | 'government'
+  first_name?: string
+  last_name?: string
+  company_name?: string
+  display_name: string
+  email?: string
+  phone?: string
+  tags: string[]
+  source?: string
+  notes?: string
+  is_active: boolean
+  total_revenue: number
+  outstanding_balance: number
+  portal_access: boolean
+}
+
+// ── Lead ─────────────────────────────────────────────────────
+
+export interface Lead extends BaseRecord {
+  organization_id: string
+  customer_id?: string
+  status: LeadStatus
+  title: string
+  description?: string
+  estimated_value?: number
+  source?: string
+  assigned_to?: string
+  follow_up_date?: string
+  tags: string[]
+  // Relations
+  customer?: Customer
+  assignee?: Profile
+}
+
+// ── Project ──────────────────────────────────────────────────
+
+export interface Project extends BaseRecord, Address {
+  organization_id: string
+  customer_id?: string
+  lead_id?: string
+  project_number?: string
+  name: string
+  description?: string
+  status: ProjectStatus
+  industry?: IndustryType
+  type?: string
+  coordinates?: Coordinates
+  contract_value?: number
+  estimated_cost?: number
+  actual_cost: number
+  profit_margin?: number
+  estimated_start_date?: string
+  estimated_end_date?: string
+  actual_start_date?: string
+  actual_end_date?: string
+  project_manager_id?: string
+  foreman_id?: string
+  // Roofing specific
+  roof_type?: string
+  roof_slope?: string
+  roof_squares?: number
+  // GC specific
+  permit_number?: string
+  permit_issued_date?: string
+  client_portal_enabled: boolean
+  tags: string[]
+  // Relations
+  customer?: Customer
+  project_manager?: Profile
+  foreman?: Profile
+  phases?: ProjectPhase[]
+  team?: ProjectTeamMember[]
+}
+
+export interface ProjectPhase extends BaseRecord {
+  project_id: string
+  name: string
+  description?: string
+  status: PhaseStatus
+  order_index: number
+  start_date?: string
+  end_date?: string
+  actual_start?: string
+  actual_end?: string
+  color?: string
+}
+
+export interface ProjectMilestone extends BaseRecord {
+  project_id: string
+  phase_id?: string
+  name: string
+  description?: string
+  status: MilestoneStatus
+  due_date?: string
+  completed_at?: string
+  notify_client: boolean
+}
+
+export interface ProjectTeamMember {
+  id: string
+  project_id: string
+  user_id: string
+  role?: string
+  hourly_rate?: number
+  assigned_at: string
+  profile?: Profile
+}
+
+// ── Job ──────────────────────────────────────────────────────
+
+export interface Job extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  customer_id?: string
+  job_number?: string
+  title: string
+  description?: string
+  status: JobStatus
+  priority: 'low' | 'normal' | 'high' | 'urgent'
+  scheduled_start?: string
+  scheduled_end?: string
+  actual_start?: string
+  actual_end?: string
+  address_line1?: string
+  city?: string
+  state?: string
+  zip?: string
+  coordinates?: Coordinates
+  assigned_to?: string
+  instructions?: string
+  completion_notes?: string
+  tags: string[]
+  // Relations
+  assignee?: Profile
+  project?: Project
+  customer?: Customer
+}
+
+// ── File ─────────────────────────────────────────────────────
+
+export interface FileRecord extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  job_id?: string
+  customer_id?: string
+  name: string
+  original_name: string
+  file_type: FileType
+  mime_type?: string
+  size_bytes?: number
+  storage_path: string
+  public_url?: string
+  thumbnail_url?: string
+  description?: string
+  tags: string[]
+  version: number
+  is_public: boolean
+  uploaded_by?: string
+}
+
+export interface Photo extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  job_id?: string
+  phase_id?: string
+  storage_path: string
+  public_url: string
+  thumbnail_url?: string
+  caption?: string
+  taken_at?: string
+  location?: Coordinates
+  tags: string[]
+  is_before?: boolean
+  is_after?: boolean
+  is_public: boolean
+  uploaded_by?: string
+}
+
+// ── Blueprint ────────────────────────────────────────────────
+
+export interface Blueprint extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  name: string
+  description?: string
+  version: string
+  discipline?: string
+  scale?: string
+  file_id?: string
+  storage_path?: string
+  public_url?: string
+  page_count?: number
+  is_processed: boolean
+  processing_status: string
+  uploaded_by?: string
+  sheets?: BlueprintSheet[]
+}
+
+export interface BlueprintSheet extends BaseRecord {
+  blueprint_id: string
+  page_number: number
+  title?: string
+  sheet_number?: string
+  discipline?: string
+  scale?: string
+  thumbnail_url?: string
+  public_url?: string
+  metadata: Record<string, unknown>
+}
+
+// ── Takeoff ──────────────────────────────────────────────────
+
+export interface Takeoff extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  blueprint_id?: string
+  estimate_id?: string
+  name: string
+  trade?: string
+  status: TakeoffStatus
+  ai_confidence?: number
+  processing_started_at?: string
+  processing_completed_at?: string
+  reviewed_by?: string
+  reviewed_at?: string
+  notes?: string
+  items?: TakeoffItem[]
+}
+
+export interface TakeoffItem extends BaseRecord {
+  takeoff_id: string
+  sheet_id?: string
+  name: string
+  description?: string
+  category?: string
+  quantity: number
+  unit?: string
+  ai_quantity?: number
+  confidence_score?: number
+  formula_used?: string
+  is_reviewed: boolean
+  is_overridden: boolean
+  override_quantity?: number
+  override_reason?: string
+  material_id?: string
+  unit_cost?: number
+  total_cost?: number
+}
+
+// ── Estimate ─────────────────────────────────────────────────
+
+export interface Estimate extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  customer_id?: string
+  takeoff_id?: string
+  estimate_number?: string
+  title: string
+  description?: string
+  status: EstimateStatus
+  issue_date: string
+  expiry_date?: string
+  approved_at?: string
+  subtotal: number
+  discount_type?: 'percent' | 'fixed'
+  discount_value: number
+  discount_amount: number
+  tax_rate: number
+  tax_amount: number
+  total: number
+  terms?: string
+  notes?: string
+  signature_url?: string
+  signed_at?: string
+  view_count: number
+  sections?: EstimateSection[]
+  line_items?: EstimateLineItem[]
+  customer?: Customer
+  project?: Project
+}
+
+export interface EstimateSection {
+  id: string
+  estimate_id: string
+  name: string
+  order_index: number
+  line_items?: EstimateLineItem[]
+}
+
+export interface EstimateLineItem extends BaseRecord {
+  estimate_id: string
+  section_id?: string
+  name: string
+  description?: string
+  category?: string
+  quantity: number
+  unit?: string
+  unit_cost: number
+  markup_percent: number
+  total: number
+  order_index: number
+  is_optional: boolean
+  is_taxable: boolean
+}
+
+// ── Invoice ──────────────────────────────────────────────────
+
+export interface Invoice extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  customer_id?: string
+  estimate_id?: string
+  invoice_number?: string
+  title?: string
+  status: InvoiceStatus
+  type: 'standard' | 'progress' | 'deposit' | 'final' | 'credit'
+  issue_date: string
+  due_date?: string
+  paid_at?: string
+  subtotal: number
+  discount_amount: number
+  tax_amount: number
+  total: number
+  amount_paid: number
+  amount_due: number
+  terms?: string
+  notes?: string
+  view_count: number
+  line_items?: InvoiceLineItem[]
+  customer?: Customer
+  project?: Project
+  payments?: Payment[]
+}
+
+export interface InvoiceLineItem {
+  id: string
+  invoice_id: string
+  name: string
+  description?: string
+  quantity: number
+  unit?: string
+  unit_cost: number
+  total: number
+  is_taxable: boolean
+  order_index: number
+}
+
+// ── Payment ──────────────────────────────────────────────────
+
+export interface Payment extends BaseRecord {
+  organization_id: string
+  invoice_id?: string
+  customer_id?: string
+  amount: number
+  currency: string
+  method?: PaymentMethod
+  status: PaymentStatus
+  stripe_payment_intent_id?: string
+  reference?: string
+  notes?: string
+  refunded_amount: number
+}
+
+// ── Expense ──────────────────────────────────────────────────
+
+export interface Expense extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  job_id?: string
+  title: string
+  description?: string
+  category: ExpenseCategory
+  amount: number
+  tax_amount: number
+  total_amount: number
+  vendor_name?: string
+  status: 'pending' | 'approved' | 'rejected' | 'reimbursed'
+  is_billable: boolean
+  is_reimbursable: boolean
+  receipt_file_id?: string
+  expense_date: string
+  approved_at?: string
+  approved_by?: string
+  submitted_by?: string
+}
+
+// ── Materials ────────────────────────────────────────────────
+
+export interface MaterialCatalogItem extends BaseRecord {
+  organization_id: string
+  name: string
+  description?: string
+  sku?: string
+  category?: string
+  trade?: string
+  unit?: string
+  unit_cost: number
+  markup_percent: number
+  supplier?: string
+  is_active: boolean
+}
+
+export interface ProjectMaterial extends BaseRecord {
+  project_id: string
+  material_id?: string
+  name: string
+  description?: string
+  category?: string
+  quantity_estimated?: number
+  quantity_ordered: number
+  quantity_received: number
+  quantity_used: number
+  unit?: string
+  unit_cost?: number
+  total_cost?: number
+  status: 'pending' | 'ordered' | 'partial' | 'received' | 'installed'
+  supplier?: string
+  po_number?: string
+  notes?: string
+}
+
+// ── Daily Log ────────────────────────────────────────────────
+
+export interface DailyLog extends BaseRecord {
+  project_id: string
+  log_date: string
+  weather?: string
+  temperature_high?: number
+  temperature_low?: number
+  weather_delay: boolean
+  weather_delay_hours?: number
+  work_performed: string
+  areas_worked?: string
+  crew_count?: number
+  crew_hours?: number
+  visitors?: string
+  safety_incidents?: string
+  issues?: string
+  submitted_by: string
+  submitter?: Profile
+}
+
+// ── Punch List ───────────────────────────────────────────────
+
+export interface PunchListItem extends BaseRecord {
+  project_id: string
+  phase_id?: string
+  title: string
+  description?: string
+  location?: string
+  status: 'open' | 'in_progress' | 'completed' | 'void'
+  priority: 'low' | 'normal' | 'high'
+  assigned_to?: string
+  due_date?: string
+  completed_at?: string
+  assignee?: Profile
+}
+
+// ── RFI ──────────────────────────────────────────────────────
+
+export interface RFI extends BaseRecord {
+  project_id: string
+  rfi_number?: string
+  title: string
+  question: string
+  answer?: string
+  status: RFIStatus
+  priority: string
+  discipline?: string
+  due_date?: string
+  answered_at?: string
+  submitted_by?: string
+  assigned_to?: string
+  answered_by?: string
+}
+
+// ── Change Order ─────────────────────────────────────────────
+
+export interface ChangeOrder extends BaseRecord {
+  project_id: string
+  co_number?: string
+  title: string
+  description?: string
+  status: ChangeOrderStatus
+  reason?: string
+  amount: number
+  approved_amount?: number
+  schedule_days_impact: number
+  submitted_at?: string
+  approved_at?: string
+  approved_by?: string
+}
+
+// ── Messages ─────────────────────────────────────────────────
+
+export interface Conversation extends BaseRecord {
+  organization_id: string
+  customer_id?: string
+  project_id?: string
+  channel: MessageChannel
+  phone_number?: string
+  email_address?: string
+  subject?: string
+  is_archived: boolean
+  last_message_at?: string
+  customer?: Customer
+  messages?: Message[]
+}
+
+export interface Message extends BaseRecord {
+  conversation_id: string
+  organization_id: string
+  direction: MessageDirection
+  channel: MessageChannel
+  body: string
+  status: string
+  sent_at: string
+  delivered_at?: string
+  read_at?: string
+  media_urls: string[]
+  sent_by?: string
+}
+
+// ── Notification ─────────────────────────────────────────────
+
+export interface Notification extends BaseRecord {
+  organization_id: string
+  user_id: string
+  type: NotificationType
+  title: string
+  body?: string
+  entity_type?: string
+  entity_id?: string
+  action_url?: string
+  channels: MessageChannel[]
+  is_read: boolean
+  read_at?: string
+  sent_at: string
+  data: Record<string, unknown>
+}
+
+// ── Automation ───────────────────────────────────────────────
+
+export interface AutomationRule extends BaseRecord {
+  organization_id: string
+  name: string
+  description?: string
+  is_active: boolean
+  trigger_event: string
+  trigger_conditions: Record<string, unknown>
+  actions: AutomationAction[]
+  run_count: number
+  last_run_at?: string
+}
+
+export interface AutomationAction {
+  type: 'send_sms' | 'send_email' | 'send_push' | 'assign_job' | 'update_status' | 'create_task'
+  config: Record<string, unknown>
+}
+
+// ── Subcontractor ────────────────────────────────────────────
+
+export interface Subcontractor extends BaseRecord {
+  organization_id: string
+  company_name: string
+  contact_name?: string
+  email?: string
+  phone?: string
+  trade?: string
+  license_number?: string
+  insurance_expiry?: string
+  rating?: number
+  notes?: string
+  is_active: boolean
+}
+
+// ── Dashboard / Analytics ────────────────────────────────────
+
+export interface DashboardMetrics {
+  revenue: {
+    current_month: number
+    last_month: number
+    ytd: number
+    outstanding: number
+  }
+  projects: {
+    active: number
+    completed_this_month: number
+    overdue: number
+  }
+  jobs: {
+    scheduled_today: number
+    in_progress: number
+    completed_this_week: number
+  }
+  leads: {
+    new: number
+    qualified: number
+    close_rate: number
+  }
+  expenses: {
+    this_month: number
+    pending_approval: number
+  }
+}
+
+// ── API Response Wrappers ────────────────────────────────────
+
+export interface ApiResponse<T> {
+  data: T | null
+  error: string | null
+  success: boolean
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  total: number
+  page: number
+  per_page: number
+  total_pages: number
+}
+
+export interface ApiError {
+  code: string
+  message: string
+  details?: Record<string, unknown>
+}

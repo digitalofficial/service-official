@@ -1,0 +1,45 @@
+import Link from 'next/link'
+import { Building2, Users, CreditCard, Palette, Bell, Plug, Shield } from 'lucide-react'
+
+const SETTINGS_NAV = [
+  { label: 'General', href: '/settings', icon: Building2 },
+  { label: 'Team', href: '/settings/team', icon: Users },
+  { label: 'Billing', href: '/settings/billing', icon: CreditCard },
+  { label: 'Branding', href: '/settings/branding', icon: Palette },
+  { label: 'Notifications', href: '/settings/notifications', icon: Bell },
+  { label: 'Integrations', href: '/settings/integrations', icon: Plug },
+  { label: 'Permissions', href: '/settings/permissions', icon: Shield },
+]
+
+export default function SettingsLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+        <p className="text-sm text-gray-500 mt-0.5">Manage your organization settings</p>
+      </div>
+
+      <div className="flex gap-6">
+        {/* Sidebar Nav */}
+        <nav className="w-48 shrink-0 space-y-0.5">
+          {SETTINGS_NAV.map((item) => {
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            )
+          })}
+        </nav>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">{children}</div>
+      </div>
+    </div>
+  )
+}

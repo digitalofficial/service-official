@@ -1,0 +1,10 @@
+{
+  "name": "@service-official/ai",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/takeoffs/index.ts",
+  "types": "./src/takeoffs/index.ts",
+  "exports": {
+    "./takeoffs": "./src/takeoffs/index.ts"
+  }
+}

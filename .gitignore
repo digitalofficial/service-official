@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+dist/
+build/
+out/
+
+# Environment
+.env
+.env.local
+.env.production
+.env.staging
+
+# Turbo
+.turbo/
+
+# Misc
+.DS_Store
+*.log
+.vercel
+.idea/
+.vscode/
+*.swp
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
+# Generated
+packages/types/src/database.types.ts

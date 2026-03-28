@@ -1,0 +1,33 @@
+{
+  "name": "service-official",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Service Official — The Contractor Operating System",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "modules/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "db:migrate": "turbo run db:migrate",
+    "db:seed": "turbo run db:seed",
+    "db:studio": "cd packages/database && npx supabase studio"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "dependencies": {
+    "@supabase/ssr": "^0.9.0"
+  }
+}

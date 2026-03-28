@@ -1,0 +1,19 @@
+{
+  "name": "@service-official/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/client.ts",
+  "types": "./src/client.ts",
+  "exports": {
+    ".": "./src/client-server.ts",
+    "./client": "./src/client-browser.ts",
+    "./queries/*": "./src/queries/*/index.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "*"
+  },
+  "peerDependencies": {
+    "next": "*"
+  }
+}
