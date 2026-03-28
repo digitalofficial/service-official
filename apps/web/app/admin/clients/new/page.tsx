@@ -76,10 +76,14 @@ export default function NewClientPage() {
   }
 
   if (result) {
+    const dns = result.dns
+    const vercel = result.vercel_domain
+
     return (
-      <div className="max-w-2xl space-y-6">
+      <div className="max-w-3xl space-y-6">
+        {/* Success Banner */}
         <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6">
-          <h2 className="text-lg font-bold text-green-400 mb-4">✅ Client Created Successfully</h2>
+          <h2 className="text-lg font-bold text-green-400 mb-4">Client Created Successfully</h2>
           <div className="space-y-3 text-sm">
             <Row label="Company" value={result.client.company_name} />
             <Row label="App URL" value={result.client.app_url} link />
@@ -88,26 +92,106 @@ export default function NewClientPage() {
           </div>
         </div>
 
+        {/* DNS Setup */}
+        {dns && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <h3 className="font-semibold text-white mb-1">1. DNS Record</h3>
+            <p className="text-xs text-gray-500 mb-4">Add this in Cloudflare (or DNS provider) for <span className="text-blue-400">{dns.root_domain}</span></p>
+            <div className="bg-gray-800 rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-gray-500 border-b border-gray-700">
+                    <th className="text-left px-4 py-2 font-medium">Type</th>
+                    <th className="text-left px-4 py-2 font-medium">Name</th>
+                    <th className="text-left px-4 py-2 font-medium">Target</th>
+                    <th className="text-left px-4 py-2 font-medium">Proxy</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="px-4 py-3 text-blue-400 font-mono">{dns.type}</td>
+                    <td className="px-4 py-3 text-white font-mono">{dns.name}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(dns.target); toast.success('Copied!') }}
+                        className="text-green-400 font-mono hover:underline cursor-pointer"
+                      >
+                        {dns.target}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-amber-400">{dns.proxy}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Vercel Domain */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h3 className="font-semibold text-white mb-4">Next Steps</h3>
-          <ol className="space-y-3">
-            {result.instructions.map((step: string, i: number) => (
-              <li key={i} className="flex gap-3 text-sm text-gray-300">
-                <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center shrink-0 mt-0.5">
-                  {i + 1}
-                </span>
-                {step.replace(`${i + 1}. `, '')}
-              </li>
-            ))}
-          </ol>
+          <h3 className="font-semibold text-white mb-2">2. Vercel Domain</h3>
+          {vercel?.success ? (
+            <div className="flex items-center gap-2 text-green-400 text-sm">
+              <span className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center text-xs">✓</span>
+              <span>{form.domain} added to Vercel automatically</span>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-amber-400 mb-2">Manual step required:</p>
+              <p className="text-xs text-gray-400">
+                Go to <a href="https://vercel.com/digitalofficials-projects/service-official/settings/domains" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Vercel → Settings → Domains</a> and add: <span className="font-mono text-white">{form.domain}</span>
+              </p>
+              {vercel?.error && <p className="text-xs text-red-400 mt-1">Error: {vercel.error}</p>}
+            </div>
+          )}
         </div>
 
-        <button
-          onClick={() => { setResult(null); setForm({ company_name: '', industry: 'general_contractor', domain: '', owner_email: '', owner_first_name: '', owner_last_name: '', owner_phone: '', subscription_tier: 'solo' }) }}
-          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg"
-        >
-          Add Another Client
-        </button>
+        {/* Supabase */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <h3 className="font-semibold text-white mb-2">3. Supabase Auth</h3>
+          <p className="text-xs text-gray-400">
+            Go to <a href="https://supabase.com/dashboard/project/quonrljpcqjkekedncla/auth/url-configuration" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Supabase → Auth → URL Config</a> and add to Redirect URLs:
+          </p>
+          <button
+            onClick={() => { navigator.clipboard.writeText(`https://${form.domain}/**`); toast.success('Copied!') }}
+            className="mt-2 font-mono text-sm text-green-400 bg-gray-800 px-3 py-1.5 rounded hover:bg-gray-700 transition-colors"
+          >
+            https://{form.domain}/** (click to copy)
+          </button>
+        </div>
+
+        {/* Credentials to send */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+          <h3 className="font-semibold text-white mb-2">4. Send Credentials</h3>
+          <p className="text-xs text-gray-400 mb-3">Send this to the client owner:</p>
+          <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-300 space-y-1 font-mono">
+            <p>Login URL: <span className="text-blue-400">{result.client.app_url}</span></p>
+            <p>Email: <span className="text-white">{result.client.login_email}</span></p>
+            <p>Password: <span className="text-green-400">{result.client.temp_password}</span></p>
+          </div>
+          <button
+            onClick={() => {
+              const text = `Login URL: ${result.client.app_url}\nEmail: ${result.client.login_email}\nPassword: ${result.client.temp_password}`
+              navigator.clipboard.writeText(text)
+              toast.success('Credentials copied!')
+            }}
+            className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+          >
+            Copy All Credentials
+          </button>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => { setResult(null); setForm({ company_name: '', industry: 'general_contractor', domain: '', owner_email: '', owner_first_name: '', owner_last_name: '', owner_phone: '', subscription_tier: 'solo' }) }}
+            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg"
+          >
+            Add Another Client
+          </button>
+          <a href="/admin/clients" className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg">
+            View All Clients
+          </a>
+        </div>
       </div>
     )
   }

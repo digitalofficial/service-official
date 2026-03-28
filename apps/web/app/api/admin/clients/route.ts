@@ -3,21 +3,58 @@ import { createServiceRoleClient } from '@service-official/database'
 import { z } from 'zod'
 
 const schema = z.object({
-  // Client organization
   company_name: z.string().min(1),
   industry: z.string().default('general_contractor'),
-  domain: z.string().min(1), // e.g. service.smithroofing.com
-  // Owner account
+  domain: z.string().min(1),
   owner_email: z.string().email(),
   owner_first_name: z.string(),
   owner_last_name: z.string(),
   owner_phone: z.string().optional(),
-  // Plan
   subscription_tier: z.enum(['solo', 'team', 'growth', 'enterprise']).default('solo'),
 })
 
+async function addVercelDomain(domain: string): Promise<{ success: boolean; error?: string }> {
+  const token = process.env.VERCEL_TOKEN
+  const projectId = process.env.VERCEL_PROJECT_ID
+  const teamId = process.env.VERCEL_TEAM_ID
+
+  if (!token || !projectId) {
+    return { success: false, error: 'Vercel API not configured' }
+  }
+
+  try {
+    const url = `https://api.vercel.com/v10/projects/${projectId}/domains${teamId ? `?teamId=${teamId}` : ''}`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: domain }),
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      // Domain might already be added — that's fine
+      if (data.error?.code === 'domain_already_in_use' || data.error?.code === 'DOMAIN_ALREADY_IN_USE') {
+        return { success: true }
+      }
+      return { success: false, error: data.error?.message ?? 'Failed to add domain to Vercel' }
+    }
+
+    return { success: true }
+  } catch (err: any) {
+    return { success: false, error: err.message }
+  }
+}
+
+async function addSupabaseRedirect(domain: string): Promise<void> {
+  // Supabase Management API to add redirect URL would go here
+  // For now this is a manual step — noted in instructions
+}
+
 export async function POST(request: NextRequest) {
-  // Protect with admin secret
   const secret = request.headers.get('x-admin-secret')
   if (secret !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -60,7 +97,7 @@ export async function POST(request: NextRequest) {
 
   if (orgError) return NextResponse.json({ error: orgError.message }, { status: 500 })
 
-  // Register their domain
+  // Register their domain in DB
   const { error: domainError } = await supabase
     .from('organization_domains')
     .insert({
@@ -72,6 +109,9 @@ export async function POST(request: NextRequest) {
     })
 
   if (domainError) return NextResponse.json({ error: domainError.message }, { status: 500 })
+
+  // Auto-add domain to Vercel
+  const vercelResult = await addVercelDomain(data.domain)
 
   // Create owner auth account with temp password
   const tempPassword = `SO-${Math.random().toString(36).slice(2, 10).toUpperCase()}!`
@@ -95,6 +135,59 @@ export async function POST(request: NextRequest) {
     phone: data.owner_phone,
   })
 
+  // Parse the subdomain and root domain for DNS instructions
+  const domainParts = data.domain.split('.')
+  const subdomain = domainParts[0] // e.g. "service"
+  const rootDomain = domainParts.slice(1).join('.') // e.g. "theplatinumbuildersllc.com"
+
+  // Build setup steps
+  const steps = []
+
+  // DNS step
+  steps.push({
+    title: 'Add DNS Record',
+    where: `Cloudflare (or DNS provider) for ${rootDomain}`,
+    action: 'Add CNAME record',
+    details: {
+      type: 'CNAME',
+      name: subdomain,
+      target: 'cname.vercel-dns.com',
+      proxy: 'OFF (grey cloud in Cloudflare)',
+      ttl: 'Auto',
+    },
+  })
+
+  // Vercel domain step
+  if (vercelResult.success) {
+    steps.push({
+      title: 'Vercel Domain',
+      where: 'Auto-configured',
+      action: `${data.domain} has been added to Vercel automatically`,
+      status: 'done',
+    })
+  } else {
+    steps.push({
+      title: 'Add Domain to Vercel (manual)',
+      where: 'Vercel Dashboard → Settings → Domains',
+      action: `Add ${data.domain}`,
+      error: vercelResult.error,
+    })
+  }
+
+  // Supabase step
+  steps.push({
+    title: 'Add Supabase Redirect URL',
+    where: 'Supabase Dashboard → Auth → URL Configuration → Redirect URLs',
+    action: `Add https://${data.domain}/**`,
+  })
+
+  // Credentials step
+  steps.push({
+    title: 'Send Login Credentials',
+    where: `Email to ${data.owner_email}`,
+    action: 'Share the login URL and temporary password below',
+  })
+
   return NextResponse.json({
     success: true,
     client: {
@@ -104,11 +197,23 @@ export async function POST(request: NextRequest) {
       login_email: data.owner_email,
       temp_password: tempPassword,
     },
+    dns: {
+      type: 'CNAME',
+      name: subdomain,
+      target: 'cname.vercel-dns.com',
+      root_domain: rootDomain,
+      proxy: 'OFF',
+    },
+    vercel_domain: vercelResult,
+    setup_steps: steps,
     instructions: [
-      `1. In their Cloudflare: Add CNAME record — Name: service, Target: cname.vercel-dns.com, Proxy: OFF`,
-      `2. In Vercel: Settings → Domains → Add → ${data.domain}`,
-      `3. Send credentials to ${data.owner_email}`,
-      `4. They log in at https://${data.domain}`,
+      `1. DNS: In ${rootDomain} Cloudflare → Add CNAME: ${subdomain} → cname.vercel-dns.com (proxy OFF)`,
+      vercelResult.success
+        ? `2. Vercel: ✅ Domain ${data.domain} added automatically`
+        : `2. Vercel: Add ${data.domain} in Settings → Domains`,
+      `3. Supabase: Add https://${data.domain}/** to Auth → Redirect URLs`,
+      `4. Send credentials to ${data.owner_email} — temp password: ${tempPassword}`,
+      `5. They log in at https://${data.domain}`,
     ],
   }, { status: 201 })
 }
