@@ -37,11 +37,6 @@ function LoginForm() {
       return
     }
 
-    // Verify session was stored
-    const { data: { session } } = await supabase.auth.getSession()
-    console.log('[login] session after signIn:', session ? 'YES' : 'NO')
-    console.log('[login] cookies:', document.cookie.substring(0, 200))
-
     // Full page navigation so the server sees the fresh auth cookies
     window.location.href = redirect
   }

@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
-import { createServerSupabaseClient } from '@service-official/database'
+import { cookies } from 'next/headers'
+import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
 import { Sidebar } from '@/components/layout/sidebar'
 import { TopBar } from '@/components/layout/topbar'
+import { OrgSwitcher } from '@/components/admin/org-switcher'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerSupabaseClient()
@@ -9,7 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/auth/login')
 
-  // Try to get profile, create one if it doesn't exist yet (first login)
+  // Get the user's own profile
   let { data: profile } = await supabase
     .from('profiles')
     .select('*, organization:organizations(*)')
@@ -19,8 +21,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!profile) {
     // Auto-create org + profile for new users from signup metadata
     const meta = user.user_metadata ?? {}
-
-    // Create organization
     const { data: org } = await supabase
       .from('organizations')
       .insert({
@@ -41,7 +41,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .single()
 
     if (org) {
-      // Create profile
       const { data: newProfile } = await supabase
         .from('profiles')
         .insert({
@@ -50,7 +49,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           email: user.email!,
           first_name: meta.first_name || user.email!.split('@')[0],
           last_name: meta.last_name || '',
-          full_name: `${meta.first_name || ''} ${meta.last_name || ''}`.trim() || user.email!.split('@')[0],
           role: 'owner',
           is_active: true,
           notify_sms: true,
@@ -64,7 +62,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }
   }
 
-  // Fallback profile for when DB tables don't exist yet
+  // Fallback profile
   if (!profile) {
     const meta = user.user_metadata ?? {}
     profile = {
@@ -77,11 +75,49 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     } as any
   }
 
+  // Check if this user is a super admin
+  const userOrg = (profile as any).organization
+  const isSuperAdmin = userOrg?.slug === 'service-official' && profile.role === 'owner'
+
+  // Check for admin org override cookie
+  let activeOrg = userOrg
+  let activeOrgId = profile.organization_id
+  const cookieStore = cookies()
+  const adminOrgCookie = cookieStore.get('so-admin-org')?.value
+
+  if (isSuperAdmin && adminOrgCookie && adminOrgCookie !== profile.organization_id) {
+    // Super admin is viewing another org — fetch that org's data
+    const serviceClient = createServiceRoleClient()
+    const { data: overrideOrg } = await serviceClient
+      .from('organizations')
+      .select('*')
+      .eq('id', adminOrgCookie)
+      .single()
+
+    if (overrideOrg) {
+      activeOrg = overrideOrg
+      activeOrgId = overrideOrg.id
+    }
+  }
+
+  // Pass activeOrgId as a data attribute so client components can read it
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar profile={profile} organization={(profile as any).organization} />
+    <div className="flex h-screen overflow-hidden bg-gray-50" data-org-id={activeOrgId}>
+      <Sidebar profile={profile} organization={activeOrg} />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <TopBar profile={profile} />
+        <header className="flex items-center justify-between h-14 px-6 bg-white border-b border-gray-200 shrink-0">
+          {/* Org Switcher (super admin only) */}
+          <div className="flex items-center gap-4">
+            {isSuperAdmin && (
+              <OrgSwitcher
+                currentOrgId={activeOrgId}
+                currentOrgName={activeOrg?.name ?? 'Unknown'}
+                isSuperAdmin={isSuperAdmin}
+              />
+            )}
+          </div>
+          <TopBar profile={profile} />
+        </header>
         <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>

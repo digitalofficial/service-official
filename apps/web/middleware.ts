@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_ROUTES = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/callback', '/public']
+const PUBLIC_ROUTES = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/callback', '/auth/accept-invite', '/public']
 const AUTH_ROUTES = ['/auth/login', '/auth/register']
 
 export async function middleware(request: NextRequest) {
@@ -24,28 +24,11 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // First try getSession to see if the token can be parsed at all
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-  // Then validate with getUser (hits Supabase API)
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-
+  const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
   const isPublicRoute = PUBLIC_ROUTES.some(r => path.startsWith(r))
   const isAuthRoute = AUTH_ROUTES.some(r => path.startsWith(r))
 
-  // Debug logging
-  if (!isPublicRoute) {
-    const allCookies = request.cookies.getAll().map(c => c.name)
-    const sbCookies = allCookies.filter(n => n.includes('sb-') || n.includes('supabase'))
-    const chunk0 = request.cookies.get('sb-quonrljpcqjkekedncla-auth-token.0')?.value?.substring(0, 50)
-    console.log(`[middleware] ${path}`)
-    console.log(`  session: ${session ? 'YES (user: ' + session.user?.id + ')' : 'NO'} | sessionError: ${sessionError?.message ?? 'none'}`)
-    console.log(`  user: ${user?.id ?? 'none'} | authError: ${authError?.message ?? 'none'}`)
-    console.log(`  sb-cookies: [${sbCookies.join(', ')}] | chunk0: ${chunk0 ?? 'empty'}`)
-  }
-
-  // Redirect unauthenticated users to login
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
@@ -53,7 +36,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users away from auth pages
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
