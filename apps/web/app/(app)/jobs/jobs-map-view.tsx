@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 // Dynamic import to avoid SSR issues with Leaflet
 const JobMap = dynamic(() => import('@/components/maps/job-map').then(m => ({ default: m.JobMap })), {
   ssr: false,
-  loading: () => <div className="h-[500px] bg-gray-100 rounded-xl animate-pulse flex items-center justify-center text-gray-400">Loading map...</div>,
+  loading: () => <div className="h-[400px] bg-gray-100 rounded-xl animate-pulse flex items-center justify-center text-gray-400">Loading map...</div>,
 })
 
 interface Job {
@@ -23,7 +23,7 @@ interface Job {
   assignee?: { first_name?: string; last_name?: string }
 }
 
-export function JobsMapView({ jobs }: { jobs: Job[] }) {
+export function JobsMapView({ jobs, height = '500px' }: { jobs: Job[]; height?: string }) {
   const [mapJobs, setMapJobs] = useState<any[]>([])
 
   useEffect(() => {
@@ -81,11 +81,11 @@ export function JobsMapView({ jobs }: { jobs: Job[] }) {
   return (
     <div>
       {mapJobs.length === 0 && jobs.length > 0 ? (
-        <div className="h-[500px] bg-gray-50 rounded-xl flex items-center justify-center text-sm text-gray-400">
+        <div style={{ height }} className="bg-gray-50 rounded-xl flex items-center justify-center text-sm text-gray-400">
           Geocoding job locations...
         </div>
       ) : (
-        <JobMap jobs={mapJobs} height="500px" type="jobs" />
+        <JobMap jobs={mapJobs} height={height} type="jobs" />
       )}
       <p className="text-xs text-gray-400 mt-2">
         {mapJobs.length} of {jobs.length} jobs mapped — double-click a pin to open the job
