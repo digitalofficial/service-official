@@ -1,12 +1,18 @@
 import { createServerSupabaseClient } from '@service-official/database'
-import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
+import { AddItemForm } from '@/components/projects/add-item-form'
 import { formatDate, statusColor } from '@/lib/utils'
-import { Plus, HelpCircle, MessageSquare } from 'lucide-react'
+import { HelpCircle } from 'lucide-react'
+
+const FIELDS = [
+  { name: 'title', label: 'Subject', type: 'text' as const, placeholder: 'e.g. Confirm header size over kitchen window', required: true, colSpan: 2 },
+  { name: 'question', label: 'Question', type: 'textarea' as const, placeholder: 'Describe what you need clarified...', required: true, colSpan: 2 },
+  { name: 'discipline', label: 'Discipline', type: 'text' as const, placeholder: 'e.g. structural, electrical' },
+  { name: 'due_date', label: 'Due Date', type: 'date' as const },
+]
 
 export default async function ProjectRFIsPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
-
   const { data: rfis } = await supabase
     .from('rfis')
     .select('*, submitter:profiles!submitted_by(first_name, last_name), answerer:profiles!answered_by(first_name, last_name)')
@@ -17,16 +23,11 @@ export default async function ProjectRFIsPage({ params }: { params: { id: string
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-gray-900">RFIs ({rfis?.length ?? 0})</h2>
-        <Button size="sm"><Plus className="w-4 h-4 mr-1" />New RFI</Button>
+        <AddItemForm projectId={params.id} itemType="rfi" buttonLabel="New RFI" formTitle="New RFI" fields={FIELDS} />
       </div>
-
       {!rfis || rfis.length === 0 ? (
-        <EmptyState
-          icon={<HelpCircle className="w-10 h-10" />}
-          title="No RFIs"
-          description="Requests for information will appear here."
-          action={<Button size="sm"><Plus className="w-4 h-4 mr-1" />Submit RFI</Button>}
-        />
+        <EmptyState icon={<HelpCircle className="w-10 h-10" />} title="No RFIs" description="Requests for information will appear here."
+          action={<AddItemForm projectId={params.id} itemType="rfi" buttonLabel="Submit RFI" formTitle="New RFI" fields={FIELDS} />} />
       ) : (
         <div className="space-y-2">
           {rfis.map((rfi: any) => {
@@ -41,9 +42,7 @@ export default async function ProjectRFIsPage({ params }: { params: { id: string
                     </div>
                     {rfi.discipline && <p className="text-xs text-gray-500 capitalize mt-0.5">{rfi.discipline}</p>}
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>
-                    {rfi.status.replace(/_/g, ' ')}
-                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>{rfi.status.replace(/_/g, ' ')}</span>
                 </div>
                 <p className="text-sm text-gray-700 mb-2">{rfi.question}</p>
                 {rfi.answer && (

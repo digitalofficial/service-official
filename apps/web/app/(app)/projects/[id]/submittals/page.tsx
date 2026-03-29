@@ -1,32 +1,29 @@
 import { createServerSupabaseClient } from '@service-official/database'
-import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
+import { AddItemForm } from '@/components/projects/add-item-form'
 import { formatDate, statusColor } from '@/lib/utils'
-import { Plus, Send, FileText } from 'lucide-react'
+import { Send, FileText } from 'lucide-react'
+
+const FIELDS = [
+  { name: 'title', label: 'Title', type: 'text' as const, placeholder: 'e.g. Shingle color samples', required: true, colSpan: 2 },
+  { name: 'description', label: 'Description', type: 'textarea' as const, placeholder: 'Details about what is being submitted...', colSpan: 2 },
+  { name: 'spec_section', label: 'Spec Section', type: 'text' as const, placeholder: 'e.g. 07310 - Asphalt Shingles' },
+  { name: 'due_date', label: 'Due Date', type: 'date' as const },
+]
 
 export default async function SubmittalsPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
-
-  const { data: submittals } = await supabase
-    .from('submittals')
-    .select('*')
-    .eq('project_id', params.id)
-    .order('created_at', { ascending: false })
+  const { data: submittals } = await supabase.from('submittals').select('*').eq('project_id', params.id).order('created_at', { ascending: false })
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-gray-900">Submittals ({submittals?.length ?? 0})</h2>
-        <Button size="sm"><Plus className="w-4 h-4 mr-1" />New Submittal</Button>
+        <AddItemForm projectId={params.id} itemType="submittal" buttonLabel="New Submittal" formTitle="New Submittal" fields={FIELDS} />
       </div>
-
       {!submittals || submittals.length === 0 ? (
-        <EmptyState
-          icon={<Send className="w-10 h-10" />}
-          title="No submittals"
-          description="Track product approvals and shop drawing submittals."
-          action={<Button size="sm"><Plus className="w-4 h-4 mr-1" />Submit</Button>}
-        />
+        <EmptyState icon={<Send className="w-10 h-10" />} title="No submittals" description="Track product approvals and shop drawing submittals."
+          action={<AddItemForm projectId={params.id} itemType="submittal" buttonLabel="Submit" formTitle="New Submittal" fields={FIELDS} />} />
       ) : (
         <div className="space-y-2">
           {submittals.map((sub: any) => {
@@ -39,9 +36,7 @@ export default async function SubmittalsPage({ params }: { params: { id: string 
                   {sub.description && <p className="text-xs text-gray-500 mt-0.5 truncate">{sub.description}</p>}
                   <p className="text-xs text-gray-400 mt-0.5">{formatDate(sub.created_at, { month: 'short', day: 'numeric' })}</p>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>
-                  {sub.status.replace(/_/g, ' ')}
-                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>{sub.status.replace(/_/g, ' ')}</span>
               </div>
             )
           })}

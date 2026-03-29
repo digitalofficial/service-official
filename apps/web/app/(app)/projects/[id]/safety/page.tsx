@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createServerSupabaseClient } from '@service-official/database'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -21,7 +22,9 @@ export default async function SafetyPage({ params }: { params: { id: string } })
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-gray-900">Safety</h2>
-        <Button size="sm"><Plus className="w-4 h-4 mr-1" />Report Incident</Button>
+        <Link href={`/projects/${params.id}/daily-logs`}>
+          <Button size="sm"><Plus className="w-4 h-4 mr-1" />Report in Daily Log</Button>
+        </Link>
       </div>
 
       {/* Safety Stats */}
