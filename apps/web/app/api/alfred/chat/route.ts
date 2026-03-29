@@ -3,17 +3,22 @@ import { createServerSupabaseClient } from '@service-official/database'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildSystemPrompt } from '@/lib/alfred/system-prompt'
 
+export const maxDuration = 60
+
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })
+      console.error('Alfred: ANTHROPIC_API_KEY is missing')
+      return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
     }
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
     const supabase = createServerSupabaseClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -37,7 +42,8 @@ export async function POST(request: NextRequest) {
       currentPage: currentPage ?? '/',
     })
 
-    const stream = client.messages.stream({
+    // Use non-streaming for reliability on Vercel
+    const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
       system: systemPrompt,
@@ -47,13 +53,9 @@ export async function POST(request: NextRequest) {
       })),
     })
 
-    return new Response(stream.toReadableStream(), {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    })
+    const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
+
+    return NextResponse.json({ content: text })
   } catch (error: any) {
     console.error('Alfred chat error:', error?.message ?? error)
     return NextResponse.json(

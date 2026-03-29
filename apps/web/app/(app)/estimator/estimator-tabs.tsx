@@ -69,36 +69,11 @@ export function EstimatorTabs({ takeoffs, blueprints, userName, orgIndustry }: E
         }),
       })
 
-      if (!res.ok) throw new Error('Failed')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed')
 
-      const reader = res.body?.getReader()
-      if (!reader) throw new Error('No reader')
-
-      const decoder = new TextDecoder()
-      let assistantContent = ''
-      setMessages([...newMessages, { role: 'assistant', content: '' }])
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6))
-              if (data.type === 'content_block_delta' && data.delta?.text) {
-                assistantContent += data.delta.text
-                setMessages(prev => {
-                  const updated = [...prev]
-                  updated[updated.length - 1] = { role: 'assistant', content: assistantContent }
-                  return updated
-                })
-              }
-            } catch {}
-          }
-        }
-      }
+      const assistantContent = data.content ?? ''
+      setMessages([...newMessages, { role: 'assistant', content: assistantContent }])
     } catch {
       setMessages(prev => [
         ...prev.slice(0, -1),
