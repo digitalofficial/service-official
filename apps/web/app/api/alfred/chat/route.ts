@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     // Use non-streaming for reliability on Vercel
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
+      max_tokens: 2048,
       system: systemPrompt,
       messages: messages.map((m: any) => ({
         role: m.role,
