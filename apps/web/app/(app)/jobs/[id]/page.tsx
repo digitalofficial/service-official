@@ -8,6 +8,7 @@ import { JobActions } from './job-actions'
 import { JobPhotos } from './job-photos'
 import { JobFiles } from './job-files'
 import { JobExpenses } from './job-expenses'
+import { JobTimeEntries } from './job-time-entries'
 import {
   ArrowLeft, MapPin, Clock, User, Phone, Calendar, FileText,
   Camera, DollarSign, MessageSquare, Briefcase
@@ -132,6 +133,14 @@ export default async function JobDetailPage({ params }: { params: { id: string }
               </div>
             )}
           </div>
+
+          {/* Crew Hours */}
+          <JobTimeEntries
+            jobId={params.id}
+            assigneeId={assignee?.id}
+            currentUserId={user.id}
+            currentUserRole={profile?.role ?? 'viewer'}
+          />
 
           {/* Photos */}
           <JobPhotos jobId={params.id} photos={photos ?? []} />
