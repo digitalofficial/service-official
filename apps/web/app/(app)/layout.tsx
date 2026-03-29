@@ -4,6 +4,7 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@service-of
 import { Sidebar } from '@/components/layout/sidebar'
 import { TopBar } from '@/components/layout/topbar'
 import { OrgSwitcher } from '@/components/admin/org-switcher'
+import { AlfredChat } from '@/components/alfred/alfred-chat'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerSupabaseClient()
@@ -125,6 +126,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </main>
       </div>
+      <AlfredChat userName={profile.first_name} />
     </div>
   )
 }

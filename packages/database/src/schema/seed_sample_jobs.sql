@@ -1,27 +1,27 @@
 -- ============================================================
--- SAMPLE JOBS — Tucson, AZ addresses for demo purposes
--- Run after creating an organization and at least one profile.
--- Replace the UUIDs below with your actual org/profile/customer IDs.
+-- SEED: Tucson demo jobs for Platinum Builders
+-- Paste into Supabase SQL Editor and run
 -- ============================================================
 
--- Usage:
---   1. Get your organization_id:  SELECT id FROM organizations LIMIT 1;
---   2. Get a profile_id:          SELECT id FROM profiles LIMIT 1;
---   3. Replace 'YOUR_ORG_ID' and 'YOUR_PROFILE_ID' below
---   4. Run this script in Supabase SQL Editor
+-- Bypass RLS for this session
+SET session_replication_role = 'replica';
 
 DO $$
 DECLARE
   v_org_id UUID;
   v_profile_id UUID;
 BEGIN
-  -- Auto-detect first org and profile
-  SELECT id INTO v_org_id FROM organizations LIMIT 1;
+  -- Platinum Builders org ID
+  v_org_id := '1ccb3126-45f0-4343-b5a2-e41bfb7c8df3';
+
+  -- Find a profile in that org to assign jobs to
   SELECT id INTO v_profile_id FROM profiles WHERE organization_id = v_org_id LIMIT 1;
+
+  -- Delete existing jobs first
+  DELETE FROM jobs WHERE organization_id = v_org_id;
 
   INSERT INTO jobs (organization_id, job_number, title, description, status, priority, scheduled_start, scheduled_end, address_line1, city, state, zip, coordinates, assigned_to, created_by, instructions) VALUES
 
-  -- Scheduled jobs
   (v_org_id, 'JOB-1001', 'Roof Inspection — Grant Rd Office', 'Full roof inspection for commercial office building. Check for storm damage and drainage issues.', 'scheduled', 'high',
    NOW() + INTERVAL '1 day', NOW() + INTERVAL '1 day 3 hours',
    '4001 E Grant Rd', 'Tucson', 'AZ', '85712',
@@ -40,7 +40,6 @@ BEGIN
    '{"lat": 32.2364, "lng": -110.9387}',
    v_profile_id, v_profile_id, 'Coordinate with tenant — restaurant below. Start early before it gets hot.'),
 
-  -- In Progress
   (v_org_id, 'JOB-1004', 'Re-Roof — Rita Ranch Residence', 'Full tear-off and re-roof with 30-year architectural shingles. 2,800 sq ft.', 'in_progress', 'high',
    NOW() - INTERVAL '4 hours', NOW() + INTERVAL '2 days',
    '10450 E Rita Rd', 'Tucson', 'AZ', '85747',
@@ -53,7 +52,6 @@ BEGIN
    '{"lat": 32.3390, "lng": -110.9912}',
    v_profile_id, v_profile_id, 'Materials staged in garage. Homeowner is home all day.'),
 
-  -- Completed
   (v_org_id, 'JOB-1006', 'Gutter Installation — Marana', 'Install 6" seamless aluminum gutters with downspouts on all four sides.', 'completed', 'normal',
    NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days' + INTERVAL '5 hours',
    '8370 N Cortaro Rd', 'Tucson', 'AZ', '85743',
@@ -66,7 +64,6 @@ BEGIN
    '{"lat": 32.1950, "lng": -110.9720}',
    v_profile_id, v_profile_id, 'Tarp secured. Follow-up repair needed — see JOB-1010.'),
 
-  -- Unscheduled
   (v_org_id, 'JOB-1008', 'Roof Estimate — Broadway Village', 'Provide estimate for full commercial re-roof. TPO single-ply system.', 'unscheduled', 'normal',
    NULL, NULL,
    '16 S Eastbourne Ave', 'Tucson', 'AZ', '85716',
@@ -79,7 +76,6 @@ BEGIN
    '{"lat": 32.3270, "lng": -110.8750}',
    v_profile_id, v_profile_id, 'Solar company: SunTech AZ, contact Mike at 520-555-0199.'),
 
-  -- Needs Follow Up
   (v_org_id, 'JOB-1010', 'Follow-Up Repair — 12th Ave Monsoon', 'Permanent repair for ridge cap tiles blown off during monsoon. Follow-up to JOB-1007.', 'needs_follow_up', 'high',
    NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days' + INTERVAL '3 hours',
    '3640 S 12th Ave', 'Tucson', 'AZ', '85713',
@@ -92,7 +88,6 @@ BEGIN
    '{"lat": 32.2217, "lng": -110.9665}',
    v_profile_id, v_profile_id, 'Penthouse unit 4B. Doorman will let you up. Possible flashing failure at parapet.'),
 
-  -- More scheduled for a full-looking calendar
   (v_org_id, 'JOB-1012', 'Fascia & Soffit Repair — Midvale Park', 'Replace rotted fascia boards and repaint soffit on south and west sides.', 'scheduled', 'low',
    NOW() + INTERVAL '5 days', NOW() + INTERVAL '5 days 4 hours',
    '4802 E 22nd St', 'Tucson', 'AZ', '85711',
