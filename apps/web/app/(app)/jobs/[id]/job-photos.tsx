@@ -27,29 +27,11 @@ export function JobPhotos({ jobId, photos }: Props) {
       if (!file.type.startsWith('image/')) continue
 
       try {
-        // Upload file
         const formData = new FormData()
         formData.append('file', file)
         formData.append('job_id', jobId)
-        formData.append('file_type', 'image')
 
-        const uploadRes = await fetch('/api/files', { method: 'POST', body: formData })
-        if (!uploadRes.ok) throw new Error('Upload failed')
-
-        const { data: fileRecord } = await uploadRes.json()
-
-        // Create photo record
-        const res = await fetch('/api/photos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            job_id: jobId,
-            storage_path: fileRecord.storage_path,
-            public_url: fileRecord.public_url,
-            caption: file.name.split('.')[0],
-          }),
-        })
-
+        const res = await fetch('/api/photos/upload', { method: 'POST', body: formData })
         if (res.ok) uploaded++
       } catch {}
     }
