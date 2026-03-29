@@ -53,12 +53,12 @@ export default async function AdminRevenuePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Revenue</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-white">Revenue</h1>
         <p className="text-gray-400 text-sm mt-1">Platform-wide financial overview</p>
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard label="Total Collected" value={formatCurrency(totalRevenue)} color="green" />
         <MetricCard label="Total Invoiced" value={formatCurrency(totalInvoiced)} />
         <MetricCard label="Outstanding" value={formatCurrency(totalOutstanding)} color="amber" />
@@ -66,17 +66,17 @@ export default async function AdminRevenuePage() {
       </div>
 
       {/* Monthly Revenue */}
-      <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-4 sm:p-6">
         <h2 className="font-semibold text-white mb-4">Monthly Revenue (All Clients)</h2>
-        <div className="flex items-end gap-2 h-48">
+        <div className="flex items-end gap-1 sm:gap-2 h-36 sm:h-48 overflow-hidden">
           {monthly.map((m) => {
             const maxRev = Math.max(...monthly.map(x => x.revenue), 1)
             const height = Math.max((m.revenue / maxRev) * 100, 2)
             return (
               <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-xs text-gray-500">{m.revenue > 0 ? formatCurrency(m.revenue) : ''}</span>
+                <span className="text-[9px] sm:text-xs text-gray-500 hidden sm:block">{m.revenue > 0 ? formatCurrency(m.revenue) : ''}</span>
                 <div className="w-full bg-blue-600 rounded-t" style={{ height: `${height}%` }} />
-                <span className="text-xs text-gray-500">{m.month}</span>
+                <span className="text-[9px] sm:text-xs text-gray-500 truncate">{m.month}</span>
               </div>
             )
           })}
@@ -143,9 +143,9 @@ export default async function AdminRevenuePage() {
 function MetricCard({ label, value, color = 'default' }: { label: string; value: string; color?: string }) {
   const colors: Record<string, string> = { green: 'text-green-400', amber: 'text-amber-400', blue: 'text-blue-400', default: 'text-gray-400' }
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
-      <p className="text-3xl font-bold text-white">{value}</p>
-      <p className={`text-sm mt-1 ${colors[color] ?? colors.default}`}>{label}</p>
+    <div className="bg-gray-900 rounded-xl border border-gray-800 p-3 sm:p-5">
+      <p className="text-xl sm:text-3xl font-bold text-white truncate">{value}</p>
+      <p className={`text-xs sm:text-sm mt-1 truncate ${colors[color] ?? colors.default}`}>{label}</p>
     </div>
   )
 }

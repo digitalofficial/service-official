@@ -55,9 +55,9 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-xl font-bold text-white">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-600 flex items-center justify-center text-lg sm:text-xl font-bold text-white shrink-0">
             {org.name[0]}
           </div>
           <div>
@@ -80,7 +80,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <StatCard label="Total Revenue" value={formatCurrency(totalRevenue)} color="green" />
         <StatCard label="Team Members" value={String(profiles.length)} />
         <StatCard label="Projects" value={String(projects?.length ?? 0)} />
@@ -143,7 +143,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       {/* Org Details */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
         <h2 className="font-semibold text-white mb-4">Organization Details</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
           <Detail label="Industry" value={org.industry?.replace(/_/g, ' ')} />
           <Detail label="Created" value={formatDate(org.created_at)} />
           <Detail label="Trial Ends" value={org.trial_ends_at ? formatDate(org.trial_ends_at) : 'N/A'} />
@@ -156,9 +156,9 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 
 function StatCard({ label, value, color = 'default' }: { label: string; value: string; color?: string }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-      <p className={`text-2xl font-bold ${color === 'green' ? 'text-green-400' : 'text-white'}`}>{value}</p>
-      <p className="text-xs text-gray-400 mt-1">{label}</p>
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 sm:p-4">
+      <p className={`text-lg sm:text-2xl font-bold truncate ${color === 'green' ? 'text-green-400' : 'text-white'}`}>{value}</p>
+      <p className="text-xs text-gray-400 mt-1 truncate">{label}</p>
     </div>
   )
 }

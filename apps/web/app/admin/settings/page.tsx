@@ -27,7 +27,7 @@ export default function AdminSettingsPage() {
       {/* Quick Links */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
         <h2 className="font-semibold text-white mb-4">Quick Links</h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
             { label: 'Vercel Dashboard', href: 'https://vercel.com/digitalofficials-projects/service-official' },
             { label: 'Vercel Domains', href: 'https://vercel.com/digitalofficials-projects/service-official/settings/domains' },

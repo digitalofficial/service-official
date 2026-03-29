@@ -97,8 +97,8 @@ export default function NewClientPage() {
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <h3 className="font-semibold text-white mb-1">1. DNS Record</h3>
             <p className="text-xs text-gray-500 mb-4">Add this in Cloudflare (or DNS provider) for <span className="text-blue-400">{dns.root_domain}</span></p>
-            <div className="bg-gray-800 rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-gray-800 rounded-lg overflow-x-auto">
+              <table className="w-full text-sm min-w-[400px]">
                 <thead>
                   <tr className="text-xs text-gray-500 border-b border-gray-700">
                     <th className="text-left px-4 py-2 font-medium">Type</th>
@@ -197,7 +197,7 @@ export default function NewClientPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl w-full space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Add New Client</h1>
         <p className="text-gray-400 text-sm mt-1">Creates their organization, account, and registers their domain</p>

@@ -26,12 +26,12 @@ export default async function AdminPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Overview</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-white">Overview</h1>
         <p className="text-gray-400 text-sm mt-1">All organizations across Service Official</p>
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard label="Total Clients" value={String(totalOrgs)} />
         <MetricCard label="Active" value={String(activeOrgs)} color="green" />
         <MetricCard label="Total Users" value={String(totalUsers)} />
@@ -41,7 +41,7 @@ export default async function AdminPage() {
       {/* Tier Breakdown */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
         <h2 className="font-semibold text-white mb-4">Plans</h2>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {['solo', 'team', 'growth', 'enterprise'].map(tier => (
             <div key={tier} className="bg-gray-800 rounded-lg p-4 text-center">
               <p className="text-2xl font-bold text-white">{tierCounts[tier] ?? 0}</p>
@@ -80,9 +80,9 @@ export default async function AdminPage() {
 
 function MetricCard({ label, value, color = 'default' }: { label: string; value: string; color?: string }) {
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
-      <p className="text-3xl font-bold text-white">{value}</p>
-      <p className={`text-sm mt-1 ${color === 'green' ? 'text-green-400' : color === 'blue' ? 'text-blue-400' : 'text-gray-400'}`}>
+    <div className="bg-gray-900 rounded-xl border border-gray-800 p-3 sm:p-5">
+      <p className="text-xl sm:text-3xl font-bold text-white truncate">{value}</p>
+      <p className={`text-xs sm:text-sm mt-1 truncate ${color === 'green' ? 'text-green-400' : color === 'blue' ? 'text-blue-400' : 'text-gray-400'}`}>
         {label}
       </p>
     </div>

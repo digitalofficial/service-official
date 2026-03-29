@@ -29,21 +29,21 @@ export default async function AdminClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Clients</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white">Clients</h1>
           <p className="text-gray-400 text-sm mt-1">{orgs?.length ?? 0} total organizations</p>
         </div>
         <Link
           href="/admin/clients/new"
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+          className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
         >
           + Add Client
         </Link>
       </div>
 
-      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-        <table className="w-full">
+      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-x-auto">
+        <table className="w-full min-w-[700px]">
           <thead>
             <tr className="text-xs text-gray-500 border-b border-gray-800">
               <th className="text-left px-5 py-3 font-medium">Company</th>
