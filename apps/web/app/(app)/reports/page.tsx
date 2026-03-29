@@ -111,18 +111,18 @@ export default async function ReportsPage() {
       <PageHeader title="Reports & Analytics" description="Financial performance and key metrics" />
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {metrics.map((m) => {
           const Icon = m.icon
           return (
-            <div key={m.label} className="bg-white rounded-xl border border-gray-200 p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className={`w-9 h-9 rounded-lg ${m.bg} flex items-center justify-center`}>
-                  <Icon className={`w-5 h-5 ${m.color}`} />
+            <div key={m.label} className="bg-white rounded-xl border border-gray-200 p-3 sm:p-5">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg ${m.bg} flex items-center justify-center`}>
+                  <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${m.color}`} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{m.value}</p>
-              <p className="text-sm text-gray-500 mt-0.5">{m.label}</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{m.value}</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">{m.label}</p>
             </div>
           )
         })}

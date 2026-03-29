@@ -71,7 +71,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard
           label="Revenue This Month"
           value="$0"
@@ -209,14 +209,14 @@ function MetricCard({ label, value, icon: Icon, iconColor, iconBg, trend }: {
   trend?: string
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <div className="flex items-center justify-between mb-3">
-        <div className={`w-9 h-9 rounded-lg ${iconBg} flex items-center justify-center`}>
-          <Icon className={`w-5 h-5 ${iconColor}`} />
+    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-5">
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg ${iconBg} flex items-center justify-center`}>
+          <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${iconColor}`} />
         </div>
       </div>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      <p className="text-sm text-gray-500 mt-0.5">{label}</p>
+      <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{value}</p>
+      <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">{label}</p>
       {trend && <p className="text-xs text-green-600 mt-1">{trend}</p>}
     </div>
   )
