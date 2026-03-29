@@ -20,16 +20,16 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         <p className="text-sm text-gray-500 mt-0.5">Manage your organization settings</p>
       </div>
 
-      <div className="flex gap-6">
-        {/* Sidebar Nav */}
-        <nav className="w-48 shrink-0 space-y-0.5">
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Sidebar Nav — horizontal scroll on mobile, vertical on desktop */}
+        <nav className="flex lg:flex-col lg:w-48 shrink-0 gap-0.5 overflow-x-auto pb-2 lg:pb-0 border-b lg:border-b-0 border-gray-200">
           {SETTINGS_NAV.map((item) => {
             const Icon = item.icon
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors whitespace-nowrap"
               >
                 <Icon className="w-4 h-4" />
                 {item.label}

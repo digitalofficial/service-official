@@ -33,7 +33,7 @@ export default async function ProjectMaterialsPage({ params }: { params: { id: s
           action={<Button size="sm"><Plus className="w-4 h-4 mr-1" />Add</Button>}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">

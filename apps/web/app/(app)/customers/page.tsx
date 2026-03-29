@@ -89,7 +89,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         </form>
       </div>
 
-      {/* Table */}
+      {/* Table — scrolls on mobile */}
       {!customers || customers.length === 0 ? (
         <EmptyState
           icon={<Users className="w-12 h-12" />}
@@ -102,8 +102,8 @@ export default async function CustomersPage({ searchParams }: Props) {
           }
         />
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/50">
                 <th className="text-left font-medium text-gray-500 px-4 py-3">Name</th>

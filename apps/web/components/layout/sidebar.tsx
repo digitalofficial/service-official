@@ -1,25 +1,17 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
 import {
   LayoutDashboard, FolderKanban, Users, UserPlus, Briefcase, Radio,
   Calendar, FileText, Receipt, CreditCard, MessageSquare,
-  Zap, BarChart3, Map, Cpu, Settings, Building2, ChevronLeft,
-  HardHat, ClipboardList
+  Zap, BarChart3, Map, Cpu, Settings, Building2,
+  HardHat, Menu, X
 } from 'lucide-react'
 
-interface NavItem {
-  label: string
-  href: string
-  icon: React.ElementType
-  badge?: number
-  roles?: string[]
-  children?: NavItem[]
-}
-
-const NAV_ITEMS: NavItem[] = [
+const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Dispatch', href: '/dispatch', icon: Radio },
   { label: 'Projects', href: '/projects', icon: FolderKanban },
@@ -41,32 +33,45 @@ const NAV_ITEMS: NavItem[] = [
 interface SidebarProps {
   profile: any
   organization: any
-  collapsed?: boolean
 }
 
-export function Sidebar({ profile, organization, collapsed = false }: SidebarProps) {
+export function Sidebar({ profile, organization }: SidebarProps) {
   const pathname = usePathname()
+  const [open, setOpen] = useState(false)
 
-  return (
-    <aside className={cn(
-      'flex flex-col h-screen bg-gray-900 text-white transition-all duration-200',
-      collapsed ? 'w-16' : 'w-64'
-    )}>
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
+  // Close on escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  const sidebarContent = (
+    <>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-800">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 shrink-0">
-          <HardHat className="w-4 h-4 text-white" />
-        </div>
-        {!collapsed && (
+      <div className="flex items-center justify-between px-4 py-5 border-b border-gray-800">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 shrink-0">
+            <HardHat className="w-4 h-4 text-white" />
+          </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate">{organization?.name}</p>
             <p className="text-xs text-gray-400 truncate capitalize">{organization?.industry?.replace('_', ' ')}</p>
           </div>
-        )}
+        </div>
+        {/* Close button (mobile only) */}
+        <button onClick={() => setOpen(false)} className="lg:hidden p-1 text-gray-400 hover:text-white">
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
+      <nav className="flex-1 overflow-y-auto py-3 px-2 scrollbar-thin">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
@@ -76,19 +81,14 @@ export function Sidebar({ profile, organization, collapsed = false }: SidebarPro
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-sm transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 text-sm transition-colors',
                 isActive
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-400 hover:bg-gray-800 hover:text-white'
               )}
             >
               <Icon className="w-4 h-4 shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-              {!collapsed && item.badge != null && (
-                <span className="ml-auto bg-blue-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.25rem] text-center">
-                  {item.badge}
-                </span>
-              )}
+              <span>{item.label}</span>
             </Link>
           )
         })}
@@ -100,14 +100,43 @@ export function Sidebar({ profile, organization, collapsed = false }: SidebarPro
           <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 text-xs font-bold">
             {profile?.first_name?.[0]}{profile?.last_name?.[0]}
           </div>
-          {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate">{profile?.first_name} {profile?.last_name}</p>
-              <p className="text-xs text-gray-400 capitalize">{profile?.role?.replace('_', ' ')}</p>
-            </div>
-          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium truncate">{profile?.first_name} {profile?.last_name}</p>
+            <p className="text-xs text-gray-400 capitalize">{profile?.role?.replace('_', ' ')}</p>
+          </div>
         </div>
       </div>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setOpen(true)}
+        className="lg:hidden fixed top-3 left-3 z-50 p-2 bg-gray-900 text-white rounded-lg shadow-lg"
+        aria-label="Open menu"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* Mobile overlay */}
+      {open && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* Sidebar — hidden on mobile, slide-in when open */}
+      <aside className={cn(
+        'flex flex-col h-screen bg-gray-900 text-white w-64 shrink-0 transition-transform duration-200 z-50',
+        // Mobile: fixed, slide in/out
+        'fixed lg:relative',
+        open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      )}>
+        {sidebarContent}
+      </aside>
+    </>
   )
 }

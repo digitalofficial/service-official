@@ -104,10 +104,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50" data-org-id={activeOrgId}>
       <Sidebar profile={profile} organization={activeOrg} />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <header className="flex items-center justify-between h-14 px-6 bg-white border-b border-gray-200 shrink-0">
-          {/* Org Switcher (super admin only) */}
-          <div className="flex items-center gap-4">
+      <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+        <header className="flex items-center justify-between h-14 px-4 lg:px-6 bg-white border-b border-gray-200 shrink-0">
+          {/* Left side — spacer for hamburger on mobile + org switcher */}
+          <div className="flex items-center gap-3">
+            <div className="w-9 lg:hidden" /> {/* Spacer for hamburger button */}
             {isSuperAdmin && (
               <OrgSwitcher
                 currentOrgId={activeOrgId}
@@ -118,7 +119,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
           <TopBar profile={profile} />
         </header>
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {children}
         </main>
       </div>

@@ -42,7 +42,21 @@
   }
 }
 
+/* Responsive table wrapper — tables scroll horizontally on mobile */
+@layer components {
+  .table-responsive {
+    @apply overflow-x-auto -mx-4 px-4 lg:mx-0 lg:px-0;
+  }
+}
+
 @layer utilities {
+  /* Hide on mobile, show on desktop */
+  .desktop-only {
+    @apply hidden lg:block;
+  }
+  .mobile-only {
+    @apply block lg:hidden;
+  }
   .scrollbar-thin {
     scrollbar-width: thin;
   }
