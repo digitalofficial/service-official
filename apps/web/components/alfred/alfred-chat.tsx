@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
-import { MessageCircle, X, Send, Loader2, AlertCircle } from 'lucide-react'
+import { X, Send, Loader2, AlertCircle } from 'lucide-react'
+import { AlfredAvatar } from './alfred-avatar'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -140,7 +141,7 @@ export function AlfredChat({ userName }: AlfredChatProps) {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-gray-900 text-white shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-sm font-bold">A</div>
+              <AlfredAvatar size={32} />
               <div>
                 <p className="text-sm font-semibold leading-none">Alfred</p>
                 <p className="text-[11px] text-gray-400 mt-0.5">Service Official Assistant</p>
@@ -155,8 +156,8 @@ export function AlfredChat({ userName }: AlfredChatProps) {
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.length === 0 && (
               <div className="text-center py-8">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3">
-                  <MessageCircle className="w-6 h-6 text-blue-600" />
+                <div className="mx-auto mb-3">
+                  <AlfredAvatar size={48} />
                 </div>
                 <p className="text-sm font-medium text-gray-900">Hi {userName}, I'm Alfred</p>
                 <p className="text-xs text-gray-500 mt-1 max-w-[240px] mx-auto">
@@ -177,9 +178,14 @@ export function AlfredChat({ userName }: AlfredChatProps) {
             )}
 
             {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'assistant' && (
+                  <div className="shrink-0 mt-1">
+                    <AlfredAvatar size={24} />
+                  </div>
+                )}
                 <div
-                  className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white rounded-br-md'
                       : 'bg-gray-100 text-gray-900 rounded-bl-md'
@@ -228,16 +234,16 @@ export function AlfredChat({ userName }: AlfredChatProps) {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 rounded-full shadow-lg flex items-center justify-center z-50 transition-all ${
+        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-50 transition-all overflow-hidden ${
           isOpen
             ? 'bg-gray-900 hover:bg-gray-800 scale-90'
-            : 'bg-blue-600 hover:bg-blue-700 hover:scale-105'
+            : 'bg-[#1E3A5F] hover:scale-105 ring-2 ring-amber-400/50'
         }`}
       >
         {isOpen ? (
           <X className="w-5 h-5 text-white" />
         ) : (
-          <MessageCircle className="w-5 h-5 text-white" />
+          <AlfredAvatar size={56} />
         )}
       </button>
     </>
