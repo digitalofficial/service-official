@@ -1,8 +1,8 @@
 import { createServerSupabaseClient } from '@service-official/database'
-import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
-import { formatDate, formatCurrency } from '@/lib/utils'
-import { Plus, Users, Mail, Phone } from 'lucide-react'
+import { formatCurrency } from '@/lib/utils'
+import { Users, Mail, Phone } from 'lucide-react'
+import { AddMemberButton } from './add-member'
 
 export default async function ProjectTeamPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
@@ -17,7 +17,7 @@ export default async function ProjectTeamPage({ params }: { params: { id: string
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-gray-900">Team ({members?.length ?? 0})</h2>
-        <Button size="sm"><Plus className="w-4 h-4 mr-1" />Add Member</Button>
+        <AddMemberButton projectId={params.id} />
       </div>
 
       {!members || members.length === 0 ? (
@@ -25,7 +25,7 @@ export default async function ProjectTeamPage({ params }: { params: { id: string
           icon={<Users className="w-10 h-10" />}
           title="No team assigned"
           description="Add team members to this project."
-          action={<Button size="sm"><Plus className="w-4 h-4 mr-1" />Add</Button>}
+          action={<AddMemberButton projectId={params.id} />}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
