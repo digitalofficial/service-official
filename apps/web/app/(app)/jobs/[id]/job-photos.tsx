@@ -71,15 +71,17 @@ export function JobPhotos({ jobId, photos }: Props) {
         <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
           <Camera className="w-4 h-4" /> Photos ({photos.length})
         </h2>
-        <label className="cursor-pointer">
-          <input ref={fileRef} type="file" accept="image/*" multiple capture="environment" className="hidden" onChange={handleUpload} disabled={uploading} />
-          <Button size="sm" variant="outline" asChild disabled={uploading}>
-            <span>
-              {uploading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
-              {uploading ? 'Uploading...' : 'Upload Photos'}
-            </span>
-          </Button>
-        </label>
+        <div>
+          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+            {uploading ? 'Uploading...' : 'Upload Photos'}
+          </button>
+        </div>
       </div>
       {photos.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-4">No photos yet — upload before/after photos</p>
