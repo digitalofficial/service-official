@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
 import { v4 as uuidv4 } from 'uuid'
 
 const ALLOWED_TYPES = [
@@ -44,9 +44,10 @@ export async function POST(request: NextRequest) {
     const entityPath = project_id ? `projects/${project_id}` : job_id ? `jobs/${job_id}` : `customers/${customer_id ?? 'general'}`
     const storagePath = `${profile!.organization_id}/${entityPath}/${uniqueName}`
 
-    // Upload to Supabase Storage
+    // Upload to Supabase Storage using service role (bypasses storage RLS)
+    const serviceClient = createServiceRoleClient()
     const bytes = await file.arrayBuffer()
-    const { data: upload, error: uploadError } = await supabase.storage
+    const { data: upload, error: uploadError } = await serviceClient.storage
       .from('files')
       .upload(storagePath, bytes, {
         contentType: file.type,
@@ -54,12 +55,12 @@ export async function POST(request: NextRequest) {
       })
 
     if (uploadError) {
-      console.error('Upload error:', uploadError)
-      return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
+      console.error('Upload error:', uploadError.message)
+      return NextResponse.json({ error: 'Upload failed: ' + uploadError.message }, { status: 500 })
     }
 
     // Get public URL
-    const { data: { publicUrl } } = supabase.storage.from('files').getPublicUrl(storagePath)
+    const { data: { publicUrl } } = serviceClient.storage.from('files').getPublicUrl(storagePath)
 
     // Save to database
     const { data: fileRecord, error: dbError } = await supabase
