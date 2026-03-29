@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
 
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient()
@@ -34,4 +34,29 @@ export async function POST(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ data, success: true }, { status: 201 })
+}
+
+export async function DELETE(request: NextRequest) {
+  const supabase = createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
+
+  // Get the photo to find storage path
+  const { data: photo } = await supabase.from('photos').select('storage_path').eq('id', id).single()
+
+  // Delete from storage
+  if (photo?.storage_path) {
+    const serviceClient = createServiceRoleClient()
+    await serviceClient.storage.from('files').remove([photo.storage_path])
+  }
+
+  // Delete from database
+  const { error } = await supabase.from('photos').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ success: true })
 }

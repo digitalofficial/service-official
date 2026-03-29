@@ -2,8 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Camera, Plus, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Camera, Plus, Loader2, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Props {
@@ -14,6 +13,8 @@ interface Props {
 export function JobPhotos({ jobId, photos }: Props) {
   const router = useRouter()
   const [uploading, setUploading] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [confirmText, setConfirmText] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,7 +25,7 @@ export function JobPhotos({ jobId, photos }: Props) {
     let uploaded = 0
 
     for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) continue
+      if (!file.type.startsWith('image/') && file.type !== 'application/octet-stream') continue
 
       try {
         const formData = new FormData()
@@ -47,6 +48,23 @@ export function JobPhotos({ jobId, photos }: Props) {
     if (fileRef.current) fileRef.current.value = ''
   }
 
+  const handleDelete = async (id: string) => {
+    if (confirmText !== 'delete') return
+    try {
+      const res = await fetch(`/api/photos?id=${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast.success('Photo deleted')
+        setDeleting(null)
+        setConfirmText('')
+        router.refresh()
+      } else {
+        toast.error('Failed to delete')
+      }
+    } catch {
+      toast.error('Failed to delete')
+    }
+  }
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex items-center justify-between mb-4">
@@ -65,18 +83,56 @@ export function JobPhotos({ jobId, photos }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleting && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm font-medium text-red-800">Are you sure? This cannot be undone.</p>
+          <p className="text-xs text-red-600 mt-1">Type <strong>delete</strong> to confirm:</p>
+          <div className="flex items-center gap-2 mt-2">
+            <input
+              type="text"
+              value={confirmText}
+              onChange={e => setConfirmText(e.target.value)}
+              placeholder="delete"
+              className="px-3 py-1.5 text-sm border border-red-300 rounded-lg focus:outline-none focus:border-red-400 w-32"
+              autoFocus
+            />
+            <button
+              onClick={() => handleDelete(deleting)}
+              disabled={confirmText !== 'delete'}
+              className="px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-40 transition-colors"
+            >
+              Delete Photo
+            </button>
+            <button
+              onClick={() => { setDeleting(null); setConfirmText('') }}
+              className="p-1.5 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {photos.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-4">No photos yet — upload before/after photos</p>
       ) : (
         <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
           {photos.map((p: any) => (
-            <div key={p.id} className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative">
+            <div key={p.id} className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative group">
               <img src={p.thumbnail_url ?? p.public_url} alt={p.caption ?? ''} className="w-full h-full object-cover" />
               {(p.is_before || p.is_after) && (
                 <span className={`absolute top-1 left-1 text-xs font-bold px-1.5 py-0.5 rounded ${p.is_before ? 'bg-amber-500 text-white' : 'bg-green-500 text-white'}`}>
                   {p.is_before ? 'Before' : 'After'}
                 </span>
               )}
+              <button
+                onClick={() => setDeleting(p.id)}
+                className="absolute top-1 right-1 p-1 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
             </div>
           ))}
         </div>
