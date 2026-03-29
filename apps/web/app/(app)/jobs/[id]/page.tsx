@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDate, formatPhone, statusColor } from '@/lib/utils'
 import { JobActions } from './job-actions'
+import { JobPhotos } from './job-photos'
+import { JobFiles } from './job-files'
+import { JobExpenses } from './job-expenses'
 import {
   ArrowLeft, MapPin, Clock, User, Phone, Calendar, FileText,
   Camera, DollarSign, MessageSquare, Briefcase
@@ -131,89 +134,13 @@ export default async function JobDetailPage({ params }: { params: { id: string }
           </div>
 
           {/* Photos */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <Camera className="w-4 h-4" /> Photos ({photos?.length ?? 0})
-              </h2>
-              <Button size="sm" variant="outline">Upload Photos</Button>
-            </div>
-            {!photos || photos.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No photos yet — upload before/after photos</p>
-            ) : (
-              <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                {photos.map((p: any) => (
-                  <div key={p.id} className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative">
-                    <img src={p.thumbnail_url ?? p.public_url} alt={p.caption ?? ''} className="w-full h-full object-cover" />
-                    {(p.is_before || p.is_after) && (
-                      <span className={`absolute top-1 left-1 text-xs font-bold px-1.5 py-0.5 rounded ${p.is_before ? 'bg-amber-500 text-white' : 'bg-green-500 text-white'}`}>
-                        {p.is_before ? 'Before' : 'After'}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <JobPhotos jobId={params.id} photos={photos ?? []} />
 
           {/* Documents */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <FileText className="w-4 h-4" /> Documents ({files?.length ?? 0})
-              </h2>
-              <Button size="sm" variant="outline">Upload File</Button>
-            </div>
-            {!files || files.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No documents uploaded</p>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {files.map((f: any) => (
-                  <div key={f.id} className="flex items-center justify-between py-2">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-4 h-4 text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{f.original_name ?? f.name}</p>
-                        <p className="text-xs text-gray-500">{formatDate(f.created_at, { month: 'short', day: 'numeric' })}</p>
-                      </div>
-                    </div>
-                    {f.public_url && (
-                      <a href={f.public_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">View</a>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <JobFiles jobId={params.id} files={files ?? []} />
 
           {/* Expenses */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                <DollarSign className="w-4 h-4" /> Expenses ({expenses?.length ?? 0})
-              </h2>
-              <Button size="sm" variant="outline">Add Expense</Button>
-            </div>
-            {!expenses || expenses.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No expenses tracked</p>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {expenses.map((e: any) => (
-                  <div key={e.id} className="flex items-center justify-between py-2">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{e.title}</p>
-                      <p className="text-xs text-gray-500 capitalize">{e.category?.replace(/_/g, ' ')} {e.vendor_name ? `— ${e.vendor_name}` : ''}</p>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">{formatCurrency(e.total_amount)}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between pt-2 text-sm font-bold text-gray-900">
-                  <span>Total</span>
-                  <span>{formatCurrency(expenses.reduce((s: number, e: any) => s + (e.total_amount ?? 0), 0))}</span>
-                </div>
-              </div>
-            )}
-          </div>
+          <JobExpenses jobId={params.id} projectId={project?.id} expenses={expenses ?? []} />
         </div>
 
         {/* Sidebar */}
