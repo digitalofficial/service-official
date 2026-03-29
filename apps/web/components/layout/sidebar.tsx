@@ -110,8 +110,8 @@ export function Sidebar({ profile, organization, isSuperAdmin = false }: Sidebar
         )}
       </nav>
 
-      {/* Profile */}
-      <div className="px-4 py-4 border-t border-gray-800">
+      {/* Profile — extra bottom padding for Safari mobile URL bar */}
+      <div className="px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-gray-800">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 text-xs font-bold">
             {profile?.first_name?.[0]}{profile?.last_name?.[0]}
@@ -146,7 +146,8 @@ export function Sidebar({ profile, organization, isSuperAdmin = false }: Sidebar
 
       {/* Sidebar — hidden on mobile, slide-in when open */}
       <aside className={cn(
-        'flex flex-col h-screen bg-gray-900 text-white w-64 shrink-0 transition-transform duration-200 z-50',
+        'flex flex-col bg-gray-900 text-white w-64 shrink-0 transition-transform duration-200 z-50',
+        'h-[100dvh] lg:h-screen',
         // Mobile: fixed, slide in/out
         'fixed lg:relative',
         open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'

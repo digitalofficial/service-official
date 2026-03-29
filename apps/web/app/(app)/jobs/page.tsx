@@ -108,37 +108,41 @@ export default async function JobsPage({ searchParams }: Props) {
             const colors = statusColor(job.status)
             return (
               <Link key={job.id} href={`/jobs/${job.id}`}>
-                <div className="bg-white rounded-xl border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition-all flex items-center gap-4">
-                  <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${PRIORITY_COLORS[job.priority] ?? 'bg-gray-400'}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">{job.title}</h3>
-                      {job.job_number && <span className="text-xs text-gray-400">{job.job_number}</span>}
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      {job.customer && <span>{job.customer.company_name ?? `${job.customer.first_name} ${job.customer.last_name}`}</span>}
-                      {job.project && <span className="text-gray-400">{job.project.name}</span>}
-                      {(job.city || job.address_line1) && <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{job.city ?? job.address_line1}</span>}
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    {job.scheduled_start ? (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                        <Clock className="w-3 h-3" />
-                        {formatDate(job.scheduled_start, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-4 hover:border-blue-300 hover:shadow-sm transition-all">
+                  {/* Top row: priority dot + title + status */}
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <div className={`w-2.5 h-2.5 rounded-full shrink-0 mt-1.5 ${PRIORITY_COLORS[job.priority] ?? 'bg-gray-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">{job.title}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 capitalize ${colors.bg} ${colors.text}`}>
+                          {job.status.replace(/_/g, ' ')}
+                        </span>
                       </div>
-                    ) : (
-                      <span className="text-xs text-gray-400">Unscheduled</span>
-                    )}
-                  </div>
-                  {job.assignee && (
-                    <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold shrink-0" title={`${job.assignee.first_name} ${job.assignee.last_name}`}>
-                      {job.assignee.first_name?.[0]}{job.assignee.last_name?.[0]}
+                      {/* Meta row */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs text-gray-500">
+                        {job.job_number && <span className="text-gray-400">{job.job_number}</span>}
+                        {job.customer && <span className="truncate">{job.customer.company_name ?? `${job.customer.first_name} ${job.customer.last_name}`}</span>}
+                        {(job.city || job.address_line1) && <span className="flex items-center gap-0.5 truncate"><MapPin className="w-3 h-3 shrink-0" />{job.city ?? job.address_line1}</span>}
+                        {job.scheduled_start ? (
+                          <span className="flex items-center gap-0.5">
+                            <Clock className="w-3 h-3 shrink-0" />
+                            {formatDate(job.scheduled_start, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">Unscheduled</span>
+                        )}
+                        {job.assignee && (
+                          <span className="flex items-center gap-1">
+                            <div className="w-4 h-4 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-[9px] font-bold">
+                              {job.assignee.first_name?.[0]}
+                            </div>
+                            <span className="hidden sm:inline">{job.assignee.first_name}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 capitalize ${colors.bg} ${colors.text}`}>
-                    {job.status.replace(/_/g, ' ')}
-                  </span>
+                  </div>
                 </div>
               </Link>
             )
