@@ -9,18 +9,21 @@ export const metadata: Metadata = { title: 'Invoice' }
 export default async function PublicInvoicePage({ params }: { params: { id: string } }) {
   const supabase = createServiceRoleClient()
 
-  // Fetch invoice with related data
+  // Fetch invoice
   const { data: invoice, error } = await supabase
     .from('invoices')
-    .select(`
-      *,
-      customer:customers(*),
-      line_items:invoice_line_items(*)
-    `)
+    .select('*, customer:customers(*)')
     .eq('id', params.id)
     .single()
 
   if (!invoice || error) notFound()
+
+  // Fetch line items separately to avoid any RLS/join issues
+  const { data: lineItems } = await supabase
+    .from('invoice_line_items')
+    .select('*')
+    .eq('invoice_id', params.id)
+    .order('order_index', { ascending: true })
 
   // Fetch the organization for branding
   const { data: organization } = await supabase
@@ -39,7 +42,6 @@ export default async function PublicInvoicePage({ params }: { params: { id: stri
     .eq('id', params.id)
 
   const customer = (invoice as any)?.customer
-  const lineItems = (invoice as any)?.line_items ?? []
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
@@ -68,7 +70,7 @@ export default async function PublicInvoicePage({ params }: { params: { id: stri
             invoice={invoice}
             organization={organization}
             customer={customer}
-            lineItems={lineItems}
+            lineItems={lineItems ?? []}
           />
         </div>
 
