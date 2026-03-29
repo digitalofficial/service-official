@@ -33,9 +33,10 @@ const NAV_ITEMS = [
 interface SidebarProps {
   profile: any
   organization: any
+  isSuperAdmin?: boolean
 }
 
-export function Sidebar({ profile, organization }: SidebarProps) {
+export function Sidebar({ profile, organization, isSuperAdmin = false }: SidebarProps) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
@@ -92,6 +93,21 @@ export function Sidebar({ profile, organization }: SidebarProps) {
             </Link>
           )
         })}
+        {/* Admin link — super admin only */}
+        {isSuperAdmin && (
+          <Link
+            href="/admin"
+            className={cn(
+              'flex items-center gap-3 px-3 py-2.5 rounded-lg mt-2 text-sm transition-colors border border-dashed',
+              pathname.startsWith('/admin')
+                ? 'bg-purple-600 text-white border-purple-500'
+                : 'text-purple-400 border-purple-800 hover:bg-purple-900/50 hover:text-purple-300'
+            )}
+          >
+            <Building2 className="w-4 h-4 shrink-0" />
+            <span>Admin Panel</span>
+          </Link>
+        )}
       </nav>
 
       {/* Profile */}
