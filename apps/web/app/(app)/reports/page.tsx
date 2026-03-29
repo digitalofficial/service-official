@@ -1,72 +1,116 @@
 import { createServerSupabaseClient } from '@service-official/database'
 import { PageHeader } from '@/components/ui/page-header'
 import { formatCurrency } from '@/lib/utils'
-import { DollarSign, FolderKanban, Briefcase, UserPlus, TrendingUp, TrendingDown, Receipt, CreditCard } from 'lucide-react'
+import { DollarSign, TrendingUp, TrendingDown, Receipt, CreditCard, Briefcase, UserPlus, Target } from 'lucide-react'
+import { ReportsCharts } from './reports-charts'
 import type { Metadata } from 'next'
 
-export const metadata: Metadata = { title: 'Reports' }
+export const metadata: Metadata = { title: 'Reports & Analytics' }
 
 export default async function ReportsPage() {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user!.id).single()
-  const orgId = profile!.organization_id
+  if (!user) return null
 
-  // Fetch metrics in parallel
+  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const orgId = profile?.organization_id
+  if (!orgId) return null
+
   const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-  const startOfYear = new Date(now.getFullYear(), 0, 1).toISOString()
+  const twelveMonthsAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString()
 
+  // Fetch all data in parallel
   const [
-    { count: activeProjects },
-    { count: completedThisMonth },
-    { count: totalCustomers },
-    { count: newLeads },
-    { data: recentInvoices },
-    { data: recentExpenses },
+    { data: invoices },
+    { data: expenses },
+    { data: jobs },
+    { data: leads },
+    { data: customers },
   ] = await Promise.all([
-    supabase.from('projects').select('*', { count: 'exact', head: true }).eq('organization_id', orgId).in('status', ['in_progress', 'approved']),
-    supabase.from('projects').select('*', { count: 'exact', head: true }).eq('organization_id', orgId).eq('status', 'completed').gte('updated_at', startOfMonth),
-    supabase.from('customers').select('*', { count: 'exact', head: true }).eq('organization_id', orgId).eq('is_active', true),
-    supabase.from('leads').select('*', { count: 'exact', head: true }).eq('organization_id', orgId).eq('status', 'new'),
-    supabase.from('invoices').select('total, amount_paid, amount_due, status').eq('organization_id', orgId),
-    supabase.from('expenses').select('total_amount, category').eq('organization_id', orgId).gte('expense_date', startOfMonth),
+    supabase.from('invoices').select('id, total, amount_paid, amount_due, status, issue_date, customer_id').eq('organization_id', orgId),
+    supabase.from('expenses').select('id, total_amount, category, expense_date').eq('organization_id', orgId).gte('expense_date', twelveMonthsAgo),
+    supabase.from('jobs').select('id, status, scheduled_start, actual_end').eq('organization_id', orgId).gte('created_at', twelveMonthsAgo),
+    supabase.from('leads').select('id, status, created_at').eq('organization_id', orgId),
+    supabase.from('customers').select('id, first_name, last_name, company_name, total_revenue').eq('organization_id', orgId).eq('is_active', true).order('total_revenue', { ascending: false }).limit(10),
   ])
 
-  const invoiceTotals = (recentInvoices ?? []).reduce(
-    (acc: any, inv: any) => ({
-      total: acc.total + (inv.total ?? 0),
-      paid: acc.paid + (inv.amount_paid ?? 0),
-      outstanding: acc.outstanding + (inv.amount_due ?? 0),
-    }),
-    { total: 0, paid: 0, outstanding: 0 }
-  )
+  // === Top Metrics ===
+  const totalRevenue = (invoices ?? []).reduce((sum, i) => sum + (i.amount_paid ?? 0), 0)
+  const totalExpenses = (expenses ?? []).reduce((sum, e) => sum + (e.total_amount ?? 0), 0)
+  const outstanding = (invoices ?? []).filter(i => ['sent', 'partial', 'overdue', 'viewed'].includes(i.status)).reduce((sum, i) => sum + (i.amount_due ?? 0), 0)
+  const profitMargin = totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue * 100) : 0
 
-  const expenseTotal = (recentExpenses ?? []).reduce((sum: number, e: any) => sum + (e.total_amount ?? 0), 0)
+  const totalLeads = (leads ?? []).length
+  const wonLeads = (leads ?? []).filter(l => l.status === 'won').length
+  const conversionRate = totalLeads > 0 ? (wonLeads / totalLeads * 100) : 0
+
+  const completedJobs = (jobs ?? []).filter(j => j.status === 'completed').length
+
+  // === Monthly Revenue (last 12 months) ===
+  const monthlyRevenue: { month: string; revenue: number; expenses: number }[] = []
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const monthKey = d.toISOString().slice(0, 7) // YYYY-MM
+    const monthLabel = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+
+    const monthRevenue = (invoices ?? [])
+      .filter(inv => inv.issue_date?.startsWith(monthKey))
+      .reduce((sum, inv) => sum + (inv.amount_paid ?? 0), 0)
+
+    const monthExpenses = (expenses ?? [])
+      .filter(exp => exp.expense_date?.startsWith(monthKey))
+      .reduce((sum, exp) => sum + (exp.total_amount ?? 0), 0)
+
+    monthlyRevenue.push({ month: monthLabel, revenue: monthRevenue, expenses: monthExpenses })
+  }
+
+  // === Jobs Completed Per Month ===
+  const monthlyJobs: { month: string; completed: number }[] = []
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const monthKey = d.toISOString().slice(0, 7)
+    const monthLabel = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+
+    const completed = (jobs ?? []).filter(j =>
+      j.status === 'completed' && j.actual_end?.startsWith(monthKey)
+    ).length
+
+    monthlyJobs.push({ month: monthLabel, completed })
+  }
+
+  // === Expense Breakdown ===
+  const expenseByCategory: { name: string; value: number }[] = []
+  const categoryMap: Record<string, number> = {}
+  for (const exp of (expenses ?? [])) {
+    const cat = (exp.category ?? 'other').replace(/_/g, ' ')
+    categoryMap[cat] = (categoryMap[cat] ?? 0) + (exp.total_amount ?? 0)
+  }
+  for (const [name, value] of Object.entries(categoryMap).sort((a, b) => b[1] - a[1])) {
+    expenseByCategory.push({ name, value })
+  }
+
+  // === Top Customers ===
+  const topCustomers = (customers ?? []).filter(c => (c.total_revenue ?? 0) > 0).map(c => ({
+    name: c.company_name ?? `${c.first_name} ${c.last_name}`,
+    revenue: c.total_revenue ?? 0,
+  }))
 
   const metrics = [
-    { label: 'Total Revenue', value: formatCurrency(invoiceTotals.paid), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Outstanding', value: formatCurrency(invoiceTotals.outstanding), icon: Receipt, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Expenses (Month)', value: formatCurrency(expenseTotal), icon: CreditCard, color: 'text-red-600', bg: 'bg-red-50' },
-    { label: 'Active Projects', value: String(activeProjects ?? 0), icon: FolderKanban, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Completed (Month)', value: String(completedThisMonth ?? 0), icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Total Customers', value: String(totalCustomers ?? 0), icon: UserPlus, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { label: 'New Leads', value: String(newLeads ?? 0), icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Net Revenue', value: formatCurrency(invoiceTotals.paid - expenseTotal), icon: invoiceTotals.paid - expenseTotal >= 0 ? TrendingUp : TrendingDown, color: invoiceTotals.paid - expenseTotal >= 0 ? 'text-green-600' : 'text-red-600', bg: invoiceTotals.paid - expenseTotal >= 0 ? 'bg-green-50' : 'bg-red-50' },
+    { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'Total Expenses', value: formatCurrency(totalExpenses), icon: CreditCard, color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Profit Margin', value: `${profitMargin.toFixed(1)}%`, icon: profitMargin >= 0 ? TrendingUp : TrendingDown, color: profitMargin >= 0 ? 'text-green-600' : 'text-red-600', bg: profitMargin >= 0 ? 'bg-green-50' : 'bg-red-50' },
+    { label: 'Outstanding', value: formatCurrency(outstanding), icon: Receipt, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Jobs Completed', value: String(completedJobs), icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Lead Conversion', value: `${conversionRate.toFixed(0)}%`, icon: Target, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Total Leads', value: String(totalLeads), icon: UserPlus, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Net Profit', value: formatCurrency(totalRevenue - totalExpenses), icon: totalRevenue - totalExpenses >= 0 ? TrendingUp : TrendingDown, color: totalRevenue - totalExpenses >= 0 ? 'text-green-600' : 'text-red-600', bg: totalRevenue - totalExpenses >= 0 ? 'bg-green-50' : 'bg-red-50' },
   ]
-
-  // Expense breakdown
-  const expenseBreakdown = (recentExpenses ?? []).reduce((acc: Record<string, number>, e: any) => {
-    const cat = e.category ?? 'other'
-    acc[cat] = (acc[cat] ?? 0) + (e.total_amount ?? 0)
-    return acc
-  }, {})
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reports" description="Financial overview and key metrics" />
+      <PageHeader title="Reports & Analytics" description="Financial performance and key metrics" />
 
-      {/* Metric Grid */}
+      {/* Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((m) => {
           const Icon = m.icon
@@ -84,32 +128,14 @@ export default async function ReportsPage() {
         })}
       </div>
 
-      {/* Expense Breakdown */}
-      {Object.keys(expenseBreakdown).length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="font-semibold text-gray-900 mb-4">Expenses This Month by Category</h2>
-          <div className="space-y-3">
-            {Object.entries(expenseBreakdown)
-              .sort(([, a], [, b]) => (b as number) - (a as number))
-              .map(([category, amount]) => (
-                <div key={category} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-700 capitalize">{category.replace(/_/g, ' ')}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-32 h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-500 rounded-full"
-                        style={{ width: `${Math.min(100, ((amount as number) / expenseTotal) * 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-sm font-medium text-gray-900 w-24 text-right">{formatCurrency(amount as number)}</span>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
+      {/* Charts */}
+      <ReportsCharts
+        monthlyRevenue={monthlyRevenue}
+        monthlyJobs={monthlyJobs}
+        expenseByCategory={expenseByCategory}
+        topCustomers={topCustomers}
+        totalExpenses={totalExpenses}
+      />
     </div>
   )
 }
