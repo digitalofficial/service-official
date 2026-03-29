@@ -43,11 +43,36 @@ export default function NewInvoicePage() {
   const [projects, setProjects] = useState<any[]>([])
   const [items, setItems] = useState<LineItem[]>([emptyItem()])
   const [taxRate, setTaxRate] = useState(0)
+  const [showNewCustomer, setShowNewCustomer] = useState(false)
+  const [newCustLoading, setNewCustLoading] = useState(false)
+  const [selectedCustomerId, setSelectedCustomerId] = useState(prefillCustomerId ?? '')
+  const [selectedProjectId, setSelectedProjectId] = useState(prefillProjectId ?? '')
+  const [newCust, setNewCust] = useState({ first_name: '', last_name: '', company_name: '', email: '', phone: '' })
 
   useEffect(() => {
     fetch('/api/customers').then(r => r.json()).then(d => setCustomers(d.data ?? []))
     fetch('/api/projects').then(r => r.json()).then(d => setProjects(d.data ?? []))
   }, [])
+
+  const createCustomer = async () => {
+    if (!newCust.first_name && !newCust.company_name) { toast.error('Name or company required'); return }
+    setNewCustLoading(true)
+    try {
+      const res = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'residential', ...newCust }),
+      })
+      if (!res.ok) throw new Error('Failed')
+      const { data } = await res.json()
+      setCustomers(prev => [...prev, data])
+      setSelectedCustomerId(data.id)
+      setShowNewCustomer(false)
+      setNewCust({ first_name: '', last_name: '', company_name: '', email: '', phone: '' })
+      toast.success('Customer created')
+    } catch { toast.error('Failed to create customer') }
+    finally { setNewCustLoading(false) }
+  }
 
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item))
@@ -121,24 +146,58 @@ export default function NewInvoicePage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Header */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="customer_id" required>Customer</Label>
-              <Select
-                id="customer_id" name="customer_id" placeholder="Select customer..."
-                defaultValue={prefillCustomerId ?? ''}
-                options={customers.map((c: any) => ({
-                  label: c.company_name ?? `${c.first_name} ${c.last_name}`, value: c.id,
-                }))}
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="customer_id" required>Customer</Label>
+                <button type="button" onClick={() => setShowNewCustomer(!showNewCustomer)} className="text-xs text-blue-600 hover:underline">
+                  {showNewCustomer ? 'Select existing' : '+ New customer'}
+                </button>
+              </div>
+              {showNewCustomer ? (
+                <div className="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="text" placeholder="First name" value={newCust.first_name} onChange={e => setNewCust(p => ({ ...p, first_name: e.target.value }))} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg" />
+                    <input type="text" placeholder="Last name" value={newCust.last_name} onChange={e => setNewCust(p => ({ ...p, last_name: e.target.value }))} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg" />
+                  </div>
+                  <input type="text" placeholder="Company name (optional)" value={newCust.company_name} onChange={e => setNewCust(p => ({ ...p, company_name: e.target.value }))} className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="email" placeholder="Email" value={newCust.email} onChange={e => setNewCust(p => ({ ...p, email: e.target.value }))} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg" />
+                    <input type="tel" placeholder="Phone" value={newCust.phone} onChange={e => setNewCust(p => ({ ...p, phone: e.target.value }))} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg" />
+                  </div>
+                  <button type="button" onClick={createCustomer} disabled={newCustLoading} className="w-full px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                    {newCustLoading ? 'Creating...' : 'Create & Select Customer'}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <select
+                    id="customer_id" name="customer_id" value={selectedCustomerId}
+                    onChange={e => setSelectedCustomerId(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-blue-400"
+                  >
+                    <option value="">Select customer...</option>
+                    {customers.map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.company_name ?? `${c.first_name} ${c.last_name}`}</option>
+                    ))}
+                  </select>
+                  <input type="hidden" name="customer_id" value={selectedCustomerId} />
+                </>
+              )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="project_id">Project</Label>
-              <Select
-                id="project_id" name="project_id" placeholder="Select project..."
-                defaultValue={prefillProjectId ?? ''}
-                options={projects.map((p: any) => ({ label: p.name, value: p.id }))}
-              />
+              <Label htmlFor="project_id">Project (optional)</Label>
+              <select
+                id="project_id" name="project_id" value={selectedProjectId}
+                onChange={e => setSelectedProjectId(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-blue-400"
+              >
+                <option value="">No project — standalone invoice</option>
+                {projects.map((p: any) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400">Leave blank for quick jobs without a project</p>
             </div>
           </div>
 
