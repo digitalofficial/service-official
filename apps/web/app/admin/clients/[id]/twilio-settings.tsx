@@ -27,6 +27,7 @@ export function TwilioSettings({ orgId, existing, smsCount }: Props) {
   const [sid, setSid] = useState(existing?.twilio_account_sid ?? '')
   const [token, setToken] = useState(existing?.twilio_auth_token ?? '')
   const [phone, setPhone] = useState(existing?.twilio_phone_number ?? '')
+  const [googleMapsKey, setGoogleMapsKey] = useState(existing?.google_maps_api_key ?? '')
   const [enabled, setEnabled] = useState(existing?.is_enabled ?? false)
   const [sendAssignment, setSendAssignment] = useState(existing?.send_assignment_sms ?? true)
   const [reminder1, setReminder1] = useState(existing?.default_reminder_1 ?? '1 day')
@@ -54,6 +55,7 @@ export function TwilioSettings({ orgId, existing, smsCount }: Props) {
         notify_customer_booked: notifyBooked,
         notify_customer_en_route: notifyEnRoute,
         notify_customer_completed: notifyCompleted,
+        google_maps_api_key: googleMapsKey || null,
       }),
     })
 
@@ -146,6 +148,16 @@ export function TwilioSettings({ orgId, existing, smsCount }: Props) {
               <input type="checkbox" checked={notifyCompleted} onChange={(e) => setNotifyCompleted(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-green-500" />
               Job completed
             </label>
+          </div>
+        </div>
+
+        {/* Google Maps */}
+        <div className="pt-3 border-t border-gray-800">
+          <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Google Maps (Optional)</p>
+          <div>
+            <label className="text-xs text-gray-400 block mb-1">API Key</label>
+            <input value={googleMapsKey} onChange={(e) => setGoogleMapsKey(e.target.value)} placeholder="AIzaSy..." className="input text-sm" />
+            <p className="text-xs text-gray-600 mt-1">For premium maps. Leave blank to use free OpenStreetMap.</p>
           </div>
         </div>
 
