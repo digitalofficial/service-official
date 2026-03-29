@@ -45,17 +45,20 @@ export async function DELETE(request: NextRequest) {
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
+  // Use service role to bypass RLS (super admin viewing other orgs)
+  const serviceClient = createServiceRoleClient()
+
   // Get the photo to find storage path
-  const { data: photo } = await supabase.from('photos').select('storage_path').eq('id', id).single()
+  const { data: photo } = await serviceClient.from('photos').select('storage_path').eq('id', id).single()
+  if (!photo) return NextResponse.json({ error: 'Photo not found' }, { status: 404 })
 
   // Delete from storage
-  if (photo?.storage_path) {
-    const serviceClient = createServiceRoleClient()
+  if (photo.storage_path) {
     await serviceClient.storage.from('files').remove([photo.storage_path])
   }
 
   // Delete from database
-  const { error } = await supabase.from('photos').delete().eq('id', id)
+  const { error } = await serviceClient.from('photos').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })
