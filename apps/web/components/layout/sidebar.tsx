@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
 import {
-  LayoutDashboard, FolderKanban, Users, UserPlus, Briefcase,
+  LayoutDashboard, FolderKanban, Users, UserPlus, Briefcase, Radio,
   Calendar, FileText, Receipt, CreditCard, MessageSquare,
   Zap, BarChart3, Map, Cpu, Settings, Building2, ChevronLeft,
   HardHat, ClipboardList
@@ -21,6 +21,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Dispatch', href: '/dispatch', icon: Radio },
   { label: 'Projects', href: '/projects', icon: FolderKanban },
   { label: 'Jobs', href: '/jobs', icon: Briefcase },
   { label: 'Calendar', href: '/calendar', icon: Calendar },
