@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createServiceRoleClient } from '@service-official/database'
 import { InvoiceTemplate } from '@/components/invoices/invoice-template'
+import { PublicInvoiceActions } from './actions'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Invoice' }
@@ -9,7 +10,7 @@ export default async function PublicInvoicePage({ params }: { params: { id: stri
   const supabase = createServiceRoleClient()
 
   // Fetch invoice with related data
-  const { data: invoice } = await supabase
+  const { data: invoice, error } = await supabase
     .from('invoices')
     .select(`
       *,
@@ -19,7 +20,7 @@ export default async function PublicInvoicePage({ params }: { params: { id: stri
     .eq('id', params.id)
     .single()
 
-  if (!invoice) notFound()
+  if (!invoice || error) notFound()
 
   // Fetch the organization for branding
   const { data: organization } = await supabase
@@ -33,7 +34,7 @@ export default async function PublicInvoicePage({ params }: { params: { id: stri
     .from('invoices')
     .update({
       view_count: (invoice.view_count ?? 0) + 1,
-      status: invoice.status === 'sent' ? 'viewed' : invoice.status,
+      ...(invoice.status === 'sent' ? { status: 'viewed' } : {}),
     })
     .eq('id', params.id)
 
@@ -58,12 +59,7 @@ export default async function PublicInvoicePage({ params }: { params: { id: stri
             )}
             <span className="text-sm text-gray-500">Invoice from <strong className="text-gray-900">{organization?.name}</strong></span>
           </div>
-          <button
-            onClick={() => window.print()}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 no-print"
-          >
-            Download PDF
-          </button>
+          <PublicInvoiceActions />
         </div>
 
         {/* Invoice */}
