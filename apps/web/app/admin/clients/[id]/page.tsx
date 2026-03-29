@@ -2,6 +2,7 @@ import { createServiceRoleClient } from '@service-official/database'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import { ClientActions } from './client-actions'
+import { AddOwnerButton } from './add-owner-button'
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServiceRoleClient()
@@ -75,7 +76,10 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Team */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-          <h2 className="font-semibold text-white mb-4">Team Members ({profiles.length})</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-white">Team Members ({profiles.length})</h2>
+            <AddOwnerButton orgId={params.id} />
+          </div>
           <div className="space-y-2">
             {profiles.map((p: any) => (
               <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
@@ -88,7 +92,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
                     <p className="text-xs text-gray-500">{p.email}</p>
                   </div>
                 </div>
-                <span className="text-xs text-gray-400 capitalize bg-gray-800 px-2 py-0.5 rounded-full">
+                <span className={`text-xs capitalize px-2 py-0.5 rounded-full ${p.role === 'owner' ? 'bg-green-500/20 text-green-400' : 'bg-gray-800 text-gray-400'}`}>
                   {p.role}
                 </span>
               </div>

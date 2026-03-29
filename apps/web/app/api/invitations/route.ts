@@ -5,7 +5,7 @@ import crypto from 'crypto'
 
 const inviteSchema = z.object({
   email: z.string().email(),
-  role: z.enum(['admin', 'office_manager', 'estimator', 'project_manager', 'foreman', 'technician', 'dispatcher', 'subcontractor', 'viewer']),
+  role: z.enum(['office_manager', 'estimator', 'project_manager', 'foreman', 'technician', 'dispatcher', 'subcontractor', 'viewer']),
 })
 
 // GET — list invitations for the org

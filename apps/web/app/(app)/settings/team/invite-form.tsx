@@ -10,7 +10,6 @@ import { UserPlus, Loader2, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 const ROLE_OPTIONS = [
-  { label: 'Admin', value: 'admin' },
   { label: 'Office Manager', value: 'office_manager' },
   { label: 'Estimator', value: 'estimator' },
   { label: 'Project Manager', value: 'project_manager' },
