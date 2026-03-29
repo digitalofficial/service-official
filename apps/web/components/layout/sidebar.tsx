@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { label: 'Invoices', href: '/invoices', icon: Receipt },
   { label: 'Payments', href: '/payments', icon: CreditCard },
   { label: 'Estimator', href: '/estimator', icon: Cpu },
+  { label: 'Team', href: '/team', icon: HardHat },
   { label: 'Messages', href: '/messages', icon: MessageSquare },
   { label: 'Automation', href: '/automation', icon: Zap },
   { label: 'Reports', href: '/reports', icon: BarChart3 },
