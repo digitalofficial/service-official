@@ -160,10 +160,10 @@ export function AlfredChat({ userName }: AlfredChatProps) {
                 </div>
                 <p className="text-sm font-medium text-gray-900">Hi {userName}, I'm Alfred</p>
                 <p className="text-xs text-gray-500 mt-1 max-w-[240px] mx-auto">
-                  I can help you navigate the platform, explain features, and answer questions about your workflow.
+                  I can estimate materials, calculate costs, and help you use the platform.
                 </p>
                 <div className="flex flex-wrap justify-center gap-1.5 mt-4">
-                  {['How do projects work?', 'How to create an estimate?', 'What are jobs vs projects?'].map((q) => (
+                  {['Estimate materials for a roof', 'How much paint for a room?', 'Help me create a takeoff'].map((q) => (
                     <button
                       key={q}
                       onClick={() => { setInput(q); inputRef.current?.focus() }}
