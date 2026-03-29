@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@service-official/database'
+import { Button } from '@/components/ui/button'
 import { EditCompanyButton } from './settings-edit'
 import type { Metadata } from 'next'
 
