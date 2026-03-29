@@ -3,6 +3,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import { ClientActions } from './client-actions'
 import { AddOwnerButton } from './add-owner-button'
+import { TwilioSettings } from './twilio-settings'
 
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServiceRoleClient()
@@ -32,6 +33,19 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     .eq('organization_id', params.id)
     .order('created_at', { ascending: false })
     .limit(5)
+
+  // Twilio settings + SMS count
+  const { data: smsSettings } = await supabase
+    .from('organization_sms_settings')
+    .select('*')
+    .eq('organization_id', params.id)
+    .single()
+
+  const { count: smsCount } = await supabase
+    .from('job_reminders')
+    .select('*', { count: 'exact', head: true })
+    .eq('organization_id', params.id)
+    .eq('status', 'sent')
 
   const totalRevenue = invoices?.reduce((sum, i) => sum + (i.amount_paid ?? 0), 0) ?? 0
   const profiles = org.profiles as any[]
@@ -122,6 +136,9 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           )}
         </div>
       </div>
+
+      {/* Twilio / SMS */}
+      <TwilioSettings orgId={params.id} existing={smsSettings} smsCount={smsCount ?? 0} />
 
       {/* Org Details */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
