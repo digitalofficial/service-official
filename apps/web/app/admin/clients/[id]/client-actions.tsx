@@ -50,8 +50,8 @@ export function ClientActions({ org }: { org: any }) {
       if (!res.ok) throw new Error(data.error)
       // Open their app in new tab with magic link
       window.open(data.magic_link, '_blank')
-    } catch {
-      toast.error('Could not generate login link')
+    } catch (err: any) {
+      toast.error(err.message ?? 'Could not generate login link')
     } finally {
       setLoading(null)
     }
