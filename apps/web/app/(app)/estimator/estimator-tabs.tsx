@@ -214,6 +214,22 @@ export function EstimatorTabs({ takeoffs, blueprints, userName, orgIndustry }: E
                 </div>
               </div>
             ))}
+
+            {isLoading && (
+              <div className="flex gap-3 justify-start">
+                <div className="shrink-0 mt-1">
+                  <AlfredAvatar size={28} />
+                </div>
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl rounded-bl-md px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1.5">Alfred is calculating your estimate...</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Input */}
@@ -224,9 +240,10 @@ export function EstimatorTabs({ takeoffs, blueprints, userName, orgIndustry }: E
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Describe your project — e.g. '2,400 sq ft roof, 6/12 pitch, architectural shingles'"
+                placeholder={isLoading ? 'Alfred is calculating...' : "Describe your project — e.g. '2,400 sq ft roof, 6/12 pitch, architectural shingles'"}
+                disabled={isLoading}
                 rows={1}
-                className="flex-1 resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 max-h-32"
+                className="flex-1 resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 max-h-32 disabled:bg-gray-50 disabled:text-gray-400"
                 style={{ minHeight: '44px' }}
               />
               <button

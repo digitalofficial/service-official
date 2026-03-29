@@ -166,6 +166,22 @@ export function AlfredChat({ userName }: AlfredChatProps) {
               </div>
             ))}
 
+            {isLoading && (
+              <div className="flex gap-2 justify-start">
+                <div className="shrink-0 mt-1">
+                  <AlfredAvatar size={24} />
+                </div>
+                <div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1.5">Alfred is thinking...</p>
+                </div>
+              </div>
+            )}
+
             {notified && (
               <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                 <AlertCircle className="w-4 h-4 text-green-600 shrink-0" />
@@ -182,9 +198,10 @@ export function AlfredChat({ userName }: AlfredChatProps) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Alfred anything..."
+                placeholder={isLoading ? 'Alfred is thinking...' : 'Ask Alfred anything...'}
+                disabled={isLoading}
                 rows={1}
-                className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 max-h-24"
+                className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 max-h-24 disabled:bg-gray-50 disabled:text-gray-400"
                 style={{ minHeight: '36px' }}
               />
               <button
