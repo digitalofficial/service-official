@@ -3,13 +3,11 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
 import { UserPlus, Loader2, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 
 const ROLE_OPTIONS = [
+  { label: 'Admin', value: 'admin' },
   { label: 'Office Manager', value: 'office_manager' },
   { label: 'Estimator', value: 'estimator' },
   { label: 'Project Manager', value: 'project_manager' },
@@ -69,30 +67,36 @@ export function InviteForm() {
         <UserPlus className="w-4 h-4" /> Invite Team Member
       </h3>
 
-      <form onSubmit={handleInvite} className="flex items-end gap-3">
-        <div className="flex-1 space-y-1.5">
-          <Label htmlFor="invite-email">Email address</Label>
-          <Input
-            id="invite-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="teammate@company.com"
-            required
-          />
+      <form onSubmit={handleInvite} className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
+            <label className="text-xs font-medium text-gray-600">Email address *</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="teammate@company.com"
+              required
+              className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-400"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600">Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-blue-400"
+            >
+              {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </div>
         </div>
-        <div className="w-44 space-y-1.5">
-          <Label htmlFor="invite-role">Role</Label>
-          <Select
-            id="invite-role"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            options={ROLE_OPTIONS}
-          />
+        <div className="flex justify-end">
+          <Button type="submit" disabled={loading}>
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <UserPlus className="w-4 h-4 mr-1" />}
+            Send Invite
+          </Button>
         </div>
-        <Button type="submit" disabled={loading}>
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send Invite'}
-        </Button>
       </form>
 
       {inviteUrl && (

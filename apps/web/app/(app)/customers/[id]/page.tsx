@@ -62,7 +62,9 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Edit className="w-4 h-4 mr-1" /> Edit</Button>
+          <Link href={`/customers/${customer.id}/edit`}>
+            <Button variant="outline" size="sm"><Edit className="w-4 h-4 mr-1" /> Edit</Button>
+          </Link>
           <Link href={`/projects/new?customer_id=${customer.id}`}>
             <Button size="sm"><FolderKanban className="w-4 h-4 mr-1" /> New Project</Button>
           </Link>

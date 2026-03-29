@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from '@service-official/database'
-import { Button } from '@/components/ui/button'
+import { EditCompanyButton } from './settings-edit'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'General Settings' }
@@ -37,7 +37,7 @@ export default async function GeneralSettingsPage() {
           </div>
         </div>
         <div className="flex justify-end mt-6">
-          <Button variant="outline">Edit</Button>
+          <EditCompanyButton org={org ?? {}} />
         </div>
       </div>
 
