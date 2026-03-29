@@ -4,10 +4,12 @@ import { v4 as uuidv4 } from 'uuid'
 
 const ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'image/heic', 'image/heif', 'image/svg+xml', 'image/bmp', 'image/tiff',
   'application/pdf',
   'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'text/plain', 'text/csv',
+  'application/octet-stream', // fallback for unknown types
 ]
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -30,7 +32,10 @@ export async function POST(request: NextRequest) {
     const is_public = formData.get('is_public') === 'true'
 
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
-    if (!ALLOWED_TYPES.includes(file.type)) return NextResponse.json({ error: 'File type not allowed' }, { status: 400 })
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      console.error('File type rejected:', file.type, file.name)
+      return NextResponse.json({ error: `File type "${file.type}" not allowed` }, { status: 400 })
+    }
     if (file.size > MAX_FILE_SIZE) return NextResponse.json({ error: 'File too large (max 50MB)' }, { status: 400 })
 
     // Build storage path: org_id/entity_type/entity_id/uuid.ext
