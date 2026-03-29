@@ -11,6 +11,21 @@ import {
   HardHat, Menu, X
 } from 'lucide-react'
 
+// Role-based nav access
+// owner/admin see everything. Other roles see only what's listed.
+const ROLE_ACCESS: Record<string, string[]> = {
+  owner: ['*'],
+  admin: ['*'],
+  office_manager: ['/dashboard', '/dispatch', '/projects', '/jobs', '/calendar', '/customers', '/leads', '/estimates', '/invoices', '/payments', '/estimator', '/team', '/messages', '/settings'],
+  estimator: ['/dashboard', '/projects', '/jobs', '/customers', '/estimates', '/estimator'],
+  project_manager: ['/dashboard', '/projects', '/jobs', '/calendar', '/customers', '/estimates', '/team', '/messages'],
+  foreman: ['/dashboard', '/jobs', '/calendar', '/team'],
+  technician: ['/dashboard', '/jobs', '/calendar'],
+  dispatcher: ['/dashboard', '/dispatch', '/jobs', '/calendar', '/customers', '/team'],
+  subcontractor: ['/dashboard', '/jobs', '/calendar'],
+  viewer: ['/dashboard', '/projects', '/jobs', '/calendar'],
+}
+
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Dispatch', href: '/dispatch', icon: Radio },
@@ -39,6 +54,9 @@ interface SidebarProps {
 export function Sidebar({ profile, organization, isSuperAdmin = false }: SidebarProps) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const userRole = profile?.role ?? 'viewer'
+  const access = ROLE_ACCESS[userRole] ?? ROLE_ACCESS.viewer
+  const visibleNav = access.includes('*') ? NAV_ITEMS : NAV_ITEMS.filter(item => access.includes(item.href))
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -73,7 +91,7 @@ export function Sidebar({ profile, organization, isSuperAdmin = false }: Sidebar
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 scrollbar-thin">
-        {NAV_ITEMS.map((item) => {
+        {visibleNav.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
 

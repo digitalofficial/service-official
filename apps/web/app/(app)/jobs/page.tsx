@@ -30,7 +30,9 @@ const PRIORITY_COLORS: Record<string, string> = {
 export default async function JobsPage({ searchParams }: Props) {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user!.id).single()
+  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user!.id).single()
+
+  const selfOnlyRoles = ['technician', 'foreman', 'subcontractor']
 
   let query = supabase
     .from('jobs')
@@ -42,6 +44,11 @@ export default async function JobsPage({ searchParams }: Props) {
     `)
     .eq('organization_id', profile!.organization_id)
     .order('scheduled_start', { ascending: true })
+
+  // Technicians/foremen/subs only see their assigned jobs
+  if (selfOnlyRoles.includes(profile?.role ?? '')) {
+    query = query.eq('assigned_to', user!.id)
+  }
 
   if (searchParams.status) query = query.eq('status', searchParams.status)
 

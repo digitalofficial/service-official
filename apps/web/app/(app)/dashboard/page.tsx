@@ -37,15 +37,24 @@ export default async function DashboardPage() {
     .limit(5) : { data: [] }
 
   // Get today's jobs
+  const selfOnlyRoles = ['technician', 'foreman', 'subcontractor']
+  const isSelfOnly = selfOnlyRoles.includes(profile?.role ?? '')
+
   const today = new Date().toISOString().split('T')[0]
-  const { data: todayJobs } = orgId ? await supabase
+  let jobsQuery = orgId ? supabase
     .from('jobs')
     .select('id, title, status, scheduled_start, customer:customers(first_name, last_name), assignee:profiles!assigned_to(first_name, last_name)')
     .eq('organization_id', orgId)
     .gte('scheduled_start', `${today}T00:00:00`)
     .lte('scheduled_start', `${today}T23:59:59`)
     .order('scheduled_start', { ascending: true })
-    .limit(8) : { data: [] }
+    .limit(8) : null
+
+  if (jobsQuery && isSelfOnly) {
+    jobsQuery = jobsQuery.eq('assigned_to', user.id)
+  }
+
+  const { data: todayJobs } = jobsQuery ? await jobsQuery : { data: [] }
 
   // Get unread notifications
   const { data: notifications } = await supabase
