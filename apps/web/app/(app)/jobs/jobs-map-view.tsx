@@ -30,14 +30,21 @@ export function JobsMapView({ jobs, height = '500px' }: { jobs: Job[]; height?: 
     async function geocodeJobs() {
       const results = []
       for (const job of jobs) {
+        // Parse coordinates — handle string or object
+        let coords: { lat: number; lng: number } | null = null
+        if (job.coordinates) {
+          const c = typeof job.coordinates === 'string' ? JSON.parse(job.coordinates) : job.coordinates
+          if (c?.lat && c?.lng) coords = { lat: Number(c.lat), lng: Number(c.lng) }
+        }
+
         // Use existing coordinates if available
-        if (job.coordinates?.lat && job.coordinates?.lng) {
+        if (coords) {
           results.push({
             id: job.id,
             title: job.title,
             status: job.status,
-            lat: job.coordinates.lat,
-            lng: job.coordinates.lng,
+            lat: coords.lat,
+            lng: coords.lng,
             address: [job.address_line1, job.city, job.state].filter(Boolean).join(', '),
             customer_name: job.customer?.company_name ?? (job.customer?.first_name ? `${job.customer.first_name} ${job.customer.last_name}` : ''),
             scheduled_start: job.scheduled_start,
