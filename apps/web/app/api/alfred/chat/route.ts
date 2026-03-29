@@ -5,6 +5,23 @@ import { buildSystemPrompt } from '@/lib/alfred/system-prompt'
 
 export const maxDuration = 60
 
+// Rate limiting: 30 messages per user per hour
+const rateLimits = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT = 30
+const RATE_WINDOW = 60 * 60 * 1000 // 1 hour
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now()
+  const entry = rateLimits.get(userId)
+  if (!entry || now > entry.resetAt) {
+    rateLimits.set(userId, { count: 1, resetAt: now + RATE_WINDOW })
+    return true
+  }
+  if (entry.count >= RATE_LIMIT) return false
+  entry.count++
+  return true
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -18,6 +35,13 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (!checkRateLimit(user.id)) {
+      return NextResponse.json(
+        { error: 'You\'ve reached the message limit (30/hour). Please try again later.' },
+        { status: 429 }
+      )
     }
 
     const { data: profile } = await supabase
