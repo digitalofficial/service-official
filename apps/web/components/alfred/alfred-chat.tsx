@@ -84,10 +84,10 @@ export function AlfredChat({ userName }: AlfredChatProps) {
       }
 
       setMessages([...newMessages, { role: 'assistant', content: assistantContent }])
-    } catch {
+    } catch (err: any) {
       setMessages(prev => [
-        ...prev.slice(0, -1),
-        { role: 'assistant', content: 'Sorry, I had trouble responding. Please try again.' },
+        ...prev,
+        { role: 'assistant', content: `Error: ${err?.message ?? 'Unknown error'}. Please try again.` },
       ])
     } finally {
       setIsLoading(false)

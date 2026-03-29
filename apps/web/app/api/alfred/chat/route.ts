@@ -57,9 +57,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ content: text })
   } catch (error: any) {
-    console.error('Alfred chat error:', error?.message ?? error)
+    const errMsg = error?.message ?? String(error)
+    console.error('Alfred chat error:', errMsg)
+    console.error('Alfred chat stack:', error?.stack)
     return NextResponse.json(
-      { error: error?.message ?? 'Internal server error' },
+      { error: errMsg },
       { status: 500 }
     )
   }
