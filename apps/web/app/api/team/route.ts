@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, first_name, last_name, role, phone, email, is_active')
+    .select('id, first_name, last_name, role, phone, email, is_active, hourly_rate, title')
     .eq('organization_id', profile!.organization_id)
     .eq('is_active', true)
     .order('first_name', { ascending: true })

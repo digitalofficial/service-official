@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@service-official/database'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Plus, Receipt, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { AddExpenseButton } from './project-expenses'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Expenses' }
@@ -79,10 +80,7 @@ export default async function ProjectExpensesPage({ params }: { params: { id: st
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
           <h3 className="font-semibold text-gray-900">All Expenses ({expenses?.length ?? 0})</h3>
-          <button className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            <Plus className="w-4 h-4" />
-            Add Expense
-          </button>
+          <AddExpenseButton projectId={params.id} />
         </div>
 
         {expenses?.length === 0 ? (

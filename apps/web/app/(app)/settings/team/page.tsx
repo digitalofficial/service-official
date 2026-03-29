@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Plus, Users, Mail, Phone, Clock } from 'lucide-react'
 import { formatPhone, formatDate } from '@/lib/utils'
 import { InviteForm } from './invite-form'
+import { EditMemberButton } from './edit-member'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Team Settings' }
@@ -91,7 +92,16 @@ export default async function TeamSettingsPage() {
                 </div>
               </div>
               {isOwnerOrAdmin && m.role !== 'owner' && (
-                <Button variant="ghost" size="sm">Edit</Button>
+                <EditMemberButton
+                  memberId={m.id}
+                  firstName={m.first_name}
+                  lastName={m.last_name}
+                  role={m.role}
+                  phone={m.phone}
+                  title={m.title}
+                  hourlyRate={m.hourly_rate}
+                  isActive={m.is_active}
+                />
               )}
             </div>
           ))}

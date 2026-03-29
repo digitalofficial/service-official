@@ -1,8 +1,7 @@
 import { createServerSupabaseClient } from '@service-official/database'
-import { Button } from '@/components/ui/button'
+import { Camera, Eye, Download } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
-import { formatDate } from '@/lib/utils'
-import { Plus, Camera, Download, Eye } from 'lucide-react'
+import { UploadPhotosButton, DeletePhotoButton } from './project-photos'
 
 export default async function ProjectPhotosPage({ params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
@@ -17,7 +16,7 @@ export default async function ProjectPhotosPage({ params }: { params: { id: stri
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-gray-900">Photos ({photos?.length ?? 0})</h2>
-        <Button size="sm"><Plus className="w-4 h-4 mr-1" />Upload Photos</Button>
+        <UploadPhotosButton projectId={params.id} />
       </div>
 
       {!photos || photos.length === 0 ? (
@@ -25,7 +24,7 @@ export default async function ProjectPhotosPage({ params }: { params: { id: stri
           icon={<Camera className="w-10 h-10" />}
           title="No photos yet"
           description="Upload before/after and progress photos."
-          action={<Button size="sm"><Plus className="w-4 h-4 mr-1" />Upload</Button>}
+          action={<UploadPhotosButton projectId={params.id} />}
         />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -42,6 +41,7 @@ export default async function ProjectPhotosPage({ params }: { params: { id: stri
                   <Download className="w-4 h-4 text-gray-700" />
                 </a>
               </div>
+              <DeletePhotoButton photoId={photo.id} />
               {(photo.is_before || photo.is_after) && (
                 <span className={`absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded ${photo.is_before ? 'bg-amber-500 text-white' : 'bg-green-500 text-white'}`}>
                   {photo.is_before ? 'Before' : 'After'}
