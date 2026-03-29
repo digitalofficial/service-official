@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
 import { ArrowLeft, Loader2 } from 'lucide-react'
+import { InlineCustomerSelect } from '@/components/forms/inline-customer-select'
 import { toast } from 'sonner'
 
 const STATUS_OPTIONS = [
@@ -38,11 +39,6 @@ export default function NewProjectPage() {
   const prefillCustomerId = searchParams.get('customer_id')
 
   const [loading, setLoading] = useState(false)
-  const [customers, setCustomers] = useState<any[]>([])
-
-  useEffect(() => {
-    fetch('/api/customers').then(r => r.json()).then(d => setCustomers(d.data ?? []))
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -101,19 +97,7 @@ export default function NewProjectPage() {
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="customer_id">Customer</Label>
-          <Select
-            id="customer_id"
-            name="customer_id"
-            placeholder="Select a customer..."
-            defaultValue={prefillCustomerId ?? ''}
-            options={customers.map((c: any) => ({
-              label: c.company_name ?? `${c.first_name} ${c.last_name}`,
-              value: c.id,
-            }))}
-          />
-        </div>
+        <InlineCustomerSelect defaultValue={prefillCustomerId ?? ''} />
 
         <div className="space-y-1.5">
           <Label htmlFor="description">Description</Label>

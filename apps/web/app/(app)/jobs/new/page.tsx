@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
 import { ArrowLeft, Loader2 } from 'lucide-react'
+import { InlineCustomerSelect } from '@/components/forms/inline-customer-select'
+import { InlineProjectSelect } from '@/components/forms/inline-project-select'
 import { toast } from 'sonner'
 
 const PRIORITY_OPTIONS = [
@@ -25,14 +27,6 @@ export default function NewJobPage() {
   const prefillCustomerId = searchParams.get('customer_id')
 
   const [loading, setLoading] = useState(false)
-  const [customers, setCustomers] = useState<any[]>([])
-  const [projects, setProjects] = useState<any[]>([])
-  const [team, setTeam] = useState<any[]>([])
-
-  useEffect(() => {
-    fetch('/api/customers').then(r => r.json()).then(d => setCustomers(d.data ?? []))
-    fetch('/api/projects').then(r => r.json()).then(d => setProjects(d.data ?? []))
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -89,30 +83,9 @@ export default function NewJobPage() {
           <Input id="title" name="title" placeholder="Install new shingles - front slope" required autoFocus />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="project_id">Project</Label>
-            <Select
-              id="project_id"
-              name="project_id"
-              placeholder="Select project..."
-              defaultValue={prefillProjectId ?? ''}
-              options={projects.map((p: any) => ({ label: p.name, value: p.id }))}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="customer_id">Customer</Label>
-            <Select
-              id="customer_id"
-              name="customer_id"
-              placeholder="Select customer..."
-              defaultValue={prefillCustomerId ?? ''}
-              options={customers.map((c: any) => ({
-                label: c.company_name ?? `${c.first_name} ${c.last_name}`,
-                value: c.id,
-              }))}
-            />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <InlineCustomerSelect defaultValue={prefillCustomerId ?? ''} />
+          <InlineProjectSelect defaultValue={prefillProjectId ?? ''} />
         </div>
 
         <div className="space-y-1.5">
