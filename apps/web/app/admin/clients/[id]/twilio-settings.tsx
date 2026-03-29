@@ -31,6 +31,9 @@ export function TwilioSettings({ orgId, existing, smsCount }: Props) {
   const [sendAssignment, setSendAssignment] = useState(existing?.send_assignment_sms ?? true)
   const [reminder1, setReminder1] = useState(existing?.default_reminder_1 ?? '1 day')
   const [reminder2, setReminder2] = useState(existing?.default_reminder_2 ?? '1 hour')
+  const [notifyBooked, setNotifyBooked] = useState(existing?.notify_customer_booked ?? true)
+  const [notifyEnRoute, setNotifyEnRoute] = useState(existing?.notify_customer_en_route ?? true)
+  const [notifyCompleted, setNotifyCompleted] = useState(existing?.notify_customer_completed ?? false)
 
   const handleSave = async () => {
     setLoading(true)
@@ -48,6 +51,9 @@ export function TwilioSettings({ orgId, existing, smsCount }: Props) {
         send_assignment_sms: sendAssignment,
         default_reminder_1: reminder1,
         default_reminder_2: reminder2,
+        notify_customer_booked: notifyBooked,
+        notify_customer_en_route: notifyEnRoute,
+        notify_customer_completed: notifyCompleted,
       }),
     })
 
@@ -109,15 +115,38 @@ export function TwilioSettings({ orgId, existing, smsCount }: Props) {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 pt-2">
-          <label className="flex items-center gap-2 text-xs text-gray-300">
-            <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-blue-500" />
-            SMS Enabled
-          </label>
-          <label className="flex items-center gap-2 text-xs text-gray-300">
-            <input type="checkbox" checked={sendAssignment} onChange={(e) => setSendAssignment(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-blue-500" />
-            Send on assignment
-          </label>
+        {/* Employee notifications */}
+        <div className="pt-3 border-t border-gray-800">
+          <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Employee Notifications</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            <label className="flex items-center gap-2 text-xs text-gray-300">
+              <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-blue-500" />
+              SMS Enabled
+            </label>
+            <label className="flex items-center gap-2 text-xs text-gray-300">
+              <input type="checkbox" checked={sendAssignment} onChange={(e) => setSendAssignment(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-blue-500" />
+              On assignment
+            </label>
+          </div>
+        </div>
+
+        {/* Customer notifications */}
+        <div className="pt-3 border-t border-gray-800">
+          <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Customer Notifications</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            <label className="flex items-center gap-2 text-xs text-gray-300">
+              <input type="checkbox" checked={notifyBooked} onChange={(e) => setNotifyBooked(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-green-500" />
+              Job booked
+            </label>
+            <label className="flex items-center gap-2 text-xs text-gray-300">
+              <input type="checkbox" checked={notifyEnRoute} onChange={(e) => setNotifyEnRoute(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-green-500" />
+              On the way
+            </label>
+            <label className="flex items-center gap-2 text-xs text-gray-300">
+              <input type="checkbox" checked={notifyCompleted} onChange={(e) => setNotifyCompleted(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-green-500" />
+              Job completed
+            </label>
+          </div>
         </div>
 
         <button

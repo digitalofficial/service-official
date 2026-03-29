@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@service-official/database'
 import { trigger } from '@service-official/workflows'
+import { notifyCustomer } from '@/lib/sms'
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
@@ -62,7 +63,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         { job_title: existing?.title }
       )
     }
+
+    // Auto-send customer SMS on key status changes
+    if (updates.status === 'en_route') {
+      notifyCustomer(profile!.organization_id, params.id, 'on_the_way').catch(() => {})
+    }
+    if (updates.status === 'completed') {
+      notifyCustomer(profile!.organization_id, params.id, 'completed').catch(() => {})
+    }
   }
 
-  return NextResponse.json({ data })
+  return NextResponse.json({ data, sms_sent: updates.status === 'en_route' || updates.status === 'completed' })
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@service-official/database'
+import { notifyCustomer } from '@/lib/sms'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
@@ -145,9 +146,13 @@ ${loginUrl}`
     await supabase.from('job_reminders').insert(remindersToCreate)
   }
 
+  // Notify customer that the job is booked
+  const customerSms = await notifyCustomer(profile!.organization_id, params.id, 'booked').catch(() => ({ success: false }))
+
   return NextResponse.json({
     data: job,
     reminders_scheduled: remindersToCreate.length,
-    message: `Job assigned to ${assignee.first_name}. ${remindersToCreate.length} SMS reminder(s) scheduled.`,
+    customer_notified: customerSms.success,
+    message: `Job assigned to ${assignee.first_name}. ${remindersToCreate.length} SMS reminder(s) scheduled.${customerSms.success ? ' Customer notified.' : ''}`,
   })
 }
