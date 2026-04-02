@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@service-official/database'
-import { DollarSign, FolderKanban, Briefcase, AlertCircle, TrendingUp } from 'lucide-react'
+import { DollarSign, FolderKanban, Briefcase, AlertCircle, TrendingUp, MapPin } from 'lucide-react'
 import type { Metadata } from 'next'
+import { DashboardJobMap } from './dashboard-job-map'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -80,12 +81,11 @@ export default async function DashboardPage() {
   const today = new Date().toISOString().split('T')[0]
   let jobsQuery = orgId ? supabase
     .from('jobs')
-    .select('id, title, status, scheduled_start, customer:customers(first_name, last_name), assignee:profiles!assigned_to(first_name, last_name)')
+    .select('id, title, status, scheduled_start, address_line1, city, state, zip, coordinates, customer:customers(first_name, last_name, company_name), assignee:profiles!assigned_to(first_name, last_name)')
     .eq('organization_id', orgId)
     .gte('scheduled_start', `${today}T00:00:00`)
     .lte('scheduled_start', `${today}T23:59:59`)
-    .order('scheduled_start', { ascending: true })
-    .limit(8) : null
+    .order('scheduled_start', { ascending: true }) : null
 
   if (jobsQuery && isSelfOnly) {
     jobsQuery = jobsQuery.eq('assigned_to', user.id)
@@ -155,6 +155,20 @@ export default async function DashboardPage() {
           iconBg="bg-amber-50"
         />
       </div>
+
+      {/* Today's Jobs Map */}
+      {todayJobs && todayJobs.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-gray-500" />
+              <h2 className="font-semibold text-gray-900">Today's Jobs</h2>
+            </div>
+            <a href="/jobs" className="text-sm text-blue-600 hover:underline">View all</a>
+          </div>
+          <DashboardJobMap jobs={todayJobs as any} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Active Projects */}
