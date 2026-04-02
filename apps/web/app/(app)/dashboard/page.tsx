@@ -1,17 +1,11 @@
 import { createServerSupabaseClient } from '@service-official/database'
-import { DollarSign, FolderKanban, Briefcase, UserPlus, TrendingUp, AlertCircle, CheckCircle2, Clock } from 'lucide-react'
+import { DollarSign, FolderKanban, Briefcase, AlertCircle, TrendingUp } from 'lucide-react'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
-async function getDashboardMetrics(org_id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/reports/dashboard`, {
-    headers: { 'x-org-id': org_id },
-    cache: 'no-store',
-  })
-  if (!res.ok) return null
-  const json = await res.json()
-  return json.data
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount)
 }
 
 export default async function DashboardPage() {
@@ -26,6 +20,45 @@ export default async function DashboardPage() {
     .single()
 
   const orgId = profile?.organization_id
+
+  // Fetch financial metrics
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).toISOString()
+  const startOfYear = new Date(now.getFullYear(), 0, 1).toISOString()
+
+  const [
+    { data: currentInvoices },
+    { data: lastMonthInvoices },
+    { data: ytdInvoices },
+  ] = orgId ? await Promise.all([
+    supabase.from('invoices')
+      .select('amount_paid, total, status')
+      .eq('organization_id', orgId)
+      .gte('created_at', startOfMonth),
+    supabase.from('invoices')
+      .select('amount_paid')
+      .eq('organization_id', orgId)
+      .gte('created_at', startOfLastMonth)
+      .lte('created_at', endOfLastMonth),
+    supabase.from('invoices')
+      .select('amount_paid')
+      .eq('organization_id', orgId)
+      .gte('created_at', startOfYear),
+  ]) : [{ data: [] }, { data: [] }, { data: [] }]
+
+  const currentMonthRevenue = (currentInvoices ?? []).reduce((sum, i) => sum + (i.amount_paid ?? 0), 0)
+  const lastMonthRevenue = (lastMonthInvoices ?? []).reduce((sum, i) => sum + (i.amount_paid ?? 0), 0)
+  const outstanding = (currentInvoices ?? [])
+    .filter(i => ['sent', 'viewed', 'partial', 'overdue'].includes(i.status))
+    .reduce((sum, i) => sum + ((i.total ?? 0) - (i.amount_paid ?? 0)), 0)
+
+  const ytdRevenue = (ytdInvoices ?? []).reduce((sum, i) => sum + (i.amount_paid ?? 0), 0)
+
+  const revenueTrend = lastMonthRevenue > 0
+    ? `${currentMonthRevenue >= lastMonthRevenue ? '+' : ''}${Math.round(((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100)}% vs last month`
+    : currentMonthRevenue > 0 ? 'Up from last month' : undefined
 
   // Get recent projects
   const { data: recentProjects } = orgId ? await supabase
@@ -80,14 +113,21 @@ export default async function DashboardPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
         <MetricCard
           label="Revenue This Month"
-          value="$0"
+          value={formatCurrency(currentMonthRevenue)}
           icon={DollarSign}
           iconColor="text-green-600"
           iconBg="bg-green-50"
-          trend="+0% vs last month"
+          trend={revenueTrend}
+        />
+        <MetricCard
+          label="Revenue This Year"
+          value={formatCurrency(ytdRevenue)}
+          icon={TrendingUp}
+          iconColor="text-emerald-600"
+          iconBg="bg-emerald-50"
         />
         <MetricCard
           label="Active Projects"
@@ -105,7 +145,7 @@ export default async function DashboardPage() {
         />
         <MetricCard
           label="Outstanding"
-          value="$0"
+          value={formatCurrency(outstanding)}
           icon={AlertCircle}
           iconColor="text-amber-600"
           iconBg="bg-amber-50"
