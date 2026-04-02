@@ -16,10 +16,24 @@ const ALLOWED_TABLES: Record<string, string> = {
   submittal: 'submittals',
 }
 
+// Roles allowed to create each item type
+const TYPE_ROLES: Record<string, string[]> = {
+  punch_list: ['owner', 'admin', 'office_manager', 'project_manager', 'foreman', 'technician', 'subcontractor'],
+  phase: ['owner', 'admin', 'office_manager', 'project_manager'],
+  milestone: ['owner', 'admin', 'office_manager', 'project_manager'],
+  daily_log: ['owner', 'admin', 'project_manager', 'foreman', 'technician'],
+  material: ['owner', 'admin', 'office_manager', 'project_manager', 'foreman'],
+  rfi: ['owner', 'admin', 'office_manager', 'project_manager', 'foreman', 'technician', 'subcontractor'],
+  change_order: ['owner', 'admin', 'office_manager', 'project_manager'],
+  submittal: ['owner', 'admin', 'office_manager', 'project_manager', 'foreman', 'subcontractor'],
+}
+
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
 
   const body = await request.json()
   const { type, ...data } = body
@@ -27,6 +41,12 @@ export async function POST(request: NextRequest) {
   const table = ALLOWED_TABLES[type]
   if (!table) return NextResponse.json({ error: `Invalid type: ${type}` }, { status: 400 })
   if (!data.project_id) return NextResponse.json({ error: 'project_id required' }, { status: 400 })
+
+  // Enforce role-based access per item type
+  const allowedRoles = TYPE_ROLES[type]
+  if (allowedRoles && !allowedRoles.includes(profile?.role ?? '')) {
+    return NextResponse.json({ error: 'You do not have permission to create this item' }, { status: 403 })
+  }
 
   // Add user references where applicable
   if (type === 'daily_log') data.submitted_by = user.id

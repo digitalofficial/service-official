@@ -49,8 +49,9 @@ export async function GET(request: NextRequest) {
     .eq('organization_id', profile!.organization_id)
     .order('scheduled_start', { ascending: true })
 
-  // Technicians only see their own jobs
-  if (profile!.role === 'technician') {
+  // Field workers only see their own assigned jobs
+  const selfOnlyRoles = ['technician', 'foreman', 'subcontractor']
+  if (selfOnlyRoles.includes(profile!.role)) {
     query = query.eq('assigned_to', user.id)
   }
 

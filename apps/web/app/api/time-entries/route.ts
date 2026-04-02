@@ -91,6 +91,18 @@ export async function DELETE(request: NextRequest) {
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const managerRoles = ['owner', 'admin', 'office_manager', 'project_manager']
+  const isManager = managerRoles.includes(profile?.role ?? '')
+
+  // Non-managers can only delete their own time entries
+  if (!isManager) {
+    const { data: entry } = await supabase.from('time_entries').select('created_by').eq('id', id).single()
+    if (entry?.created_by !== user.id) {
+      return NextResponse.json({ error: 'You can only delete your own time entries' }, { status: 403 })
+    }
+  }
+
   const { error } = await supabase.from('time_entries').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
