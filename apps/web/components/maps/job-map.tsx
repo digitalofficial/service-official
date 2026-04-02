@@ -139,7 +139,7 @@ export function JobMap({ jobs, height = '400px', type = 'jobs' }: JobMapProps) {
   const statuses = [...new Set(jobs.map(j => j.status))]
 
   return (
-    <div className="rounded-xl overflow-hidden border border-gray-200">
+    <div className="rounded-xl overflow-hidden border border-gray-200 relative z-0">
       <div ref={mapRef} style={{ height, width: '100%' }} />
       {statuses.length > 0 && (
         <div className="flex flex-wrap gap-3 px-4 py-2.5 bg-white border-t border-gray-100">
