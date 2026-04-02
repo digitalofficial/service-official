@@ -32,6 +32,7 @@ export default async function DashboardPage() {
     { data: currentInvoices },
     { data: lastMonthInvoices },
     { data: ytdInvoices },
+    { data: outstandingInvoices },
   ] = orgId ? await Promise.all([
     supabase.from('invoices')
       .select('amount_paid, total, status')
@@ -46,13 +47,16 @@ export default async function DashboardPage() {
       .select('amount_paid')
       .eq('organization_id', orgId)
       .gte('created_at', startOfYear),
-  ]) : [{ data: [] }, { data: [] }, { data: [] }]
+    supabase.from('invoices')
+      .select('amount_paid, amount_due, total, status')
+      .eq('organization_id', orgId)
+      .in('status', ['sent', 'viewed', 'partial', 'overdue']),
+  ]) : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }]
 
   const currentMonthRevenue = (currentInvoices ?? []).reduce((sum, i) => sum + (i.amount_paid ?? 0), 0)
   const lastMonthRevenue = (lastMonthInvoices ?? []).reduce((sum, i) => sum + (i.amount_paid ?? 0), 0)
-  const outstanding = (currentInvoices ?? [])
-    .filter(i => ['sent', 'viewed', 'partial', 'overdue'].includes(i.status))
-    .reduce((sum, i) => sum + ((i.total ?? 0) - (i.amount_paid ?? 0)), 0)
+  const outstanding = (outstandingInvoices ?? [])
+    .reduce((sum, i) => sum + (i.amount_due ?? ((i.total ?? 0) - (i.amount_paid ?? 0))), 0)
 
   const ytdRevenue = (ytdInvoices ?? []).reduce((sum, i) => sum + (i.amount_paid ?? 0), 0)
 
