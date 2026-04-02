@@ -119,6 +119,7 @@ async function executeActions(actions: AutomationAction[], payload: TriggerPaylo
       case 'send_sms':
         if (action.config.to && action.config.body) {
           await sendSMS({
+            organization_id: payload.organization_id,
             to: interpolate(action.config.to as string, payload.data),
             body: interpolate(action.config.body as string, payload.data),
           })

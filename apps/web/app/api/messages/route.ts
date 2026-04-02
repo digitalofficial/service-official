@@ -85,10 +85,10 @@ export async function POST(request: NextRequest) {
     phoneNumber = convo?.phone_number
   }
 
-  // Send SMS via Twilio
+  // Send SMS via Twilio (per-org credentials)
   let twilioSid: string | undefined
   if (channel === 'sms' && phoneNumber) {
-    const result = await sendSMS({ to: phoneNumber, body, media_urls })
+    const result = await sendSMS({ organization_id: profile!.organization_id, to: phoneNumber, body, media_urls })
     if (result.success) twilioSid = result.sid
   }
 

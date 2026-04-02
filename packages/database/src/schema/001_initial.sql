@@ -1064,7 +1064,7 @@ CREATE TABLE report_snapshots (
 
 CREATE TABLE audit_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  organization_id UUID REFERENCES organizations(id),
+  organization_id UUID NOT NULL REFERENCES organizations(id),
   user_id UUID REFERENCES profiles(id),
   action TEXT NOT NULL,
   entity_type TEXT NOT NULL,

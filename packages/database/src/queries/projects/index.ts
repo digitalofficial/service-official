@@ -44,10 +44,10 @@ export async function getProjects(options: GetProjectsOptions): Promise<Paginate
   }
 }
 
-export async function getProjectById(id: string): Promise<Project | null> {
+export async function getProjectById(id: string, organization_id?: string): Promise<Project | null> {
   const supabase = createServerSupabaseClient()
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('projects')
     .select(`
       *,
@@ -59,7 +59,10 @@ export async function getProjectById(id: string): Promise<Project | null> {
       team:project_team(*, profile:profiles(*))
     `)
     .eq('id', id)
-    .single()
+
+  if (organization_id) query = query.eq('organization_id', organization_id)
+
+  const { data, error } = await query.single()
 
   if (error) return null
   return data as Project
@@ -86,23 +89,29 @@ export async function createProject(data: Partial<Project>): Promise<Project> {
   return project as Project
 }
 
-export async function updateProject(id: string, updates: Partial<Project>): Promise<Project> {
+export async function updateProject(id: string, updates: Partial<Project>, organization_id?: string): Promise<Project> {
   const supabase = createServerSupabaseClient()
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('projects')
     .update(updates)
     .eq('id', id)
-    .select()
-    .single()
+
+  if (organization_id) query = query.eq('organization_id', organization_id)
+
+  const { data, error } = await query.select().single()
 
   if (error) throw new Error(error.message)
   return data as Project
 }
 
-export async function deleteProject(id: string): Promise<void> {
+export async function deleteProject(id: string, organization_id?: string): Promise<void> {
   const supabase = createServerSupabaseClient()
-  const { error } = await supabase.from('projects').delete().eq('id', id)
+
+  let query = supabase.from('projects').delete().eq('id', id)
+  if (organization_id) query = query.eq('organization_id', organization_id)
+
+  const { error } = await query
   if (error) throw new Error(error.message)
 }
 

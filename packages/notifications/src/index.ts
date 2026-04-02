@@ -58,26 +58,54 @@ export async function createNotification(options: SendNotificationOptions) {
   return data
 }
 
-// ── SMS via Twilio ───────────────────────────────────────────
+// ── SMS via Twilio (per-org credentials) ─────────────────────
 
-export async function sendSMS(options: SendSMSOptions) {
-  const twilio = require('twilio')
-  const client = twilio(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN
-  )
+/**
+ * Send SMS using an organization's Twilio credentials.
+ * Requires organization_id to look up per-org Twilio settings.
+ */
+export async function sendSMS(options: SendSMSOptions & { organization_id: string }) {
+  const { createServiceRoleClient } = await import('@service-official/database')
+  const supabase = createServiceRoleClient()
+
+  const { data: settings } = await supabase
+    .from('organization_sms_settings')
+    .select('twilio_account_sid, twilio_auth_token, twilio_phone_number, is_enabled')
+    .eq('organization_id', options.organization_id)
+    .single()
+
+  if (!settings?.is_enabled || !settings.twilio_account_sid) {
+    return { success: false, error: 'SMS not enabled for this organization' }
+  }
 
   try {
-    const message = await client.messages.create({
-      body: options.body,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: options.to,
-      mediaUrl: options.media_urls,
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${settings.twilio_account_sid}/Messages.json`
+    const auth = Buffer.from(`${settings.twilio_account_sid}:${settings.twilio_auth_token}`).toString('base64')
+
+    const params = new URLSearchParams({
+      From: settings.twilio_phone_number,
+      To: options.to,
+      Body: options.body,
     })
-    return { success: true, sid: message.sid }
-  } catch (error) {
+    if (options.media_urls?.length) {
+      options.media_urls.forEach(url => params.append('MediaUrl', url))
+    }
+
+    const res = await fetch(twilioUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params,
+    })
+
+    const data = await res.json()
+    if (!res.ok) return { success: false, error: data.message ?? 'Twilio error' }
+    return { success: true, sid: data.sid }
+  } catch (error: any) {
     console.error('SMS send failed:', error)
-    return { success: false, error }
+    return { success: false, error: error.message }
   }
 }
 
