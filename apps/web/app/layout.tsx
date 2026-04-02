@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 export const metadata: Metadata = {
   title: { default: 'Service Official', template: '%s | Service Official' },
   description: 'The Contractor Operating System',
-  icons: { icon: '/favicon.ico' },
+  icons: { icon: '/icon.svg' },
   viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
 }
 
