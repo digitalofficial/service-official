@@ -156,20 +156,6 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Today's Jobs Map */}
-      {todayJobs && todayJobs.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gray-500" />
-              <h2 className="font-semibold text-gray-900">Today's Jobs</h2>
-            </div>
-            <a href="/jobs" className="text-sm text-blue-600 hover:underline">View all</a>
-          </div>
-          <DashboardJobMap jobs={todayJobs as any} />
-        </div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Active Projects */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5">
@@ -263,6 +249,20 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Today's Jobs Map */}
+      {todayJobs && todayJobs.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-gray-500" />
+              <h2 className="font-semibold text-gray-900">Today's Jobs Map</h2>
+            </div>
+            <a href="/jobs" className="text-sm text-blue-600 hover:underline">View all</a>
+          </div>
+          <DashboardJobMap jobs={todayJobs as any} />
+        </div>
+      )}
     </div>
   )
 }
