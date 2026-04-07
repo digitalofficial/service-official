@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Permissions' }
 
-const ROLES = ['owner', 'admin', 'office_manager', 'estimator', 'project_manager', 'foreman', 'technician', 'dispatcher', 'subcontractor', 'viewer']
+const ROLES = ['owner', 'office_manager', 'estimator', 'project_manager', 'foreman', 'technician', 'dispatcher', 'subcontractor', 'viewer']
 
 const PERMISSIONS = [
   { label: 'View projects', roles: ['owner', 'admin', 'office_manager', 'estimator', 'project_manager', 'foreman', 'technician', 'dispatcher', 'subcontractor', 'viewer'] },
