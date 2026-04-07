@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { Building2, Users, CreditCard, Palette, Bell, Plug, Shield, MessageSquare } from 'lucide-react'
+import { Building2, Users, CreditCard, Palette, Bell, Plug, Shield, DollarSign } from 'lucide-react'
 
 const SETTINGS_NAV = [
   { label: 'General', href: '/settings', icon: Building2 },
   { label: 'Team', href: '/settings/team', icon: Users },
-  { label: 'SMS & Reminders', href: '/settings/sms', icon: MessageSquare },
+  { label: 'Payments', href: '/settings/payments', icon: DollarSign },
   { label: 'Billing', href: '/settings/billing', icon: CreditCard },
   { label: 'Branding', href: '/settings/branding', icon: Palette },
   { label: 'Notifications', href: '/settings/notifications', icon: Bell },

@@ -11,14 +11,6 @@ export default async function IntegrationsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase.from('profiles').select('organization_id, organization:organizations(stripe_customer_id, stripe_subscription_id)').eq('id', user!.id).single()
 
-  // Check if Twilio is configured
-  const { data: smsSettings } = await supabase
-    .from('organization_sms_settings')
-    .select('is_enabled, twilio_account_sid')
-    .eq('organization_id', profile!.organization_id)
-    .single()
-
-  const twilioConnected = !!(smsSettings?.is_enabled && smsSettings?.twilio_account_sid)
   const org = (profile as any)?.organization
   const stripeConnected = !!(org?.stripe_customer_id || org?.stripe_subscription_id)
 
@@ -31,11 +23,11 @@ export default async function IntegrationsPage() {
       href: '/settings/billing',
     },
     {
-      name: 'Twilio',
-      description: 'Send and receive SMS messages + job reminders',
+      name: 'SMS & Reminders',
+      description: 'Text message alerts and job reminders for your team',
       category: 'Communication',
-      connected: twilioConnected,
-      href: '/settings/sms',
+      connected: true,
+      href: null,
     },
     {
       name: 'Google Maps',
