@@ -2,6 +2,7 @@ import { createServiceRoleClient } from '@service-official/database'
 import { formatCurrency } from '@/lib/utils'
 import type { Metadata } from 'next'
 
+export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Admin — Service Official' }
 
 export default async function AdminPage() {

@@ -5,6 +5,8 @@ import { ClientActions } from './client-actions'
 import { AddOwnerButton } from './add-owner-button'
 import { TwilioSettings } from './twilio-settings'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ClientDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServiceRoleClient()
 
