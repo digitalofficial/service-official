@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { UserPlus, Loader2, Copy, Check } from 'lucide-react'
+import { UserPlus, Loader2, Copy, Check, ArrowUpCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import Link from 'next/link'
 
 const ROLE_OPTIONS = [
   { label: 'Admin', value: 'admin' },
@@ -24,6 +25,7 @@ export function InviteForm() {
   const [loading, setLoading] = useState(false)
   const [inviteUrl, setInviteUrl] = useState('')
   const [copied, setCopied] = useState(false)
+  const [upgradeMessage, setUpgradeMessage] = useState('')
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,6 +33,7 @@ export function InviteForm() {
 
     setLoading(true)
     setInviteUrl('')
+    setUpgradeMessage('')
 
     const res = await fetch('/api/invitations', {
       method: 'POST',
@@ -41,7 +44,11 @@ export function InviteForm() {
     const data = await res.json()
 
     if (!res.ok) {
-      toast.error(data.error ?? 'Failed to send invitation')
+      if (data.upgrade_required) {
+        setUpgradeMessage(data.error)
+      } else {
+        toast.error(data.error ?? 'Failed to send invitation')
+      }
       setLoading(false)
       return
     }
@@ -97,6 +104,23 @@ export function InviteForm() {
           </Button>
         </div>
       </form>
+
+      {upgradeMessage && (
+        <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <ArrowUpCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-800">{upgradeMessage}</p>
+              <Link
+                href="/settings/billing"
+                className="inline-flex items-center gap-1 mt-2 px-4 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                View Plans
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {inviteUrl && (
         <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
