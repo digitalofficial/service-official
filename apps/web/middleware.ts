@@ -29,6 +29,11 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute = PUBLIC_ROUTES.some(r => path.startsWith(r))
   const isAuthRoute = AUTH_ROUTES.some(r => path.startsWith(r))
 
+  // Allow homepage for unauthenticated users
+  if (!user && path === '/') {
+    return supabaseResponse
+  }
+
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
