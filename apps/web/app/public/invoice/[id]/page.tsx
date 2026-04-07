@@ -32,6 +32,16 @@ export default async function PublicInvoicePage({ params }: { params: { id: stri
     .eq('id', invoice.organization_id)
     .single()
 
+  // Fetch latest pending payment for this invoice (for Pay Now button)
+  const { data: pendingPayment } = await supabase
+    .from('payments')
+    .select('stripe_payment_intent_id, status')
+    .eq('invoice_id', params.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
   // Increment view count
   await supabase
     .from('invoices')
@@ -61,7 +71,12 @@ export default async function PublicInvoicePage({ params }: { params: { id: stri
             )}
             <span className="text-sm text-gray-500">Invoice from <strong className="text-gray-900">{organization?.name}</strong></span>
           </div>
-          <PublicInvoiceActions />
+          <PublicInvoiceActions
+            paymentIntentId={pendingPayment?.stripe_payment_intent_id ?? null}
+            amountDue={invoice.amount_due}
+            invoiceStatus={invoice.status}
+            paymentsEnabled={organization?.payments_enabled ?? false}
+          />
         </div>
 
         {/* Invoice */}

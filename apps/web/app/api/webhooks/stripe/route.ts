@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createServiceRoleClient } from '@service-official/database'
-import { createNotification } from '@service-official/notifications'
 
+// Global Stripe client for webhook signature verification
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(request: NextRequest) {

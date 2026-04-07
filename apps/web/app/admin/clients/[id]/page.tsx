@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { ClientActions } from './client-actions'
 import { AddOwnerButton } from './add-owner-button'
 import { TwilioSettings } from './twilio-settings'
+import { StripeSettings } from './stripe-settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,6 +49,17 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     .select('*', { count: 'exact', head: true })
     .eq('organization_id', params.id)
     .eq('status', 'sent')
+
+  // Payment stats for Stripe section
+  const { data: payments } = await supabase
+    .from('payments')
+    .select('amount, status')
+    .eq('organization_id', params.id)
+
+  const paymentStats = {
+    total_collected: payments?.filter(p => p.status === 'succeeded').reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0,
+    pending: payments?.filter(p => p.status === 'pending').reduce((sum, p) => sum + (p.amount ?? 0), 0) ?? 0,
+  }
 
   const totalRevenue = invoices?.reduce((sum, i) => sum + (i.amount_paid ?? 0), 0) ?? 0
   const profiles = org.profiles as any[]
@@ -141,6 +153,19 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 
       {/* Twilio / SMS */}
       <TwilioSettings orgId={params.id} existing={smsSettings} smsCount={smsCount ?? 0} />
+
+      {/* Stripe / Payments */}
+      <StripeSettings
+        orgId={params.id}
+        existing={{
+          stripe_publishable_key: org.stripe_publishable_key,
+          stripe_secret_key: org.stripe_secret_key,
+          stripe_webhook_secret: org.stripe_webhook_secret,
+          stripe_account_id: org.stripe_account_id,
+          payments_enabled: org.payments_enabled,
+        }}
+        paymentStats={paymentStats}
+      />
 
       {/* Org Details */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
