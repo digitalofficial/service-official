@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/select'
 import { Phone, UserPlus, Briefcase, MapPin, Clock, Loader2, CheckCircle, Search, Tag } from 'lucide-react'
 import { toast } from 'sonner'
 import { DEFAULT_LEAD_SOURCES } from '@/lib/constants/lead-sources'
+import { TeamAvailability } from '@/components/dispatch/team-availability'
 
 const PRIORITY_OPTIONS = [
   { label: 'Low', value: 'low' },
@@ -287,6 +288,16 @@ export default function DispatchPage() {
           <div><Label>Crew Instructions</Label><Textarea value={instructions} onChange={e => setInstructions(e.target.value)} placeholder="Gate code, parking info, special notes..." /></div>
         </div>
       </div>
+
+      {/* Team Availability */}
+      <TeamAvailability
+        selectedMemberId={assignedTo}
+        selectedDate={date}
+        onSelectSlot={(memberId, slotDate) => {
+          setAssignedTo(memberId)
+          setDate(slotDate)
+        }}
+      />
 
       {/* Submit */}
       <Button onClick={handleSubmit} disabled={loading} className="w-full py-3" size="lg">
