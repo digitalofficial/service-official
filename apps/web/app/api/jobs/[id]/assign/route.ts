@@ -23,15 +23,27 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   if (jobError) return NextResponse.json({ error: jobError.message }, { status: 500 })
 
-  // Get the assignee's phone
+  // Get the assignee's phone and reminder preferences
   const { data: assignee } = await supabase
     .from('profiles')
-    .select('id, first_name, last_name, phone')
+    .select('id, first_name, last_name, phone, reminder_pref_1, reminder_pref_2, notify_sms')
     .eq('id', assigned_to)
     .single()
 
   if (!assignee?.phone) {
     return NextResponse.json({ data: job, warning: 'Job assigned but employee has no phone number — no SMS sent' })
+  }
+
+  // Respect employee's SMS opt-out preference
+  if (assignee.notify_sms === false) {
+    // Still notify customer, just skip employee SMS
+    const customerSms = await notifyCustomer(profile!.organization_id, params.id, 'booked').catch(() => ({ success: false }))
+    return NextResponse.json({
+      data: job,
+      reminders_scheduled: 0,
+      customer_notified: customerSms.success,
+      message: `Job assigned to ${assignee.first_name}. Employee has SMS notifications disabled.${customerSms.success ? ' Customer notified.' : ''}`,
+    })
   }
 
   // Get org SMS settings
@@ -113,7 +125,32 @@ ${loginUrl}`
       '1 day': 'tomorrow',
     }
 
-    for (const reminderInterval of [smsSettings.default_reminder_1, smsSettings.default_reminder_2]) {
+    // Use employee's personal prefs if set, otherwise fall back to org defaults
+    const pref1 = assignee.reminder_pref_1 ?? smsSettings.default_reminder_1
+    const pref2 = assignee.reminder_pref_2 ?? smsSettings.default_reminder_2
+
+    for (const reminderInterval of [pref1, pref2]) {
+      if (!reminderInterval || reminderInterval === '0') continue
+
+      // "morning" = 8 AM on the day of the job
+      if (reminderInterval === 'morning') {
+        const jobDate = new Date(job.scheduled_start!)
+        const morningOf = new Date(jobDate.getFullYear(), jobDate.getMonth(), jobDate.getDate(), 8, 0, 0)
+        if (morningOf.getTime() <= Date.now()) continue
+
+        remindersToCreate.push({
+          organization_id: profile!.organization_id,
+          job_id: params.id,
+          profile_id: assigned_to,
+          remind_at: morningOf.toISOString(),
+          reminder_type: 'custom',
+          phone_number: assignee.phone,
+          message_body: `Good morning! You have a job today:\n${baseMessage}`,
+          status: 'pending',
+        })
+        continue
+      }
+
       const ms = intervalMap[reminderInterval]
       if (!ms) continue
 

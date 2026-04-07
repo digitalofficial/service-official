@@ -101,6 +101,9 @@ export default async function TeamSettingsPage() {
                   title={m.title}
                   hourlyRate={m.hourly_rate}
                   isActive={m.is_active}
+                  reminderPref1={m.reminder_pref_1}
+                  reminderPref2={m.reminder_pref_2}
+                  notifySms={m.notify_sms}
                 />
               )}
             </div>
