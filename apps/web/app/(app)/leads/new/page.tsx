@@ -11,16 +11,7 @@ import { Select } from '@/components/ui/select'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-const SOURCE_OPTIONS = [
-  { label: 'Website', value: 'website' },
-  { label: 'Referral', value: 'referral' },
-  { label: 'Google', value: 'google' },
-  { label: 'Facebook', value: 'facebook' },
-  { label: 'Yard Sign', value: 'yard_sign' },
-  { label: 'Door Knock', value: 'door_knock' },
-  { label: 'Repeat Customer', value: 'repeat' },
-  { label: 'Other', value: 'other' },
-]
+import { DEFAULT_LEAD_SOURCES as SOURCE_OPTIONS } from '@/lib/constants/lead-sources'
 
 export default function NewLeadPage() {
   const router = useRouter()

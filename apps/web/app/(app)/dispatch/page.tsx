@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
-import { Phone, UserPlus, Briefcase, MapPin, Clock, Loader2, CheckCircle, Search } from 'lucide-react'
+import { Phone, UserPlus, Briefcase, MapPin, Clock, Loader2, CheckCircle, Search, Tag } from 'lucide-react'
 import { toast } from 'sonner'
+import { DEFAULT_LEAD_SOURCES } from '@/lib/constants/lead-sources'
 
 const PRIORITY_OPTIONS = [
   { label: 'Low', value: 'low' },
@@ -27,7 +28,7 @@ export default function DispatchPage() {
   const [customers, setCustomers] = useState<any[]>([])
   const [customerSearch, setCustomerSearch] = useState('')
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
-  const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', phone: '', email: '', company_name: '' })
+  const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', phone: '', email: '', company_name: '', source: '' })
 
   // Team
   const [team, setTeam] = useState<any[]>([])
@@ -44,6 +45,7 @@ export default function DispatchPage() {
   const [endTime, setEndTime] = useState('')
   const [priority, setPriority] = useState('normal')
   const [instructions, setInstructions] = useState('')
+  const [leadSource, setLeadSource] = useState('')
 
   useEffect(() => {
     fetch('/api/customers').then(r => r.json()).then(d => setCustomers(d.data ?? []))
@@ -67,7 +69,7 @@ export default function DispatchPage() {
       const custRes = await fetch('/api/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCustomer),
+        body: JSON.stringify({ ...newCustomer, source: newCustomer.source || leadSource || undefined }),
       })
       if (custRes.ok) {
         const { data } = await custRes.json()
@@ -77,6 +79,15 @@ export default function DispatchPage() {
         setLoading(false)
         return
       }
+    }
+
+    // Update existing customer's source if provided and they don't have one
+    if (customerMode === 'existing' && customerId && leadSource) {
+      await fetch(`/api/customers/${customerId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: leadSource }),
+      }).catch(() => {}) // Non-blocking
     }
 
     // Build job data
@@ -145,7 +156,7 @@ export default function DispatchPage() {
         </div>
         <div className="flex gap-3 justify-center">
           <Button onClick={() => router.push(`/jobs/${success.job.id}`)}>View Job</Button>
-          <Button variant="outline" onClick={() => { setSuccess(null); setTitle(''); setAddress(''); setCity(''); setState(''); setZip(''); setDate(''); setStartTime(''); setEndTime(''); setInstructions(''); setSelectedCustomerId(''); setAssignedTo('') }}>
+          <Button variant="outline" onClick={() => { setSuccess(null); setTitle(''); setAddress(''); setCity(''); setState(''); setZip(''); setDate(''); setStartTime(''); setEndTime(''); setInstructions(''); setSelectedCustomerId(''); setAssignedTo(''); setLeadSource('') }}>
             Dispatch Another
           </Button>
         </div>
@@ -217,6 +228,10 @@ export default function DispatchPage() {
               <div><Label>Phone</Label><Input value={newCustomer.phone} onChange={e => setNewCustomer(p => ({ ...p, phone: e.target.value }))} placeholder="(555) 123-4567" type="tel" /></div>
               <div><Label>Email</Label><Input value={newCustomer.email} onChange={e => setNewCustomer(p => ({ ...p, email: e.target.value }))} placeholder="john@email.com" type="email" /></div>
               <div><Label>Company (optional)</Label><Input value={newCustomer.company_name} onChange={e => setNewCustomer(p => ({ ...p, company_name: e.target.value }))} placeholder="Smith Properties" /></div>
+              <div>
+                <Label className="flex items-center gap-1"><Tag className="w-3.5 h-3.5" /> Lead Source</Label>
+                <Select value={newCustomer.source} onChange={e => setNewCustomer(p => ({ ...p, source: e.target.value }))} placeholder="Where did this lead come from?" options={DEFAULT_LEAD_SOURCES} />
+              </div>
             </div>
           )}
         </div>
@@ -230,6 +245,11 @@ export default function DispatchPage() {
           <div><Label required>Job Title</Label><Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Roof inspection, Gutter repair, etc." autoFocus /></div>
 
           <div><Label>Priority</Label><Select value={priority} onChange={e => setPriority(e.target.value)} options={PRIORITY_OPTIONS} /></div>
+
+          <div>
+            <Label className="flex items-center gap-1"><Tag className="w-3.5 h-3.5" /> Lead Source</Label>
+            <Select value={leadSource} onChange={e => setLeadSource(e.target.value)} placeholder="Where did this lead come from?" options={DEFAULT_LEAD_SOURCES} />
+          </div>
 
           {/* Address */}
           <div className="space-y-2 pt-2 border-t border-gray-100">
