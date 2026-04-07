@@ -58,11 +58,11 @@ export async function createNotification(options: SendNotificationOptions) {
   return data
 }
 
-// ── SMS via Twilio (per-org credentials) ─────────────────────
+// ── SMS via Twilio ───────────────────────────────────────────
 
 /**
- * Send SMS using an organization's Twilio credentials.
- * Requires organization_id to look up per-org Twilio settings.
+ * Send SMS using the global Twilio account, with optional per-org override
+ * for enterprise clients with their own Twilio credentials.
  */
 export async function sendSMS(options: SendSMSOptions & { organization_id: string }) {
   const { createServiceRoleClient } = await import('@service-official/database')
@@ -74,16 +74,25 @@ export async function sendSMS(options: SendSMSOptions & { organization_id: strin
     .eq('organization_id', options.organization_id)
     .single()
 
-  if (!settings?.is_enabled || !settings.twilio_account_sid) {
+  if (settings && !settings.is_enabled) {
     return { success: false, error: 'SMS not enabled for this organization' }
   }
 
+  // Per-org creds (enterprise) or global env vars
+  const sid = settings?.twilio_account_sid || process.env.TWILIO_ACCOUNT_SID
+  const token = settings?.twilio_auth_token || process.env.TWILIO_AUTH_TOKEN
+  const phone = settings?.twilio_phone_number || process.env.TWILIO_PHONE_NUMBER
+
+  if (!sid || !token || !phone) {
+    return { success: false, error: 'Twilio not configured' }
+  }
+
   try {
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${settings.twilio_account_sid}/Messages.json`
-    const auth = Buffer.from(`${settings.twilio_account_sid}:${settings.twilio_auth_token}`).toString('base64')
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`
+    const auth = Buffer.from(`${sid}:${token}`).toString('base64')
 
     const params = new URLSearchParams({
-      From: settings.twilio_phone_number,
+      From: phone,
       To: options.to,
       Body: options.body,
     })

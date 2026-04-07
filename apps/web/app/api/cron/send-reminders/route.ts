@@ -31,16 +31,20 @@ export async function GET(request: NextRequest) {
   // Group by org to batch credential lookups
   const orgIds = [...new Set(reminders.map(r => r.organization_id))]
 
-  // Fetch SMS settings for all relevant orgs
+  // Fetch SMS settings for all relevant orgs (for notification toggles + optional per-org creds)
   const { data: allSettings } = await supabase
     .from('organization_sms_settings')
     .select('*')
     .in('organization_id', orgIds)
-    .eq('is_enabled', true)
 
   const settingsMap = new Map(
     (allSettings ?? []).map(s => [s.organization_id, s])
   )
+
+  // Global Twilio credentials (used for all clients unless they have their own)
+  const globalSid = process.env.TWILIO_ACCOUNT_SID
+  const globalToken = process.env.TWILIO_AUTH_TOKEN
+  const globalPhone = process.env.TWILIO_PHONE_NUMBER
 
   let sent = 0
   let failed = 0
@@ -48,8 +52,8 @@ export async function GET(request: NextRequest) {
   for (const reminder of reminders) {
     const settings = settingsMap.get(reminder.organization_id)
 
-    if (!settings) {
-      // Org doesn't have SMS enabled — mark as failed
+    // Check if SMS is explicitly disabled for this org
+    if (settings?.is_enabled === false) {
       await supabase
         .from('job_reminders')
         .update({ status: 'failed', error_message: 'SMS not enabled for this organization' })
@@ -58,10 +62,23 @@ export async function GET(request: NextRequest) {
       continue
     }
 
+    // Use per-org creds (enterprise) or fall back to global
+    const sid = settings?.twilio_account_sid || globalSid
+    const token = settings?.twilio_auth_token || globalToken
+    const phone = settings?.twilio_phone_number || globalPhone
+
+    if (!sid || !token || !phone) {
+      await supabase
+        .from('job_reminders')
+        .update({ status: 'failed', error_message: 'Twilio not configured' })
+        .eq('id', reminder.id)
+      failed++
+      continue
+    }
+
     try {
-      // Send via Twilio using the org's credentials
-      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${settings.twilio_account_sid}/Messages.json`
-      const auth = Buffer.from(`${settings.twilio_account_sid}:${settings.twilio_auth_token}`).toString('base64')
+      const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`
+      const auth = Buffer.from(`${sid}:${token}`).toString('base64')
 
       const res = await fetch(twilioUrl, {
         method: 'POST',
@@ -70,7 +87,7 @@ export async function GET(request: NextRequest) {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          From: settings.twilio_phone_number,
+          From: phone,
           To: reminder.phone_number,
           Body: reminder.message_body,
         }),

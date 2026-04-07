@@ -13,26 +13,57 @@ interface SendSmsResult {
 }
 
 /**
- * Send an SMS using the org's Twilio credentials.
- * Logs the message to job_reminders if jobId + profileId provided.
+ * Get Twilio credentials — uses global env vars (single account for all clients).
+ * Falls back to per-org settings if they exist (enterprise white-label).
+ */
+function getTwilioCredentials(orgSettings?: any) {
+  const globalSid = process.env.TWILIO_ACCOUNT_SID
+  const globalToken = process.env.TWILIO_AUTH_TOKEN
+  const globalPhone = process.env.TWILIO_PHONE_NUMBER
+
+  // Per-org override for enterprise clients with their own Twilio
+  if (orgSettings?.twilio_account_sid && orgSettings?.twilio_auth_token && orgSettings?.twilio_phone_number) {
+    return {
+      sid: orgSettings.twilio_account_sid,
+      token: orgSettings.twilio_auth_token,
+      phone: orgSettings.twilio_phone_number,
+    }
+  }
+
+  // Global account
+  if (globalSid && globalToken && globalPhone) {
+    return { sid: globalSid, token: globalToken, phone: globalPhone }
+  }
+
+  return null
+}
+
+/**
+ * Send an SMS via Twilio. Uses the global Twilio account by default,
+ * falls back to per-org credentials for enterprise clients.
  */
 export async function sendOrgSms({ organizationId, to, body }: SendSmsParams): Promise<SendSmsResult> {
   const supabase = createServiceRoleClient()
 
-  // Get org's Twilio settings
+  // Get org's SMS settings (for notification toggles + optional per-org creds)
   const { data: settings } = await supabase
     .from('organization_sms_settings')
-    .select('twilio_account_sid, twilio_auth_token, twilio_phone_number, is_enabled')
+    .select('*')
     .eq('organization_id', organizationId)
     .single()
 
-  if (!settings?.is_enabled || !settings.twilio_account_sid) {
+  if (settings && !settings.is_enabled) {
     return { success: false, error: 'SMS not enabled for this organization' }
   }
 
+  const creds = getTwilioCredentials(settings)
+  if (!creds) {
+    return { success: false, error: 'Twilio not configured' }
+  }
+
   try {
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${settings.twilio_account_sid}/Messages.json`
-    const auth = Buffer.from(`${settings.twilio_account_sid}:${settings.twilio_auth_token}`).toString('base64')
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${creds.sid}/Messages.json`
+    const auth = Buffer.from(`${creds.sid}:${creds.token}`).toString('base64')
 
     const res = await fetch(twilioUrl, {
       method: 'POST',
@@ -41,7 +72,7 @@ export async function sendOrgSms({ organizationId, to, body }: SendSmsParams): P
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        From: settings.twilio_phone_number,
+        From: creds.phone,
         To: to,
         Body: body,
       }),
@@ -61,7 +92,7 @@ export async function sendOrgSms({ organizationId, to, body }: SendSmsParams): P
 
 /**
  * Send customer notification for a job.
- * Looks up the customer's phone from the job and sends via org's Twilio.
+ * Looks up the customer's phone from the job and sends via Twilio.
  */
 export async function notifyCustomer(
   organizationId: string,
@@ -78,12 +109,12 @@ export async function notifyCustomer(
     .eq('organization_id', organizationId)
     .single()
 
-  if (!smsSettings?.is_enabled) return { success: false, error: 'SMS not enabled' }
+  if (smsSettings && !smsSettings.is_enabled) return { success: false, error: 'SMS not enabled' }
 
   const enabledMap: Record<string, boolean> = {
-    booked: smsSettings.notify_customer_booked ?? true,
-    on_the_way: smsSettings.notify_customer_en_route ?? true,
-    completed: smsSettings.notify_customer_completed ?? false,
+    booked: smsSettings?.notify_customer_booked ?? true,
+    on_the_way: smsSettings?.notify_customer_en_route ?? true,
+    completed: smsSettings?.notify_customer_completed ?? false,
     custom: true,
   }
 
