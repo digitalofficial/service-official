@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Permissions' }
 
-const ROLES = ['owner', 'office_manager', 'estimator', 'project_manager', 'foreman', 'technician', 'dispatcher', 'subcontractor', 'viewer']
+const ROLES = ['owner', 'office_manager', 'project_manager', 'foreman', 'technician', 'dispatcher', 'subcontractor', 'viewer']
 
 const PERMISSIONS = [
   { label: 'View projects', roles: ['owner', 'admin', 'office_manager', 'estimator', 'project_manager', 'foreman', 'technician', 'dispatcher', 'subcontractor', 'viewer'] },
@@ -11,8 +11,8 @@ const PERMISSIONS = [
   { label: 'Delete projects', roles: ['owner', 'admin'] },
   { label: 'View customers', roles: ['owner', 'admin', 'office_manager', 'estimator', 'project_manager', 'dispatcher'] },
   { label: 'Manage customers', roles: ['owner', 'admin', 'office_manager'] },
-  { label: 'Create estimates', roles: ['owner', 'admin', 'estimator'] },
-  { label: 'Send estimates', roles: ['owner', 'admin', 'office_manager', 'estimator'] },
+  { label: 'Create estimates', roles: ['owner', 'admin'] },
+  { label: 'Send estimates', roles: ['owner', 'admin', 'office_manager'] },
   { label: 'Create invoices', roles: ['owner', 'admin', 'office_manager'] },
   { label: 'View financials', roles: ['owner', 'admin', 'office_manager'] },
   { label: 'Manage jobs', roles: ['owner', 'admin', 'office_manager', 'project_manager', 'dispatcher'] },

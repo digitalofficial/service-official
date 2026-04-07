@@ -12,7 +12,6 @@ const ROLE_COLORS: Record<string, string> = {
   admin: 'bg-blue-100 text-blue-700',
   office_manager: 'bg-purple-100 text-purple-700',
   project_manager: 'bg-indigo-100 text-indigo-700',
-  estimator: 'bg-cyan-100 text-cyan-700',
   foreman: 'bg-amber-100 text-amber-700',
   technician: 'bg-gray-100 text-gray-700',
   dispatcher: 'bg-orange-100 text-orange-700',

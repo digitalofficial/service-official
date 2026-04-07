@@ -9,7 +9,6 @@ import { toast } from 'sonner'
 const ROLE_OPTIONS = [
   { label: 'Admin', value: 'admin' },
   { label: 'Office Manager', value: 'office_manager' },
-  { label: 'Estimator', value: 'estimator' },
   { label: 'Project Manager', value: 'project_manager' },
   { label: 'Foreman', value: 'foreman' },
   { label: 'Technician', value: 'technician' },

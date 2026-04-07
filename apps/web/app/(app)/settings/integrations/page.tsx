@@ -20,7 +20,7 @@ export default async function IntegrationsPage() {
       description: 'Accept credit card and ACH payments',
       category: 'Payments',
       connected: stripeConnected,
-      href: '/settings/billing',
+      href: '/settings/payments',
     },
     {
       name: 'SMS & Reminders',

@@ -4,15 +4,15 @@
 const PAGE_ACCESS: Record<string, string[]> = {
   '/dashboard': ['*'],
   '/dispatch': ['owner', 'admin', 'office_manager', 'dispatcher'],
-  '/projects': ['owner', 'admin', 'office_manager', 'estimator', 'project_manager', 'viewer'],
+  '/projects': ['owner', 'admin', 'office_manager', 'project_manager', 'viewer'],
   '/jobs': ['*'],
   '/calendar': ['*'],
-  '/customers': ['owner', 'admin', 'office_manager', 'estimator', 'project_manager', 'dispatcher'],
+  '/customers': ['owner', 'admin', 'office_manager', 'project_manager', 'dispatcher'],
   '/leads': ['owner', 'admin', 'office_manager'],
-  '/estimates': ['owner', 'admin', 'office_manager', 'estimator'],
+  '/estimates': ['owner', 'admin', 'office_manager'],
   '/invoices': ['owner', 'admin', 'office_manager'],
   '/payments': ['owner', 'admin', 'office_manager'],
-  '/estimator': ['owner', 'admin', 'office_manager', 'estimator'],
+  '/estimator': ['owner', 'admin', 'office_manager'],
   '/team': ['owner', 'admin', 'office_manager', 'project_manager', 'dispatcher'],
   '/messages': ['owner', 'admin', 'office_manager', 'project_manager'],
   '/automation': ['owner', 'admin'],
@@ -45,4 +45,4 @@ export const SELF_ONLY_ROLES = ['technician', 'foreman', 'subcontractor']
 export const FINANCIAL_ROLES = ['owner', 'admin', 'office_manager']
 
 // Roles that can edit/create data
-export const EDIT_ROLES = ['owner', 'admin', 'office_manager', 'estimator', 'project_manager', 'foreman', 'dispatcher']
+export const EDIT_ROLES = ['owner', 'admin', 'office_manager', 'project_manager', 'foreman', 'dispatcher']

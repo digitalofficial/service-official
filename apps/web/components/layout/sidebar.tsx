@@ -17,7 +17,6 @@ const ROLE_ACCESS: Record<string, string[]> = {
   owner: ['*'],
   admin: ['*'],
   office_manager: ['/dashboard', '/dispatch', '/projects', '/jobs', '/calendar', '/customers', '/leads', '/estimates', '/invoices', '/payments', '/estimator', '/team', '/messages', '/settings'],
-  estimator: ['/dashboard', '/projects', '/jobs', '/customers', '/estimates', '/estimator'],
   project_manager: ['/dashboard', '/projects', '/jobs', '/calendar', '/customers', '/estimates', '/team', '/messages'],
   foreman: ['/dashboard', '/jobs', '/calendar', '/team'],
   technician: ['/dashboard', '/jobs', '/calendar'],

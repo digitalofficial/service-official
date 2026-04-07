@@ -8,7 +8,6 @@ import { toast } from 'sonner'
 const ROLES = [
   { value: 'admin', label: 'Admin' },
   { value: 'office_manager', label: 'Office Manager' },
-  { value: 'estimator', label: 'Estimator' },
   { value: 'project_manager', label: 'Project Manager' },
   { value: 'foreman', label: 'Foreman' },
   { value: 'technician', label: 'Technician' },
