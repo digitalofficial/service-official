@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@service-official/database'
 import { z } from 'zod'
 import crypto from 'crypto'
+import { getTierMaxUsers } from '@/lib/auth/tier-access'
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id, role, organization:organizations(name)')
+    .select('organization_id, role, organization:organizations(name, subscription_tier)')
     .eq('id', user.id)
     .single()
 
@@ -47,6 +48,25 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
   const validated = inviteSchema.parse(body)
+
+  // Check user limit for tier
+  const org = profile.organization as any
+  const tier = org?.subscription_tier ?? 'solo'
+  const maxUsers = getTierMaxUsers(tier)
+
+  const { count: currentUsers } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('organization_id', profile.organization_id)
+    .eq('is_active', true)
+
+  if ((currentUsers ?? 0) >= maxUsers) {
+    return NextResponse.json({
+      error: `Your ${tier} plan allows up to ${maxUsers} user${maxUsers === 1 ? '' : 's'}. Upgrade to add more team members.`,
+      upgrade_required: true,
+      current_tier: tier,
+    }, { status: 403 })
+  }
 
   // Check if already a member
   const { data: existingProfile } = await supabase

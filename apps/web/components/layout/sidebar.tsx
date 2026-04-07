@@ -8,8 +8,9 @@ import {
   LayoutDashboard, FolderKanban, Users, UserPlus, Briefcase, Radio,
   Calendar, FileText, Receipt, CreditCard, MessageSquare,
   Zap, BarChart3, Map, Cpu, Settings, Building2,
-  HardHat, Menu, X
+  HardHat, Menu, X, Lock
 } from 'lucide-react'
+import { tierHasFeature } from '@/lib/auth/tier-access'
 
 // Role-based nav access
 // owner/admin see everything. Other roles see only what's listed.
@@ -48,14 +49,21 @@ interface SidebarProps {
   profile: any
   organization: any
   isSuperAdmin?: boolean
+  tier?: string
 }
 
-export function Sidebar({ profile, organization, isSuperAdmin = false }: SidebarProps) {
+export function Sidebar({ profile, organization, isSuperAdmin = false, tier = 'solo' }: SidebarProps) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const userRole = profile?.role ?? 'viewer'
   const access = ROLE_ACCESS[userRole] ?? ROLE_ACCESS.viewer
-  const visibleNav = access.includes('*') ? NAV_ITEMS : NAV_ITEMS.filter(item => access.includes(item.href))
+  const roleFiltered = access.includes('*') ? NAV_ITEMS : NAV_ITEMS.filter(item => access.includes(item.href))
+
+  // Apply tier gating — show locked items with lock icon instead of hiding them
+  const visibleNav = roleFiltered.map(item => ({
+    ...item,
+    locked: !tierHasFeature(tier, item.href),
+  }))
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -93,6 +101,21 @@ export function Sidebar({ profile, organization, isSuperAdmin = false }: Sidebar
         {visibleNav.map((item) => {
           const Icon = item.icon
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+
+          if (item.locked) {
+            return (
+              <Link
+                key={item.href}
+                href="/settings/billing"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 text-sm text-gray-600 hover:bg-gray-800/50 transition-colors group"
+                title={`Upgrade to unlock ${item.label}`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="flex-1">{item.label}</span>
+                <Lock className="w-3 h-3 text-gray-600 group-hover:text-amber-500" />
+              </Link>
+            )
+          }
 
           return (
             <Link

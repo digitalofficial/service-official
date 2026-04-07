@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@service-official/database'
+import { tierHasSms } from '@/lib/auth/tier-access'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -31,6 +32,14 @@ export async function GET(request: NextRequest) {
   // Group by org to batch credential lookups
   const orgIds = [...new Set(reminders.map(r => r.organization_id))]
 
+  // Fetch org tiers to check SMS access
+  const { data: orgs } = await supabase
+    .from('organizations')
+    .select('id, subscription_tier')
+    .in('id', orgIds)
+
+  const orgTierMap = new Map((orgs ?? []).map(o => [o.id, o.subscription_tier]))
+
   // Fetch SMS settings for all relevant orgs (for notification toggles + optional per-org creds)
   const { data: allSettings } = await supabase
     .from('organization_sms_settings')
@@ -51,6 +60,17 @@ export async function GET(request: NextRequest) {
 
   for (const reminder of reminders) {
     const settings = settingsMap.get(reminder.organization_id)
+
+    // Check tier — skip SMS for orgs on solo plan
+    const orgTier = orgTierMap.get(reminder.organization_id) ?? 'solo'
+    if (!tierHasSms(orgTier)) {
+      await supabase
+        .from('job_reminders')
+        .update({ status: 'failed', error_message: 'SMS requires Team plan or higher' })
+        .eq('id', reminder.id)
+      failed++
+      continue
+    }
 
     // Check if SMS is explicitly disabled for this org
     if (settings?.is_enabled === false) {

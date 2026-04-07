@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@service-official/database'
 import { notifyCustomer } from '@/lib/sms'
+import { tierHasSms } from '@/lib/auth/tier-access'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('organization_id, organization:organizations(subscription_tier)').eq('id', user.id).single()
+  const orgTier = ((profile as any)?.organization as any)?.subscription_tier ?? 'solo'
   const body = await request.json()
   const { assigned_to } = body
 
@@ -32,6 +34,17 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   if (!assignee?.phone) {
     return NextResponse.json({ data: job, warning: 'Job assigned but employee has no phone number — no SMS sent' })
+  }
+
+  // Check if tier includes SMS
+  if (!tierHasSms(orgTier)) {
+    return NextResponse.json({
+      data: job,
+      reminders_scheduled: 0,
+      customer_notified: false,
+      message: `Job assigned to ${assignee.first_name}. SMS reminders require Team plan or higher.`,
+      upgrade_required: true,
+    })
   }
 
   // Respect employee's SMS opt-out preference
