@@ -31,3 +31,14 @@ supabase/.temp
 
 # Generated
 packages/types/src/database.types.ts
+
+# Expo / React Native
+.expo/
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+web-build/

@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@service-official/database'
 
+// GET /api/profile — get current user's profile
+export async function GET() {
+  const supabase = createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, organization_id, role, first_name, last_name, email, phone, avatar_url')
+    .eq('id', user.id)
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ data })
+}
+
 // PATCH /api/profile — update current user's profile (notification prefs, reminder prefs)
 export async function PATCH(request: NextRequest) {
   const supabase = createServerSupabaseClient()

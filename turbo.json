@@ -12,7 +12,10 @@
     "TWILIO_PHONE_NUMBER",
     "RESEND_API_KEY",
     "ANTHROPIC_API_KEY",
-    "NEXT_PUBLIC_APP_URL"
+    "NEXT_PUBLIC_APP_URL",
+    "EXPO_PUBLIC_SUPABASE_URL",
+    "EXPO_PUBLIC_SUPABASE_ANON_KEY",
+    "EXPO_PUBLIC_API_URL"
   ],
   "tasks": {
     "build": {
@@ -34,6 +37,14 @@
     },
     "db:seed": {
       "cache": false
+    },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
+    "ios": {
+      "cache": false,
+      "persistent": true
     }
   }
 }
