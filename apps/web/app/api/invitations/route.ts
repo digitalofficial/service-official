@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id, role, organization:organizations(name, subscription_tier)')
+    .select('organization_id, role, organization:organizations(name, subscription_tier, subscription_status)')
     .eq('id', user.id)
     .single()
 
@@ -52,7 +52,8 @@ export async function POST(request: NextRequest) {
   // Check user limit for tier
   const org = profile.organization as any
   const tier = org?.subscription_tier ?? 'solo'
-  const maxUsers = getTierMaxUsers(tier)
+  const status = org?.subscription_status
+  const maxUsers = getTierMaxUsers(tier, status)
 
   const { count: currentUsers } = await supabase
     .from('profiles')
@@ -61,8 +62,11 @@ export async function POST(request: NextRequest) {
     .eq('is_active', true)
 
   if ((currentUsers ?? 0) >= maxUsers) {
+    const trialMsg = status === 'trialing'
+      ? `Your free trial allows up to ${maxUsers} users (Growth plan). Upgrade to Enterprise for unlimited users.`
+      : `Your ${tier} plan allows up to ${maxUsers} user${maxUsers === 1 ? '' : 's'}. Upgrade to add more team members.`
     return NextResponse.json({
-      error: `Your ${tier} plan allows up to ${maxUsers} user${maxUsers === 1 ? '' : 's'}. Upgrade to add more team members.`,
+      error: trialMsg,
       upgrade_required: true,
       current_tier: tier,
     }, { status: 403 })

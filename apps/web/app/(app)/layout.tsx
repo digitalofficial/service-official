@@ -104,7 +104,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Pass activeOrgId as a data attribute so client components can read it
   return (
     <div className="flex h-[100dvh] bg-gray-50 overflow-hidden max-w-[100vw]" data-org-id={activeOrgId}>
-      <Sidebar profile={profile} organization={activeOrg} isSuperAdmin={isSuperAdmin} tier={activeOrg?.subscription_tier ?? 'solo'} />
+      <Sidebar profile={profile} organization={activeOrg} isSuperAdmin={isSuperAdmin} tier={activeOrg?.subscription_tier ?? 'solo'} subscriptionStatus={activeOrg?.subscription_status} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <header className="flex items-center justify-between h-14 px-4 lg:px-6 bg-white border-b border-gray-200 shrink-0">
           {/* Left side — spacer for hamburger on mobile + org switcher */}

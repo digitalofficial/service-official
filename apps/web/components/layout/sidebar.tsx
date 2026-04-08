@@ -50,9 +50,10 @@ interface SidebarProps {
   organization: any
   isSuperAdmin?: boolean
   tier?: string
+  subscriptionStatus?: string
 }
 
-export function Sidebar({ profile, organization, isSuperAdmin = false, tier = 'solo' }: SidebarProps) {
+export function Sidebar({ profile, organization, isSuperAdmin = false, tier = 'solo', subscriptionStatus }: SidebarProps) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const userRole = profile?.role ?? 'viewer'
@@ -62,7 +63,7 @@ export function Sidebar({ profile, organization, isSuperAdmin = false, tier = 's
   // Apply tier gating — show locked items with lock icon instead of hiding them
   const visibleNav = roleFiltered.map(item => ({
     ...item,
-    locked: !tierHasFeature(tier, item.href),
+    locked: !tierHasFeature(tier, item.href, subscriptionStatus),
   }))
 
   // Close sidebar on route change (mobile)

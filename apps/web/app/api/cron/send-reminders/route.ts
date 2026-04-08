@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
   // Fetch org tiers to check SMS access
   const { data: orgs } = await supabase
     .from('organizations')
-    .select('id, subscription_tier')
+    .select('id, subscription_tier, subscription_status')
     .in('id', orgIds)
 
-  const orgTierMap = new Map((orgs ?? []).map(o => [o.id, o.subscription_tier]))
+  const orgTierMap = new Map((orgs ?? []).map(o => [o.id, { tier: o.subscription_tier, status: o.subscription_status }]))
 
   // Fetch SMS settings for all relevant orgs (for notification toggles + optional per-org creds)
   const { data: allSettings } = await supabase
@@ -62,8 +62,8 @@ export async function GET(request: NextRequest) {
     const settings = settingsMap.get(reminder.organization_id)
 
     // Check tier — skip SMS for orgs on solo plan
-    const orgTier = orgTierMap.get(reminder.organization_id) ?? 'solo'
-    if (!tierHasSms(orgTier)) {
+    const orgInfo = orgTierMap.get(reminder.organization_id) ?? { tier: 'solo', status: 'active' }
+    if (!tierHasSms(orgInfo.tier, orgInfo.status)) {
       await supabase
         .from('job_reminders')
         .update({ status: 'failed', error_message: 'SMS requires Team plan or higher' })

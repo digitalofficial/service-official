@@ -8,8 +8,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id, organization:organizations(subscription_tier)').eq('id', user.id).single()
-  const orgTier = ((profile as any)?.organization as any)?.subscription_tier ?? 'solo'
+  const { data: profile } = await supabase.from('profiles').select('organization_id, organization:organizations(subscription_tier, subscription_status)').eq('id', user.id).single()
+  const orgData = (profile as any)?.organization as any
+  const orgTier = orgData?.subscription_tier ?? 'solo'
+  const orgStatus = orgData?.subscription_status
   const body = await request.json()
   const { assigned_to } = body
 
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 
   // Check if tier includes SMS
-  if (!tierHasSms(orgTier)) {
+  if (!tierHasSms(orgTier, orgStatus)) {
     return NextResponse.json({
       data: job,
       reminders_scheduled: 0,

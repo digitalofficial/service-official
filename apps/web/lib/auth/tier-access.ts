@@ -78,17 +78,28 @@ const TIER_CONFIG: Record<SubscriptionTier, TierLimits> = {
 }
 
 /**
+ * During a free trial, users get Growth-level access so they can
+ * experience the full product. Once the trial ends, they're locked
+ * to whatever tier they subscribe to.
+ */
+export function getEffectiveTier(tier: string, status?: string): SubscriptionTier {
+  if (status === 'trialing') return 'growth'
+  return (tier as SubscriptionTier) ?? 'solo'
+}
+
+/**
  * Get the tier config for a given subscription tier.
  */
-export function getTierConfig(tier: string): TierLimits {
-  return TIER_CONFIG[(tier as SubscriptionTier)] ?? TIER_CONFIG.solo
+export function getTierConfig(tier: string, status?: string): TierLimits {
+  const effective = getEffectiveTier(tier, status)
+  return TIER_CONFIG[effective] ?? TIER_CONFIG.solo
 }
 
 /**
  * Check if a feature (nav href) is available for a given tier.
  */
-export function tierHasFeature(tier: string, feature: string): boolean {
-  const config = getTierConfig(tier)
+export function tierHasFeature(tier: string, feature: string, status?: string): boolean {
+  const config = getTierConfig(tier, status)
   if (config.features.includes('*')) return true
   return config.features.includes(feature)
 }
@@ -96,8 +107,8 @@ export function tierHasFeature(tier: string, feature: string): boolean {
 /**
  * Get max users allowed for a tier.
  */
-export function getTierMaxUsers(tier: string): number {
-  return getTierConfig(tier).max_users
+export function getTierMaxUsers(tier: string, status?: string): number {
+  return getTierConfig(tier, status).max_users
 }
 
 /**
@@ -118,6 +129,10 @@ export function getUpgradeTier(currentTier: string, feature: string): string | n
 /**
  * Features that require SMS (gated behind team+ tier).
  */
-export function tierHasSms(tier: string): boolean {
-  return tier === 'team' || tier === 'growth' || tier === 'enterprise'
+/**
+ * Features that require SMS (gated behind team+ tier).
+ */
+export function tierHasSms(tier: string, status?: string): boolean {
+  const effective = getEffectiveTier(tier, status)
+  return effective === 'team' || effective === 'growth' || effective === 'enterprise'
 }
