@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
 
 /**
  * GET /api/team/availability?days=7
  * Returns team members with their scheduled jobs for the next N days.
  */
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Auth check with user's session
+  const authClient = createServerSupabaseClient()
+  const { data: { user } } = await authClient.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const { data: profile } = await authClient.from('profiles').select('organization_id').eq('id', user.id).single()
   const orgId = profile!.organization_id
+
+  // Use service role for data queries to bypass RLS
+  const supabase = createServiceRoleClient()
 
   const { searchParams } = new URL(request.url)
   const days = Math.min(parseInt(searchParams.get('days') ?? '7'), 14)
