@@ -14,30 +14,31 @@ export default async function AdminClientsPage() {
     .select(`
       *,
       domains:organization_domains(domain, is_verified),
-      profiles(id, user_id)
+      profiles(id)
     `)
     .order('created_at', { ascending: false })
 
-  // Get last sign-in times from auth.users
-  const orgUserIds = orgs?.flatMap(org =>
-    (org.profiles as any[])?.map((p: any) => p.user_id).filter(Boolean) ?? []
-  ) ?? []
-
-  const { data: authUsers } = orgUserIds.length
-    ? await supabase.auth.admin.listUsers()
-    : { data: { users: [] } } as any
-
+  // Get last sign-in times from auth.users (profiles.id = auth.users.id)
   const lastSignInByOrg: Record<string, string | null> = {}
-  if (orgs && authUsers?.users) {
-    for (const org of orgs) {
-      const userIds = new Set((org.profiles as any[])?.map((p: any) => p.user_id) ?? [])
-      const signIns = authUsers.users
-        .filter((u: any) => userIds.has(u.id) && u.last_sign_in_at)
-        .map((u: any) => u.last_sign_in_at as string)
-      lastSignInByOrg[org.id] = signIns.length
-        ? signIns.sort().reverse()[0]
-        : null
+  try {
+    const { data: authData } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+    if (orgs && authData?.users) {
+      const signInMap = new Map<string, string>()
+      for (const u of authData.users) {
+        if (u.last_sign_in_at) signInMap.set(u.id, u.last_sign_in_at)
+      }
+      for (const org of orgs) {
+        const profileIds = (org.profiles as any[])?.map((p: any) => p.id) ?? []
+        const signIns = profileIds
+          .map((id: string) => signInMap.get(id))
+          .filter(Boolean) as string[]
+        lastSignInByOrg[org.id] = signIns.length
+          ? signIns.sort().reverse()[0]
+          : null
+      }
     }
+  } catch {
+    // If auth admin API fails, last login will show as "—"
   }
 
   // Get revenue per org
@@ -131,7 +132,7 @@ export default async function AdminClientsPage() {
                   <td className="px-4 py-4 text-xs text-gray-500">
                     {lastSignInByOrg[org.id]
                       ? formatDate(lastSignInByOrg[org.id]!, { month: 'short', day: 'numeric', year: 'numeric' })
-                      : <span className="text-gray-600">Never</span>
+                      : <span className="text-gray-600">—</span>
                     }
                   </td>
                   <td className="px-4 py-4">
