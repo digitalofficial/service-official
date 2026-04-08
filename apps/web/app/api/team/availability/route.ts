@@ -16,35 +16,48 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const days = Math.min(parseInt(searchParams.get('days') ?? '7'), 14)
 
-  // Date range: today through N days
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const endDate = new Date(today)
-  endDate.setDate(endDate.getDate() + days)
+  // Use UTC-based date range to match Supabase timestamps
+  const now = new Date()
+  // Start from beginning of today (UTC)
+  const todayStr = now.toISOString().split('T')[0]
+  const startDate = `${todayStr}T00:00:00Z`
 
-  // Fetch active team members (field roles that get assigned jobs)
+  const endDate = new Date(now)
+  endDate.setDate(endDate.getDate() + days)
+  const endStr = endDate.toISOString()
+
+  // Fetch active team members (any role that could be assigned jobs)
   const { data: members } = await supabase
     .from('profiles')
     .select('id, first_name, last_name, role, title')
     .eq('organization_id', orgId)
     .eq('is_active', true)
-    .in('role', ['owner', 'admin', 'foreman', 'technician', 'project_manager', 'subcontractor', 'dispatcher'])
+    .in('role', ['owner', 'admin', 'office_manager', 'foreman', 'technician', 'project_manager', 'subcontractor', 'dispatcher'])
     .order('first_name', { ascending: true })
 
   if (!members?.length) {
     return NextResponse.json({ data: [], days_range: [] })
   }
 
-  // Fetch all jobs in the date range that are assigned
+  // Fetch ALL jobs in the date range that are assigned (don't filter by status)
   const { data: jobs } = await supabase
     .from('jobs')
     .select('id, title, assigned_to, scheduled_start, scheduled_end, status, customer:customers(first_name, last_name, company_name)')
     .eq('organization_id', orgId)
     .not('assigned_to', 'is', null)
-    .gte('scheduled_start', today.toISOString())
-    .lt('scheduled_start', endDate.toISOString())
-    .in('status', ['scheduled', 'in_progress', 'on_the_way'])
+    .not('scheduled_start', 'is', null)
+    .gte('scheduled_start', startDate)
+    .lt('scheduled_start', endStr)
+    .not('status', 'eq', 'canceled')
     .order('scheduled_start', { ascending: true })
+
+  // Build days array using local date strings
+  const daysRange: string[] = []
+  for (let i = 0; i < days; i++) {
+    const d = new Date(now)
+    d.setDate(d.getDate() + i)
+    daysRange.push(d.toISOString().split('T')[0])
+  }
 
   // Group jobs by assigned_to → date
   const jobsByMember = new Map<string, Map<string, any[]>>()
@@ -52,7 +65,8 @@ export async function GET(request: NextRequest) {
   for (const job of jobs ?? []) {
     if (!job.assigned_to || !job.scheduled_start) continue
 
-    const dateKey = new Date(job.scheduled_start).toISOString().split('T')[0]
+    // Get the date portion from the scheduled_start
+    const dateKey = job.scheduled_start.split('T')[0]
 
     if (!jobsByMember.has(job.assigned_to)) {
       jobsByMember.set(job.assigned_to, new Map())
@@ -73,14 +87,6 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  // Build days array
-  const daysRange: string[] = []
-  for (let i = 0; i < days; i++) {
-    const d = new Date(today)
-    d.setDate(d.getDate() + i)
-    daysRange.push(d.toISOString().split('T')[0])
-  }
-
   // Build response
   const data = members.map(m => {
     const memberDays = jobsByMember.get(m.id)
@@ -90,7 +96,7 @@ export async function GET(request: NextRequest) {
       schedule[day] = memberDays?.get(day) ?? []
     }
 
-    const totalJobs = Array.from(memberDays?.values() ?? []).reduce((sum, jobs) => sum + jobs.length, 0)
+    const totalJobs = Array.from(memberDays?.values() ?? []).reduce((sum, dayJobs) => sum + dayJobs.length, 0)
 
     return {
       id: m.id,
