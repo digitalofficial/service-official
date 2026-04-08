@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { cn } from '@/lib/utils/cn'
 import {
   LayoutDashboard, FolderKanban, Users, UserPlus, Briefcase, Radio,
@@ -84,9 +85,7 @@ export function Sidebar({ profile, organization, isSuperAdmin = false, tier = 's
       {/* Logo */}
       <div className="flex items-center justify-between px-4 py-5 border-b border-gray-800">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 shrink-0">
-            <HardHat className="w-4 h-4 text-white" />
-          </div>
+          <Image src="/icon.png" alt="Service Official" width={32} height={32} className="rounded-lg shrink-0" />
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate">{organization?.name}</p>
             <p className="text-xs text-gray-400 truncate capitalize">{organization?.industry?.replace('_', ' ')}</p>
