@@ -8,6 +8,10 @@ export function ClientActions({ org }: { org: any }) {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [showTierModal, setShowTierModal] = useState(false)
+  const [showTrialModal, setShowTrialModal] = useState(false)
+  const [trialDate, setTrialDate] = useState(
+    org.trial_ends_at ? new Date(org.trial_ends_at).toISOString().split('T')[0] : ''
+  )
 
   const updateOrg = async (updates: Record<string, any>, action: string) => {
     setLoading(action)
@@ -114,6 +118,69 @@ export function ClientActions({ org }: { org: any }) {
                 {tier}
               </button>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Trial Management */}
+      <div className="relative">
+        <button
+          onClick={() => setShowTrialModal(!showTrialModal)}
+          className="px-3 py-1.5 text-sm bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+        >
+          Trial
+        </button>
+        {showTrialModal && (
+          <div className="absolute right-0 top-10 bg-gray-800 border border-gray-700 rounded-xl p-4 w-64 z-10 shadow-xl space-y-3">
+            <p className="text-xs text-gray-400 font-medium">Trial End Date</p>
+            <input
+              type="date"
+              value={trialDate}
+              onChange={e => setTrialDate(e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-gray-900 border border-gray-600 rounded-lg text-white"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (!trialDate) return
+                  updateOrg({
+                    trial_ends_at: new Date(trialDate + 'T23:59:59Z').toISOString(),
+                    subscription_status: 'trialing',
+                  }, 'trial')
+                  setShowTrialModal(false)
+                }}
+                disabled={!trialDate || loading === 'trial'}
+                className="flex-1 px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+              >
+                {loading === 'trial' ? 'Saving...' : 'Set Trial'}
+              </button>
+              <button
+                onClick={() => {
+                  updateOrg({ trial_ends_at: null, subscription_status: 'active' }, 'trial')
+                  setShowTrialModal(false)
+                  setTrialDate('')
+                }}
+                disabled={loading === 'trial'}
+                className="px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+              >
+                End Trial
+              </button>
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {[7, 14, 30, 60].map(days => (
+                <button
+                  key={days}
+                  onClick={() => {
+                    const d = new Date()
+                    d.setDate(d.getDate() + days)
+                    setTrialDate(d.toISOString().split('T')[0])
+                  }}
+                  className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 rounded transition-colors"
+                >
+                  +{days}d
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>

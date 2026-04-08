@@ -173,7 +173,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
         <div className="grid grid-cols-2 gap-3 sm:gap-4 text-sm">
           <Detail label="Industry" value={org.industry?.replace(/_/g, ' ')} />
           <Detail label="Created" value={formatDate(org.created_at)} />
-          <Detail label="Trial Ends" value={org.trial_ends_at ? formatDate(org.trial_ends_at) : 'N/A'} />
+          <Detail label="Trial Ends" value={org.trial_ends_at ? formatDate(org.trial_ends_at, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'N/A'} />
           <Detail label="Timezone" value={org.timezone} />
         </div>
       </div>

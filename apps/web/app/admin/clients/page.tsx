@@ -131,7 +131,7 @@ export default async function AdminClientsPage() {
                   </td>
                   <td className="px-4 py-4 text-xs text-gray-500">
                     {lastSignInByOrg[org.id]
-                      ? formatDate(lastSignInByOrg[org.id]!, { month: 'short', day: 'numeric', year: 'numeric' })
+                      ? formatDate(lastSignInByOrg[org.id]!, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
                       : <span className="text-gray-600">—</span>
                     }
                   </td>
