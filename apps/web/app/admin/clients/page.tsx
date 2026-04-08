@@ -14,9 +14,31 @@ export default async function AdminClientsPage() {
     .select(`
       *,
       domains:organization_domains(domain, is_verified),
-      profiles(id)
+      profiles(id, user_id)
     `)
     .order('created_at', { ascending: false })
+
+  // Get last sign-in times from auth.users
+  const orgUserIds = orgs?.flatMap(org =>
+    (org.profiles as any[])?.map((p: any) => p.user_id).filter(Boolean) ?? []
+  ) ?? []
+
+  const { data: authUsers } = orgUserIds.length
+    ? await supabase.auth.admin.listUsers()
+    : { data: { users: [] } } as any
+
+  const lastSignInByOrg: Record<string, string | null> = {}
+  if (orgs && authUsers?.users) {
+    for (const org of orgs) {
+      const userIds = new Set((org.profiles as any[])?.map((p: any) => p.user_id) ?? [])
+      const signIns = authUsers.users
+        .filter((u: any) => userIds.has(u.id) && u.last_sign_in_at)
+        .map((u: any) => u.last_sign_in_at as string)
+      lastSignInByOrg[org.id] = signIns.length
+        ? signIns.sort().reverse()[0]
+        : null
+    }
+  }
 
   // Get revenue per org
   const { data: invoices } = await supabase
@@ -44,7 +66,7 @@ export default async function AdminClientsPage() {
       </div>
 
       <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-x-auto">
-        <table className="w-full min-w-[700px]">
+        <table className="w-full min-w-[800px]">
           <thead>
             <tr className="text-xs text-gray-500 border-b border-gray-800">
               <th className="text-left px-5 py-3 font-medium">Company</th>
@@ -54,6 +76,7 @@ export default async function AdminClientsPage() {
               <th className="text-left px-4 py-3 font-medium">Users</th>
               <th className="text-left px-4 py-3 font-medium">Revenue</th>
               <th className="text-left px-4 py-3 font-medium">Joined</th>
+              <th className="text-left px-4 py-3 font-medium">Last Login</th>
               <th className="text-left px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
@@ -104,6 +127,12 @@ export default async function AdminClientsPage() {
                   </td>
                   <td className="px-4 py-4 text-xs text-gray-500">
                     {formatDate(org.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </td>
+                  <td className="px-4 py-4 text-xs text-gray-500">
+                    {lastSignInByOrg[org.id]
+                      ? formatDate(lastSignInByOrg[org.id]!, { month: 'short', day: 'numeric', year: 'numeric' })
+                      : <span className="text-gray-600">Never</span>
+                    }
                   </td>
                   <td className="px-4 py-4">
                     <Link
