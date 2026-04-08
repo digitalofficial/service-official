@@ -106,13 +106,12 @@ export default async function DashboardPage() {
   if (isSelfOnly) upcomingQuery = upcomingQuery.eq('assigned_to', user.id)
   const { data: upcomingJobs } = await upcomingQuery
 
-  // All jobs for map — any job with an address
+  // All jobs for map
   let mapQuery = supabase
     .from('jobs')
     .select('id, title, status, scheduled_start, address_line1, city, state, zip, coordinates, customer:customers(first_name, last_name, company_name), assignee:profiles!assigned_to(first_name, last_name)')
     .eq('organization_id', orgId)
-    .not('address_line1', 'is', null)
-    .order('scheduled_start', { ascending: true })
+    .order('created_at', { ascending: false })
     .limit(50)
 
   if (isSelfOnly) mapQuery = mapQuery.eq('assigned_to', user.id)
@@ -249,8 +248,10 @@ export default async function DashboardPage() {
                     )}
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium capitalize ${
                       job.status === 'completed' ? 'bg-green-100 text-green-700' :
-                      job.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                      job.status === 'en_route' ? 'bg-yellow-100 text-yellow-700' :
+                      job.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
+                      job.status === 'en_route' ? 'bg-sky-100 text-sky-700' :
+                      job.status === 'on_site' ? 'bg-indigo-100 text-indigo-700' :
+                      job.status === 'scheduled' ? 'bg-blue-50 text-blue-700' :
                       'bg-gray-100 text-gray-600'
                     }`}>
                       {job.status.replace(/_/g, ' ')}

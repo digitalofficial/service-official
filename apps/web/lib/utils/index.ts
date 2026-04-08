@@ -57,7 +57,7 @@ export function statusColor(status: string): { bg: string; text: string; border:
     estimating:     { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
     proposal_sent:  { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
     approved:       { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
-    in_progress:    { bg: 'bg-blue-100', text: 'text-blue-800', border: 'border-blue-300' },
+    in_progress:    { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300' },
     on_hold:        { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
     punch_list:     { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
     completed:      { bg: 'bg-green-100', text: 'text-green-800', border: 'border-green-300' },
