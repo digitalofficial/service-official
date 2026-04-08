@@ -8,7 +8,6 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 
 const ROLE_OPTIONS = [
-  { label: 'Admin', value: 'admin' },
   { label: 'Office Manager', value: 'office_manager' },
   { label: 'Project Manager', value: 'project_manager' },
   { label: 'Foreman', value: 'foreman' },

@@ -10,10 +10,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+
   const { data: invoice } = await supabase
     .from('invoices')
     .select('*, customer:customers(*), organization:organizations(*)')
     .eq('id', params.id)
+    .eq('organization_id', profile!.organization_id)
     .single()
 
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -97,6 +100,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from('invoices')
     .update({ status: 'sent' })
     .eq('id', params.id)
+    .eq('organization_id', profile!.organization_id)
 
   return NextResponse.json({ success: true, payment_url: paymentUrl })
 }

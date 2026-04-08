@@ -18,12 +18,15 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+
   const { searchParams } = new URL(request.url)
   const job_id = searchParams.get('job_id')
 
   let query = supabase
     .from('time_entries')
     .select('*, profile:profiles!profile_id(id, first_name, last_name, avatar_url, hourly_rate, role)')
+    .eq('organization_id', profile!.organization_id)
     .order('date', { ascending: false })
 
   if (job_id) query = query.eq('job_id', job_id)
@@ -91,7 +94,7 @@ export async function DELETE(request: NextRequest) {
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
   const managerRoles = ['owner', 'admin', 'office_manager', 'project_manager']
   const isManager = managerRoles.includes(profile?.role ?? '')
 
@@ -103,7 +106,7 @@ export async function DELETE(request: NextRequest) {
     }
   }
 
-  const { error } = await supabase.from('time_entries').delete().eq('id', id)
+  const { error } = await supabase.from('time_entries').delete().eq('id', id).eq('organization_id', profile!.organization_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })

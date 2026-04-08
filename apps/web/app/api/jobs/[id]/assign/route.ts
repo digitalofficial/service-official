@@ -22,6 +22,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from('jobs')
     .update({ assigned_to, status: 'scheduled' })
     .eq('id', params.id)
+    .eq('organization_id', profile!.organization_id)
     .select('*, customer:customers(first_name, last_name, company_name)')
     .single()
 

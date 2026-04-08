@@ -15,12 +15,13 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from('estimates')
     .select('*, customer:customers(*), organization:organizations(*)')
     .eq('id', params.id)
+    .eq('organization_id', profile!.organization_id)
     .single()
 
   if (!estimate) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   // Update to sent
-  await supabase.from('estimates').update({ status: 'sent' }).eq('id', params.id)
+  await supabase.from('estimates').update({ status: 'sent' }).eq('id', params.id).eq('organization_id', profile!.organization_id)
 
   // Send email if customer has email
   if (estimate.customer?.email) {

@@ -8,6 +8,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+
   const { data, error } = await supabase
     .from('jobs')
     .select(`
@@ -18,6 +20,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       photos(*)
     `)
     .eq('id', params.id)
+    .eq('organization_id', profile!.organization_id)
     .single()
 
   if (error) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -32,7 +35,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const updates = await request.json()
 
-  const { data: existing } = await supabase.from('jobs').select('status, title').eq('id', params.id).single()
+  const { data: existing } = await supabase.from('jobs').select('status, title').eq('id', params.id).eq('organization_id', profile!.organization_id).single()
 
   // Set timestamps on status transitions
   if (updates.status === 'in_progress' && !updates.actual_start) {
@@ -46,6 +49,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     .from('jobs')
     .update(updates)
     .eq('id', params.id)
+    .eq('organization_id', profile!.organization_id)
     .select()
     .single()
 

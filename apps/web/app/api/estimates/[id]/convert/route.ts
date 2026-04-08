@@ -16,6 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from('estimates')
     .select('*, sections:estimate_sections(*), line_items:estimate_line_items(*)')
     .eq('id', params.id)
+    .eq('organization_id', profile!.organization_id)
     .single()
 
   if (!estimate) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 
   // Mark estimate as converted
-  await supabase.from('estimates').update({ status: 'converted' }).eq('id', params.id)
+  await supabase.from('estimates').update({ status: 'converted' }).eq('id', params.id).eq('organization_id', profile!.organization_id)
 
   return NextResponse.json({ data: invoice, success: true }, { status: 201 })
 }

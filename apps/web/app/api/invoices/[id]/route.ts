@@ -50,6 +50,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     .from('invoices')
     .update(updates)
     .eq('id', params.id)
+    .eq('organization_id', profile!.organization_id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
