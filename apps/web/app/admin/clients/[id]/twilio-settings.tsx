@@ -12,11 +12,12 @@ interface Props {
 }
 
 const REMINDER_OPTIONS = [
-  { label: '15 min before', value: '15 minutes' },
-  { label: '30 min before', value: '30 minutes' },
-  { label: '1 hour before', value: '1 hour' },
-  { label: '2 hours before', value: '2 hours' },
   { label: '1 day before', value: '1 day' },
+  { label: 'Morning of (8 AM)', value: 'morning' },
+  { label: '2 hours before', value: '2 hours' },
+  { label: '1 hour before', value: '1 hour' },
+  { label: '30 min before', value: '30 minutes' },
+  { label: '15 min before', value: '15 minutes' },
   { label: 'None', value: '0' },
 ]
 
@@ -110,31 +111,33 @@ export function TwilioSettings({ orgId, existing, smsCount }: Props) {
           </label>
         </div>
 
-        {/* Reminders */}
-        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-800">
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Reminder 1</label>
-            <select value={reminder1} onChange={(e) => setReminder1(e.target.value)} className="input text-sm">
-              {REMINDER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-1">Reminder 2</label>
-            <select value={reminder2} onChange={(e) => setReminder2(e.target.value)} className="input text-sm">
-              {REMINDER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-        </div>
-
         {/* Employee notifications */}
-        <div className="pt-3 border-t border-gray-800">
-          <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Employee Notifications</p>
+        <div className="pt-3 border-t border-gray-800 space-y-3">
+          <p className="text-xs text-gray-500 uppercase font-semibold">Employee Notifications</p>
+          <p className="text-xs text-gray-600">When a job is assigned, employees receive an SMS plus up to two reminders before the job starts. Employees can override these defaults in their own profile settings.</p>
+
           <div className="flex flex-wrap gap-x-4 gap-y-2">
             <label className="flex items-center gap-2 text-xs text-gray-300">
               <input type="checkbox" checked={sendAssignment} onChange={(e) => setSendAssignment(e.target.checked)} className="rounded border-gray-600 bg-gray-800 text-blue-500" />
-              On assignment
+              SMS on job assignment
             </label>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">First job reminder</label>
+              <select value={reminder1} onChange={(e) => setReminder1(e.target.value)} className="input text-sm">
+                {REMINDER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">Second job reminder</label>
+              <select value={reminder2} onChange={(e) => setReminder2(e.target.value)} className="input text-sm">
+                {REMINDER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <p className="text-[10px] text-gray-600">Example: "1 day before" + "1 hour before" means the employee gets two SMS reminders — one the day before and one an hour before the scheduled job.</p>
         </div>
 
         {/* Customer notifications */}
