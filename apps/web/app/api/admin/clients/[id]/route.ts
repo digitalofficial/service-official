@@ -23,16 +23,72 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   return NextResponse.json({ data })
 }
 
-// DELETE /api/admin/clients/[id] — cancel
+// DELETE /api/admin/clients/[id] — permanently delete org and all related data
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   if (!isAdmin(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const supabase = createServiceRoleClient()
+  const orgId = params.id
 
-  await supabase
+  // Verify org exists
+  const { data: org } = await supabase
     .from('organizations')
-    .update({ subscription_status: 'canceled' })
-    .eq('id', params.id)
+    .select('id, name')
+    .eq('id', orgId)
+    .single()
 
-  return NextResponse.json({ success: true })
+  if (!org) return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+
+  try {
+    // Get all profiles (users) for this org so we can delete auth users
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('organization_id', orgId)
+
+    // Delete related data in dependency order
+    const tables = [
+      'job_reminders',
+      'photos',
+      'files',
+      'expenses',
+      'payments',
+      'invoices',
+      'jobs',
+      'conversations',
+      'messages',
+      'notifications',
+      'invitations',
+      'organization_sms_settings',
+      'organization_domains',
+    ]
+
+    for (const table of tables) {
+      await supabase.from(table).delete().eq('organization_id', orgId)
+    }
+
+    // Delete profiles
+    await supabase.from('profiles').delete().eq('organization_id', orgId)
+
+    // Delete auth users
+    if (profiles && profiles.length > 0) {
+      for (const profile of profiles) {
+        await supabase.auth.admin.deleteUser(profile.id)
+      }
+    }
+
+    // Delete the organization itself
+    const { error: orgError } = await supabase
+      .from('organizations')
+      .delete()
+      .eq('id', orgId)
+
+    if (orgError) {
+      return NextResponse.json({ error: `Failed to delete organization: ${orgError.message}` }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message ?? 'Deletion failed' }, { status: 500 })
+  }
 }

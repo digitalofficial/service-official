@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@service-official/database'
 import { Button } from '@/components/ui/button'
 import { EditCompanyButton } from './settings-edit'
+import { DangerZone } from './danger-zone'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'General Settings' }
@@ -15,6 +16,7 @@ export default async function GeneralSettingsPage() {
     .single()
 
   const org = (profile as any)?.organization
+  const isOwner = profile?.role === 'owner'
 
   return (
     <div className="space-y-6">
@@ -62,6 +64,9 @@ export default async function GeneralSettingsPage() {
           <Button variant="outline">Manage Billing</Button>
         </div>
       </div>
+
+      {/* Danger Zone — only visible to owners */}
+      {isOwner && <DangerZone orgName={org?.name ?? ''} />}
     </div>
   )
 }

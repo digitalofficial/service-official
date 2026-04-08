@@ -57,10 +57,35 @@ export function ClientActions({ org }: { org: any }) {
     }
   }
 
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to permanently delete "${org.name}"? This will remove ALL data including users, jobs, invoices, and files. This cannot be undone.`)) return
+    if (!confirm(`FINAL WARNING: This will permanently delete ${org.name} and all associated data. Type OK in the next prompt to continue.`)) return
+
+    setLoading('delete')
+    try {
+      const res = await fetch(`/api/admin/clients/${org.id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-secret': process.env.NEXT_PUBLIC_ADMIN_SECRET ?? '',
+        },
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Failed to delete')
+      }
+      toast.success('Organization deleted permanently')
+      router.push('/admin/clients')
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to delete organization')
+    } finally {
+      setLoading(null)
+    }
+  }
+
   const isSuspended = org.subscription_status === 'paused' || org.subscription_status === 'canceled'
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       {/* Login As */}
       <button
         onClick={handleLoginAs}
@@ -111,6 +136,15 @@ export function ClientActions({ org }: { org: any }) {
           Suspend
         </button>
       )}
+
+      {/* Delete Client */}
+      <button
+        onClick={handleDelete}
+        disabled={loading === 'delete'}
+        className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+      >
+        {loading === 'delete' ? 'Deleting...' : 'Delete Client'}
+      </button>
     </div>
   )
 }

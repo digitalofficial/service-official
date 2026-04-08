@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from '@service-official/database'
-import { Button } from '@/components/ui/button'
 import { CheckCircle } from 'lucide-react'
+import { PlanButton, CancelPlanButton } from './billing-actions'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Billing Settings' }
@@ -17,16 +17,25 @@ export default async function BillingPage() {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: profile } = await supabase
     .from('profiles')
-    .select('organization:organizations(subscription_tier, subscription_status, trial_ends_at)')
+    .select('role, organization:organizations(subscription_tier, subscription_status, trial_ends_at)')
     .eq('id', user!.id)
     .single()
 
   const org = (profile as any)?.organization
   const currentTier = org?.subscription_tier ?? 'solo'
+  const currentStatus = org?.subscription_status ?? 'active'
+  const isOwner = profile?.role === 'owner'
 
   return (
     <div className="space-y-6">
-      <h2 className="text-base font-semibold text-gray-900">Billing & Plans</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold text-gray-900">Billing & Plans</h2>
+        {currentStatus === 'canceled' && (
+          <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-600">
+            Plan Canceled
+          </span>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {PLANS.map((plan) => {
@@ -55,17 +64,39 @@ export default async function BillingPage() {
                 ))}
               </ul>
 
-              {isCurrent ? (
-                <Button variant="outline" size="sm" className="w-full" disabled>Current Plan</Button>
+              {isOwner ? (
+                <PlanButton
+                  currentTier={currentTier}
+                  currentStatus={currentStatus}
+                  targetTier={plan.tier}
+                  isEnterprise={plan.tier === 'enterprise'}
+                />
+              ) : isCurrent ? (
+                <button disabled className="w-full h-8 px-3 text-xs font-medium rounded-lg border border-gray-300 bg-white text-gray-400 cursor-not-allowed">
+                  Current Plan
+                </button>
               ) : (
-                <Button variant={plan.tier === 'enterprise' ? 'outline' : 'default'} size="sm" className="w-full">
-                  {plan.tier === 'enterprise' ? 'Contact Sales' : 'Upgrade'}
-                </Button>
+                <button disabled className="w-full h-8 px-3 text-xs font-medium rounded-lg border border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed">
+                  Owner Only
+                </button>
               )}
             </div>
           )
         })}
       </div>
+
+      {/* Cancel / Reactivate Plan */}
+      {isOwner && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Subscription Management</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            {currentStatus === 'canceled'
+              ? 'Your plan has been canceled. Reactivate to regain access to premium features.'
+              : 'Cancel your subscription to stop billing at the end of your current period.'}
+          </p>
+          <CancelPlanButton currentStatus={currentStatus} />
+        </div>
+      )}
     </div>
   )
 }
