@@ -2,6 +2,22 @@ import type { Config } from 'tailwindcss'
 
 const config: Config = {
   darkMode: ['class'],
+  // Safelist dynamic status colors used in statusColor() utility
+  safelist: [
+    // Yellow (in_progress)
+    'bg-yellow-100', 'text-yellow-800', 'border-yellow-300',
+    'bg-yellow-50', 'text-yellow-700', 'border-yellow-200',
+    // Sky (en_route, viewed)
+    'bg-sky-50', 'text-sky-700', 'border-sky-200',
+    'bg-sky-100',
+    // Indigo (on_site, invoiced)
+    'bg-indigo-50', 'text-indigo-700', 'border-indigo-200',
+    'bg-indigo-100',
+    // Emerald (paid)
+    'bg-emerald-50', 'text-emerald-700', 'border-emerald-200',
+    // Amber (partial, outstanding)
+    'bg-amber-50', 'text-amber-700', 'border-amber-200',
+  ],
   content: [
     './app/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
