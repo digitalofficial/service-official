@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 const JobMap = dynamic(
   () => import('@/components/maps/job-map').then(m => ({ default: m.JobMap })),
@@ -29,37 +29,49 @@ interface Job {
   assignee?: { first_name?: string; last_name?: string }
 }
 
+function parseCoords(coords: any): { lat: number; lng: number } | null {
+  if (!coords) return null
+  const c = typeof coords === 'string' ? JSON.parse(coords) : coords
+  if (c?.lat && c?.lng) return { lat: Number(c.lat), lng: Number(c.lng) }
+  return null
+}
+
+function formatJob(job: Job, lat: number, lng: number) {
+  return {
+    id: job.id,
+    title: job.title,
+    status: job.status,
+    lat,
+    lng,
+    address: [job.address_line1, job.city, job.state].filter(Boolean).join(', '),
+    customer_name: job.customer?.company_name || (job.customer?.first_name ? `${job.customer.first_name} ${job.customer.last_name}` : ''),
+    scheduled_start: job.scheduled_start,
+    assignee_name: job.assignee ? `${job.assignee.first_name} ${job.assignee.last_name}` : '',
+  }
+}
+
 export function DashboardJobMap({ jobs }: { jobs: Job[] }) {
-  const [mapJobs, setMapJobs] = useState<any[]>([])
+  // Immediately map jobs that already have coordinates (no geocoding needed)
+  const jobsWithCoords = useMemo(() => {
+    const results = []
+    for (const job of jobs) {
+      const coords = parseCoords(job.coordinates)
+      if (coords) results.push(formatJob(job, coords.lat, coords.lng))
+    }
+    return results
+  }, [jobs])
 
+  const [geocodedJobs, setGeocodedJobs] = useState<any[]>([])
+
+  // Only geocode jobs that DON'T have coordinates
   useEffect(() => {
-    async function geocodeJobs() {
+    const jobsNeedingGeocode = jobs.filter(j => !parseCoords(j.coordinates) && j.address_line1)
+    if (jobsNeedingGeocode.length === 0) return
+
+    async function geocode() {
       const results = []
-      for (const job of jobs) {
-        let coords: { lat: number; lng: number } | null = null
-        if (job.coordinates) {
-          const c = typeof job.coordinates === 'string' ? JSON.parse(job.coordinates) : job.coordinates
-          if (c?.lat && c?.lng) coords = { lat: Number(c.lat), lng: Number(c.lng) }
-        }
-
-        if (coords) {
-          results.push({
-            id: job.id,
-            title: job.title,
-            status: job.status,
-            lat: coords.lat,
-            lng: coords.lng,
-            address: [job.address_line1, job.city, job.state].filter(Boolean).join(', '),
-            customer_name: job.customer?.company_name ?? (job.customer?.first_name ? `${job.customer.first_name} ${job.customer.last_name}` : ''),
-            scheduled_start: job.scheduled_start,
-            assignee_name: job.assignee ? `${job.assignee.first_name} ${job.assignee.last_name}` : '',
-          })
-          continue
-        }
-
+      for (const job of jobsNeedingGeocode) {
         const address = [job.address_line1, job.city, job.state, job.zip].filter(Boolean).join(', ')
-        if (!address) continue
-
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/search?${new URLSearchParams({ q: address, format: 'json', limit: '1' })}`,
@@ -67,28 +79,20 @@ export function DashboardJobMap({ jobs }: { jobs: Job[] }) {
           )
           const data = await res.json()
           if (data.length > 0) {
-            results.push({
-              id: job.id,
-              title: job.title,
-              status: job.status,
-              lat: parseFloat(data[0].lat),
-              lng: parseFloat(data[0].lon),
-              address,
-              customer_name: job.customer?.company_name ?? (job.customer?.first_name ? `${job.customer.first_name} ${job.customer.last_name}` : ''),
-              scheduled_start: job.scheduled_start,
-              assignee_name: job.assignee ? `${job.assignee.first_name} ${job.assignee.last_name}` : '',
-            })
+            results.push(formatJob(job, parseFloat(data[0].lat), parseFloat(data[0].lon)))
           }
           await new Promise(r => setTimeout(r, 1100))
         } catch {}
       }
-      setMapJobs(results)
+      setGeocodedJobs(results)
     }
 
-    geocodeJobs()
+    geocode()
   }, [jobs])
 
-  if (mapJobs.length === 0 && jobs.length > 0) {
+  const allMapJobs = [...jobsWithCoords, ...geocodedJobs]
+
+  if (allMapJobs.length === 0 && jobs.length > 0) {
     return (
       <div className="h-[350px] bg-gray-50 rounded-xl flex items-center justify-center text-sm text-gray-400">
         Geocoding job locations...
@@ -96,5 +100,7 @@ export function DashboardJobMap({ jobs }: { jobs: Job[] }) {
     )
   }
 
-  return <JobMap jobs={mapJobs} height="350px" type="jobs" />
+  if (allMapJobs.length === 0) return null
+
+  return <JobMap jobs={allMapJobs} height="350px" type="jobs" />
 }
