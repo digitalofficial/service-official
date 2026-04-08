@@ -106,12 +106,12 @@ export default async function DashboardPage() {
   if (isSelfOnly) upcomingQuery = upcomingQuery.eq('assigned_to', user.id)
   const { data: upcomingJobs } = await upcomingQuery
 
-  // All active jobs for map (this week)
+  // All jobs for map — any job with an address
   let mapQuery = supabase
     .from('jobs')
     .select('id, title, status, scheduled_start, address_line1, city, state, zip, coordinates, customer:customers(first_name, last_name, company_name), assignee:profiles!assigned_to(first_name, last_name)')
     .eq('organization_id', orgId)
-    .in('status', ['scheduled', 'en_route', 'on_site', 'in_progress'])
+    .not('address_line1', 'is', null)
     .order('scheduled_start', { ascending: true })
     .limit(50)
 
@@ -200,13 +200,13 @@ export default async function DashboardPage() {
         <MetricCard label="Outstanding" value={formatCurrency(outstanding)} icon={AlertCircle} iconColor="text-amber-600" iconBg="bg-amber-50" />
       </div>
 
-      {/* Jobs Map — All Active Jobs */}
+      {/* Jobs Map — All Jobs */}
       {activeJobs && activeJobs.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-blue-600" />
-              <h2 className="font-semibold text-gray-900">Active Jobs Map</h2>
+              <h2 className="font-semibold text-gray-900">Jobs Map</h2>
               <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{activeJobs.length} jobs</span>
             </div>
             <Link href="/jobs" className="text-sm text-blue-600 hover:underline">View all</Link>
