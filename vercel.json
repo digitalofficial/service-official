@@ -1,7 +1,7 @@
 {
   "buildCommand": "pnpm turbo run build --filter=@service-official/web",
   "outputDirectory": "apps/web/.next",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --filter=!@service-official/mobile",
   "framework": "nextjs",
   "crons": [
     {
