@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform,
+  ActivityIndicator, KeyboardAvoidingView, Platform, useWindowDimensions,
 } from 'react-native'
 import { router } from 'expo-router'
 import { useAuth } from '@/stores/auth'
@@ -13,6 +13,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const { width } = useWindowDimensions()
+  const isTablet = width >= 768
 
   const handleLogin = async () => {
     if (!email || !password) return
@@ -30,20 +32,59 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.inner}>
-        <View style={styles.logoBox}>
-          <Text style={styles.logoEmoji}>🛡️</Text>
+      <View style={{
+        paddingHorizontal: spacing.xl,
+        maxWidth: isTablet ? 480 : undefined,
+        alignSelf: 'center',
+        width: '100%',
+      }}>
+        <View style={{
+          width: isTablet ? 100 : 72,
+          height: isTablet ? 100 : 72,
+          borderRadius: radius.xl,
+          backgroundColor: colors.primaryDark,
+          alignItems: 'center',
+          justifyContent: 'center',
+          alignSelf: 'center',
+          marginBottom: spacing.lg,
+        }}>
+          <Text style={{ fontSize: isTablet ? 48 : 36 }}>🛡️</Text>
         </View>
-        <Text style={styles.title}>Service Official</Text>
-        <Text style={styles.subtitle}>Sign in to your account</Text>
+        <Text style={{
+          fontSize: isTablet ? 38 : fontSize.xxl,
+          fontWeight: '800',
+          color: colors.text,
+          textAlign: 'center',
+        }}>Service Official</Text>
+        <Text style={{
+          fontSize: isTablet ? fontSize.md : fontSize.sm,
+          color: colors.textSecondary,
+          textAlign: 'center',
+          marginTop: spacing.xs,
+          marginBottom: spacing.xl,
+        }}>Sign in to your account</Text>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <Text style={{ color: colors.danger, fontSize: isTablet ? fontSize.md : fontSize.sm, textAlign: 'center', marginBottom: spacing.md }}>
+            {error}
+          </Text>
+        ) : null}
 
         <TextInput
-          style={styles.input}
+          style={{
+            backgroundColor: colors.card,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: radius.lg,
+            paddingHorizontal: isTablet ? spacing.lg : spacing.md,
+            paddingVertical: isTablet ? 18 : 14,
+            fontSize: isTablet ? fontSize.lg : fontSize.md,
+            color: colors.text,
+            marginBottom: spacing.md,
+          }}
           placeholder="Email"
           placeholderTextColor={colors.textMuted}
           value={email}
@@ -53,7 +94,17 @@ export default function LoginScreen() {
           autoComplete="email"
         />
         <TextInput
-          style={styles.input}
+          style={{
+            backgroundColor: colors.card,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: radius.lg,
+            paddingHorizontal: isTablet ? spacing.lg : spacing.md,
+            paddingVertical: isTablet ? 18 : 14,
+            fontSize: isTablet ? fontSize.lg : fontSize.md,
+            color: colors.text,
+            marginBottom: spacing.md,
+          }}
           placeholder="Password"
           placeholderTextColor={colors.textMuted}
           value={password}
@@ -63,7 +114,14 @@ export default function LoginScreen() {
         />
 
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={{
+            backgroundColor: colors.primary,
+            borderRadius: radius.lg,
+            paddingVertical: isTablet ? 20 : 16,
+            alignItems: 'center',
+            marginTop: spacing.sm,
+            opacity: loading ? 0.6 : 1,
+          }}
           onPress={handleLogin}
           disabled={loading}
           activeOpacity={0.8}
@@ -71,79 +129,12 @@ export default function LoginScreen() {
           {loading ? (
             <ActivityIndicator color="white" size="small" />
           ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
+            <Text style={{ color: 'white', fontSize: isTablet ? fontSize.lg : fontSize.md, fontWeight: '600' }}>
+              Sign In
+            </Text>
           )}
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-  },
-  inner: {
-    paddingHorizontal: spacing.xl,
-  },
-  logoBox: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.xl,
-    backgroundColor: colors.primaryDark,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: spacing.lg,
-  },
-  logoEmoji: {
-    fontSize: 36,
-  },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: '800',
-    color: colors.text,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.xl,
-  },
-  error: {
-    color: colors.danger,
-    fontSize: fontSize.sm,
-    textAlign: 'center',
-    marginBottom: spacing.md,
-  },
-  input: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    fontSize: fontSize.md,
-    color: colors.text,
-    marginBottom: spacing.md,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.lg,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: fontSize.md,
-    fontWeight: '600',
-  },
-})

@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
 import {
   LayoutDashboard, FolderKanban, Users, UserPlus, Briefcase, Radio,
-  Calendar, FileText, Receipt, CreditCard, MessageSquare,
+  Calendar, FileText, Receipt, CreditCard, MessageSquare, Send,
   Zap, BarChart3, Map, Cpu, Settings, Building2,
   HardHat, Menu, X, Lock
 } from 'lucide-react'
@@ -17,11 +17,11 @@ import { tierHasFeature } from '@/lib/auth/tier-access'
 const ROLE_ACCESS: Record<string, string[]> = {
   owner: ['*'],
   admin: ['*'],
-  office_manager: ['/dashboard', '/dispatch', '/projects', '/jobs', '/calendar', '/customers', '/leads', '/estimates', '/invoices', '/payments', '/estimator', '/team', '/messages', '/settings'],
-  project_manager: ['/dashboard', '/projects', '/jobs', '/calendar', '/customers', '/estimates', '/team', '/messages'],
+  office_manager: ['/dashboard', '/dispatch', '/projects', '/jobs', '/calendar', '/customers', '/leads', '/estimates', '/invoices', '/payments', '/estimator', '/team', '/messages', '/team/messages', '/settings'],
+  project_manager: ['/dashboard', '/projects', '/jobs', '/calendar', '/customers', '/estimates', '/team', '/messages', '/team/messages'],
   foreman: ['/dashboard', '/jobs', '/calendar', '/team'],
   technician: ['/dashboard', '/jobs', '/calendar'],
-  dispatcher: ['/dashboard', '/dispatch', '/jobs', '/calendar', '/customers', '/team'],
+  dispatcher: ['/dashboard', '/dispatch', '/jobs', '/calendar', '/customers', '/team', '/team/messages'],
   subcontractor: ['/dashboard', '/jobs', '/calendar'],
   viewer: ['/dashboard', '/projects', '/jobs', '/calendar'],
 }
@@ -40,6 +40,7 @@ const NAV_ITEMS = [
   { label: 'Estimator', href: '/estimator', icon: Cpu },
   { label: 'Team', href: '/team', icon: HardHat },
   { label: 'Messages', href: '/messages', icon: MessageSquare },
+  { label: 'Team Messages', href: '/team/messages', icon: Send },
   { label: 'Automation', href: '/automation', icon: Zap },
   { label: 'Reports', href: '/reports', icon: BarChart3 },
   { label: 'Settings', href: '/settings', icon: Settings },

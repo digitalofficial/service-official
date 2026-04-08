@@ -202,6 +202,28 @@ ${loginUrl}`
   // Notify customer that the job is booked
   const customerSms = await notifyCustomer(profile!.organization_id, params.id, 'booked').catch(() => ({ success: false }))
 
+  // Send push notification to assigned employee
+  const { data: assigneeProfile } = await supabase
+    .from('profiles')
+    .select('push_token')
+    .eq('id', assigned_to)
+    .single()
+
+  if (assigneeProfile?.push_token) {
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: assigneeProfile.push_token,
+        title: 'New Job Assigned',
+        body: `${job.title}${customerName ? ` - ${customerName}` : ''} · ${scheduledTime}`,
+        sound: 'default',
+        badge: 1,
+        data: { type: 'job_assigned', job_id: params.id },
+      }),
+    }).catch(() => {})
+  }
+
   return NextResponse.json({
     data: job,
     reminders_scheduled: remindersToCreate.length,

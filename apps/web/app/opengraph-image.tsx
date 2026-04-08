@@ -1,11 +1,16 @@
 import { ImageResponse } from 'next/og'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 export const alt = 'Service Official — The Contractor Operating System'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-export default function OGImage() {
+export default async function OGImage() {
+  const iconData = await readFile(join(process.cwd(), 'public', 'icon.png'))
+  const iconSrc = `data:image/png;base64,${iconData.toString('base64')}`
+
   return new ImageResponse(
     (
       <div
@@ -19,21 +24,12 @@ export default function OGImage() {
           background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
         }}
       >
-        <div
-          style={{
-            width: 120,
-            height: 120,
-            borderRadius: 24,
-            background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 40,
-            fontSize: 64,
-          }}
-        >
-          🛡️
-        </div>
+        <img
+          src={iconSrc}
+          width={120}
+          height={120}
+          style={{ marginBottom: 40 }}
+        />
         <div
           style={{
             fontSize: 64,

@@ -3,7 +3,7 @@
     "name": "Service Official",
     "slug": "service-official",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "serviceofficial",
     "userInterfaceStyle": "dark",
@@ -14,21 +14,47 @@
     },
     "ios": {
       "bundleIdentifier": "com.serviceofficial.app",
-      "supportsTablet": false,
+      "supportsTablet": true,
+      "requireFullScreen": false,
       "infoPlist": {
         "NSCameraUsageDescription": "Take before/after photos of job sites",
-        "NSPhotoLibraryUsageDescription": "Upload photos for job documentation"
+        "NSPhotoLibraryUsageDescription": "Upload photos for job documentation",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      ["expo-camera", { "cameraPermission": "Allow Service Official to take job photos" }],
-      ["expo-image-picker", { "photosPermission": "Allow Service Official to access photos for job documentation" }],
-      ["expo-notifications", { "color": "#3b82f6" }]
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Service Official to take job photos"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Service Official to access photos for job documentation"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#3b82f6"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d3490c1f-f747-4fed-90f1-67031d7185ee"
+      }
+    },
+    "owner": "digitalofficial"
   }
 }

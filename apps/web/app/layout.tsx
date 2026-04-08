@@ -10,7 +10,13 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 export const metadata: Metadata = {
   title: { default: 'Service Official', template: '%s | Service Official' },
   description: 'The Contractor Operating System — CRM, scheduling, estimates, invoices, and AI takeoffs built for contractors.',
-  icons: { icon: '/icon.svg' },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/icon.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/apple-icon.png',
+  },
   viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://serviceofficial.com'),
   openGraph: {

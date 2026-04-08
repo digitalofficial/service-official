@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabase'
-import { api } from '@/lib/api'
 import type { Session } from '@supabase/supabase-js'
 
 interface Profile {
@@ -23,6 +22,16 @@ interface AuthState {
   signOut: () => Promise<void>
 }
 
+async function fetchProfile(userId: string): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, organization_id, role, first_name, last_name, email, phone, avatar_url')
+    .eq('id', userId)
+    .single()
+  if (error) return null
+  return data as Profile
+}
+
 export const useAuth = create<AuthState>((set, get) => ({
   session: null,
   profile: null,
@@ -32,11 +41,9 @@ export const useAuth = create<AuthState>((set, get) => ({
     const { data } = await supabase.auth.getSession()
     set({ session: data.session })
 
-    if (data.session) {
-      try {
-        const { data: profile } = await api.get<{ data: Profile }>('/api/profile')
-        set({ profile: profile as any })
-      } catch {}
+    if (data.session?.user) {
+      const profile = await fetchProfile(data.session.user.id)
+      set({ profile })
     }
 
     set({ isLoading: false })
@@ -52,10 +59,10 @@ export const useAuth = create<AuthState>((set, get) => ({
     if (error) throw error
     set({ session: data.session })
 
-    try {
-      const { data: profile } = await api.get<{ data: Profile }>('/api/profile')
-      set({ profile: profile as any })
-    } catch {}
+    if (data.session?.user) {
+      const profile = await fetchProfile(data.session.user.id)
+      set({ profile })
+    }
   },
 
   signOut: async () => {

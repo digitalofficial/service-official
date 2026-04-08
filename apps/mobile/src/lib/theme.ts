@@ -18,6 +18,7 @@ export const spacing = {
   md: 16,
   lg: 24,
   xl: 32,
+  xxl: 48,
 } as const
 
 export const radius = {
@@ -35,3 +36,8 @@ export const fontSize = {
   xl: 24,
   xxl: 30,
 } as const
+
+// Tablet-scaled font sizes
+export function scaledFont(size: number, isTablet: boolean) {
+  return isTablet ? Math.round(size * 1.15) : size
+}
