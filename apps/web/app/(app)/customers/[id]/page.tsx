@@ -199,8 +199,9 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                 height="200"
                 style={{ border: 0 }}
                 loading="lazy"
+                allowFullScreen
                 referrerPolicy="no-referrer-when-downgrade"
-                src={`https://maps.google.com/maps?q=${mapQuery}&output=embed&z=15`}
+                src={`https://maps.google.com/maps?q=${mapQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
               />
             </div>
           )}
