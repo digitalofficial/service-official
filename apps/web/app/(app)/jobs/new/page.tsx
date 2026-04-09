@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
 import { ArrowLeft, Loader2 } from 'lucide-react'
+import { TimeSelect, addHoursToTime } from '@/components/ui/time-select'
 import { InlineCustomerSelect } from '@/components/forms/inline-customer-select'
 import { InlineProjectSelect } from '@/components/forms/inline-project-select'
 import { toast } from 'sonner'
@@ -27,6 +28,13 @@ export default function NewJobPage() {
   const prefillCustomerId = searchParams.get('customer_id')
 
   const [loading, setLoading] = useState(false)
+  const [jobStartTime, setJobStartTime] = useState('08:00')
+  const [jobEndTime, setJobEndTime] = useState('09:00')
+
+  const handleJobStartChange = (time: string) => {
+    setJobStartTime(time)
+    if (time) setJobEndTime(addHoursToTime(time, 1))
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -105,12 +113,14 @@ export default function NewJobPage() {
               <Input id="scheduled_date" name="scheduled_date" type="date" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="scheduled_time">Start Time</Label>
-              <Input id="scheduled_time" name="scheduled_time" type="time" />
+              <Label>Start Time</Label>
+              <TimeSelect value={jobStartTime} onChange={handleJobStartChange} />
+              <input type="hidden" name="scheduled_time" value={jobStartTime} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="scheduled_end_time">End Time</Label>
-              <Input id="scheduled_end_time" name="scheduled_end_time" type="time" />
+              <Label>End Time</Label>
+              <TimeSelect value={jobEndTime} onChange={setJobEndTime} />
+              <input type="hidden" name="scheduled_end_time" value={jobEndTime} />
             </div>
           </div>
         </div>

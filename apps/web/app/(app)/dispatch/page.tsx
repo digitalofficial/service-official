@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
 import { Phone, UserPlus, Briefcase, MapPin, Clock, Loader2, CheckCircle, Search, Tag } from 'lucide-react'
+import { TimeSelect, addHoursToTime } from '@/components/ui/time-select'
 import { toast } from 'sonner'
 import { DEFAULT_LEAD_SOURCES } from '@/lib/constants/lead-sources'
 import { TeamAvailability } from '@/components/dispatch/team-availability'
@@ -50,12 +51,17 @@ export default function DispatchPage() {
   const [state, setState] = useState('')
   const [zip, setZip] = useState('')
   const [date, setDate] = useState('')
-  const [startTime, setStartTime] = useState('')
-  const [endTime, setEndTime] = useState('')
+  const [startTime, setStartTime] = useState('08:00')
+  const [endTime, setEndTime] = useState('09:00')
   const [priority, setPriority] = useState('normal')
   const [instructions, setInstructions] = useState('')
   const [leadSource, setLeadSource] = useState('')
   const [notifySms, setNotifySms] = useState(false)
+
+  const handleStartTimeChange = (time: string) => {
+    setStartTime(time)
+    if (time) setEndTime(addHoursToTime(time, 1))
+  }
 
   useEffect(() => {
     fetch('/api/customers').then(r => r.json()).then(d => setCustomers(d.data ?? []))
@@ -195,7 +201,7 @@ export default function DispatchPage() {
         </div>
         <div className="flex gap-3 justify-center">
           <Button onClick={() => router.push(`/jobs/${success.job.id}`)}>View Job</Button>
-          <Button variant="outline" onClick={() => { setSuccess(null); setTitle(''); setAddress(''); setCity(''); setState(''); setZip(''); setDate(''); setStartTime(''); setEndTime(''); setInstructions(''); setSelectedCustomerId(''); setAssignedTo(''); setLeadSource(''); setNotifySms(false) }}>
+          <Button variant="outline" onClick={() => { setSuccess(null); setTitle(''); setAddress(''); setCity(''); setState(''); setZip(''); setDate(''); setStartTime(''); setEndTime(''); setInstructions(''); setSelectedCustomerId(''); setAssignedTo(''); setLeadSource(''); setNotifySms(false); setStartTime('08:00'); setEndTime('09:00') }}>
             Dispatch Another
           </Button>
         </div>
@@ -310,8 +316,14 @@ export default function DispatchPage() {
             <Label required className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Schedule</Label>
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} required />
             <div className="grid grid-cols-2 gap-2">
-              <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} placeholder="Start" required />
-              <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} placeholder="End" />
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Start</label>
+                <TimeSelect value={startTime} onChange={handleStartTimeChange} required />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">End</label>
+                <TimeSelect value={endTime} onChange={setEndTime} />
+              </div>
             </div>
           </div>
 

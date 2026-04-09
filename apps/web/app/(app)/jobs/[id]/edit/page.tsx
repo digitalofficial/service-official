@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select } from '@/components/ui/select'
 import { InlineCustomerSelect } from '@/components/forms/inline-customer-select'
 import { InlineProjectSelect } from '@/components/forms/inline-project-select'
+import { TimeSelect, addHoursToTime } from '@/components/ui/time-select'
 import { ArrowLeft, Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -37,6 +38,11 @@ export default function EditJobPage() {
   const [scheduledDate, setScheduledDate] = useState('')
   const [scheduledTime, setScheduledTime] = useState('')
   const [scheduledEndTime, setScheduledEndTime] = useState('')
+
+  const handleEditStartChange = (time: string) => {
+    setScheduledTime(time)
+    if (time) setScheduledEndTime(addHoursToTime(time, 1))
+  }
   const [addressLine1, setAddressLine1] = useState('')
   const [city, setCity] = useState('')
   const [state, setState] = useState('')
@@ -177,12 +183,12 @@ export default function EditJobPage() {
               <Input id="scheduled_date" type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="scheduled_time">Start Time</Label>
-              <Input id="scheduled_time" type="time" value={scheduledTime} onChange={e => setScheduledTime(e.target.value)} />
+              <Label>Start Time</Label>
+              <TimeSelect value={scheduledTime} onChange={handleEditStartChange} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="scheduled_end_time">End Time</Label>
-              <Input id="scheduled_end_time" type="time" value={scheduledEndTime} onChange={e => setScheduledEndTime(e.target.value)} />
+              <Label>End Time</Label>
+              <TimeSelect value={scheduledEndTime} onChange={setScheduledEndTime} />
             </div>
           </div>
         </div>
