@@ -51,13 +51,32 @@ export async function POST(request: NextRequest) {
       .update({ magic_link_token: token, magic_link_expires_at: expiresAt })
       .eq('id', portalUser.id)
 
-    // TODO: Send email via Resend with link: /public/portal/login?token={token}
-    // For now, return the token in dev
+    // Send magic link email
+    const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/public/portal/login?token=${token}`
+    const org = (portalUser.customer as any)?.organization
+    const customer = portalUser.customer as any
+    const customerName = customer?.first_name || 'there'
+    const companyName = org?.name || 'Service Official'
+
+    try {
+      const { sendEmail } = await import('@service-official/notifications')
+      await sendEmail({
+        to: portalUser.email,
+        subject: `Sign in to your portal — ${companyName}`,
+        template: 'portal_login',
+        variables: {
+          customer_name: customerName,
+          company_name: companyName,
+          login_url: loginUrl,
+        },
+      })
+    } catch (err) {
+      console.error('Portal login email failed:', err)
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Login link sent to your email.',
-      // Remove in production:
-      _dev_token: token,
     })
   }
 
