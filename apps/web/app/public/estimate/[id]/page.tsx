@@ -4,6 +4,10 @@ import { EstimateTemplate } from '@/components/estimates/estimate-template'
 import { PublicEstimateActions } from './actions'
 import type { Metadata } from 'next'
 
+// CRITICAL: prevent Next.js from caching this page — must always read fresh from DB
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export const metadata: Metadata = { title: 'Estimate' }
 
 export default async function PublicEstimatePage({ params }: { params: { id: string } }) {

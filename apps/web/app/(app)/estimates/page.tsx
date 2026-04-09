@@ -7,6 +7,7 @@ import { formatCurrency, formatDate, statusColor } from '@/lib/utils'
 import { Plus, FileText, Eye, Send, ChevronRight } from 'lucide-react'
 import type { Metadata } from 'next'
 
+export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Estimates' }
 
 interface Props {

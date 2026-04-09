@@ -6,6 +6,7 @@ import { EstimateActions } from './estimate-actions'
 import { ArrowLeft } from 'lucide-react'
 import type { Metadata } from 'next'
 
+export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Estimate Detail' }
 
 export default async function EstimateDetailPage({ params }: { params: { id: string } }) {

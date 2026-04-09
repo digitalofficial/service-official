@@ -7,6 +7,7 @@ import {
 import { DashboardJobMap } from './dashboard-job-map'
 import type { Metadata } from 'next'
 
+export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Dashboard' }
 
 function formatCurrency(amount: number) {
