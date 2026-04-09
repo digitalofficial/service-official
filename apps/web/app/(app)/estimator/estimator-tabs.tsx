@@ -260,44 +260,7 @@ export function EstimatorTabs({ takeoffs, blueprints, userName, orgIndustry }: E
 
       {/* Blueprints Tab */}
       {tab === 'blueprints' && (
-        <div>
-          {blueprints.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-              <Upload className="w-12 h-12 text-gray-300 mx-auto" />
-              <h3 className="text-sm font-semibold text-gray-900 mt-4">No blueprints uploaded</h3>
-              <p className="text-xs text-gray-500 mt-1">Upload blueprints for AI-powered material extraction</p>
-              <button className="mt-4 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
-                <Plus className="w-4 h-4" />
-                Upload Blueprint
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {blueprints.map((bp: any) => (
-                <div key={bp.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-blue-300 hover:shadow-sm transition-all">
-                  <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center">
-                    {bp.public_url ? (
-                      <img src={bp.public_url} alt={bp.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <FileText className="w-12 h-12 text-gray-300" />
-                    )}
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-sm font-semibold text-gray-900 truncate">{bp.name}</h3>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                      {bp.project && <span>{bp.project.name}</span>}
-                      {bp.page_count && <span>{bp.page_count} pages</span>}
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {bp.uploader && `${bp.uploader.first_name} ${bp.uploader.last_name} · `}
-                      {formatDate(bp.created_at, { month: 'short', day: 'numeric' })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <BlueprintsTab blueprints={blueprints} />
       )}
 
       {/* History Tab */}
@@ -341,6 +304,345 @@ export function EstimatorTabs({ takeoffs, blueprints, userName, orgIndustry }: E
               ))}
             </div>
           )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Blueprints Tab with upload ─────────────────────────────
+
+function BlueprintsTab({ blueprints }: { blueprints: any[] }) {
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStatus, setUploadStatus] = useState('')
+  const [localBlueprints, setLocalBlueprints] = useState(blueprints)
+  const [projects, setProjects] = useState<any[]>([])
+  const [selectedProject, setSelectedProject] = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [blueprintName, setBlueprintName] = useState('')
+  const [discipline, setDiscipline] = useState('')
+  const [dragOver, setDragOver] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    fetch('/api/projects').then(r => r.json()).then(d => setProjects(d.data || []))
+  }, [])
+
+  function handleFileSelect(file: File) {
+    const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/tiff', 'image/webp']
+    if (!allowed.includes(file.type) && !file.name.endsWith('.pdf') && !file.name.endsWith('.dwg')) {
+      setUploadStatus('Only PDF, PNG, JPEG, TIFF, or WebP files are supported')
+      return
+    }
+    setSelectedFile(file)
+    setBlueprintName(file.name.replace(/\.[^/.]+$/, ''))
+    setUploadStatus('')
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFileSelect(file)
+  }
+
+  async function handleUpload() {
+    if (!selectedFile) return
+    setUploading(true)
+    setUploadProgress(10)
+    setUploadStatus('Preparing upload...')
+
+    try {
+      // Step 1: Get signed upload URL from our API
+      setUploadProgress(15)
+      const urlRes = await fetch('/api/blueprints/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'get-upload-url',
+          file_name: selectedFile.name,
+          file_size: selectedFile.size,
+          content_type: selectedFile.type,
+          project_id: selectedProject || undefined,
+        }),
+      })
+
+      if (!urlRes.ok) {
+        const err = await urlRes.json()
+        throw new Error(err.error || 'Failed to prepare upload')
+      }
+
+      const { data: uploadData } = await urlRes.json()
+      setUploadProgress(25)
+      setUploadStatus('Uploading blueprint...')
+
+      // Step 2: Upload directly to Supabase Storage
+      // Use XMLHttpRequest for progress tracking on large files
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 60) + 25 // 25-85%
+            setUploadProgress(pct)
+            const mbLoaded = (e.loaded / 1024 / 1024).toFixed(1)
+            const mbTotal = (e.total / 1024 / 1024).toFixed(1)
+            setUploadStatus(`Uploading... ${mbLoaded} MB / ${mbTotal} MB`)
+          }
+        })
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve()
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`))
+          }
+        })
+
+        xhr.addEventListener('error', () => reject(new Error('Upload failed — check your connection')))
+        xhr.addEventListener('timeout', () => reject(new Error('Upload timed out — file may be too large for your connection')))
+
+        // Set a generous timeout for large files (10 minutes)
+        xhr.timeout = 600000
+
+        if (uploadData.method === 'signed' && uploadData.signed_url) {
+          // Use signed URL for direct upload
+          xhr.open('PUT', uploadData.signed_url)
+          xhr.setRequestHeader('Content-Type', selectedFile.type)
+          xhr.send(selectedFile)
+        } else {
+          // Fallback: upload via Supabase REST API
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+          const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+          xhr.open('POST', `${supabaseUrl}/storage/v1/object/files/${uploadData.storage_path}`)
+          xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`)
+          xhr.setRequestHeader('Content-Type', selectedFile.type)
+          xhr.send(selectedFile)
+        }
+      })
+
+      setUploadProgress(90)
+      setUploadStatus('Finalizing...')
+
+      // Step 3: Complete upload — create file + blueprint records
+      const completeRes = await fetch('/api/blueprints/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'complete',
+          storage_path: uploadData.storage_path,
+          file_name: selectedFile.name,
+          file_size: selectedFile.size,
+          content_type: selectedFile.type,
+          project_id: selectedProject || undefined,
+          name: blueprintName || selectedFile.name.replace(/\.[^/.]+$/, ''),
+          discipline: discipline || undefined,
+        }),
+      })
+
+      if (!completeRes.ok) {
+        const err = await completeRes.json()
+        throw new Error(err.error || 'Failed to save blueprint')
+      }
+
+      const { data: result } = await completeRes.json()
+
+      setUploadProgress(100)
+      setUploadStatus('Upload complete!')
+
+      // Add to local list
+      setLocalBlueprints(prev => [result.blueprint, ...prev])
+
+      // Reset form after short delay
+      setTimeout(() => {
+        setSelectedFile(null)
+        setBlueprintName('')
+        setDiscipline('')
+        setUploadProgress(0)
+        setUploadStatus('')
+      }, 1500)
+
+    } catch (error: any) {
+      console.error('Upload error:', error)
+      setUploadStatus(`Error: ${error.message}`)
+      setUploadProgress(0)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const formatSize = (bytes: number) => {
+    if (bytes > 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024 / 1024).toFixed(1)} GB`
+    if (bytes > 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    return `${(bytes / 1024).toFixed(0)} KB`
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Upload Area */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">Upload Blueprint</h3>
+
+        {!selectedFile ? (
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
+              dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept=".pdf,.png,.jpg,.jpeg,.tiff,.tif,.webp"
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (file) handleFileSelect(file)
+                e.target.value = '' // reset so same file can be re-selected
+              }}
+            />
+            <Upload className={`w-10 h-10 mx-auto mb-3 ${dragOver ? 'text-blue-500' : 'text-gray-400'}`} />
+            <p className="text-sm font-medium text-gray-700">Drop your blueprint here or click to browse</p>
+            <p className="text-xs text-gray-500 mt-1">PDF, PNG, JPEG, TIFF — up to 500MB</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Selected file info */}
+            <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <FileText className="w-5 h-5 text-blue-600 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
+                <p className="text-xs text-gray-500">{formatSize(selectedFile.size)} — {selectedFile.type || 'unknown type'}</p>
+              </div>
+              {!uploading && (
+                <button onClick={() => { setSelectedFile(null); setUploadStatus('') }} className="text-gray-400 hover:text-red-500">
+                  <span className="text-sm">Remove</span>
+                </button>
+              )}
+            </div>
+
+            {/* Blueprint details */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Blueprint Name</label>
+                <input
+                  type="text"
+                  value={blueprintName}
+                  onChange={e => setBlueprintName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={uploading}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Project (optional)</label>
+                <select
+                  value={selectedProject}
+                  onChange={e => setSelectedProject(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={uploading}
+                >
+                  <option value="">No project</option>
+                  {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Discipline</label>
+                <select
+                  value={discipline}
+                  onChange={e => setDiscipline(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={uploading}
+                >
+                  <option value="">Select...</option>
+                  <option value="architectural">Architectural</option>
+                  <option value="structural">Structural</option>
+                  <option value="mechanical">Mechanical</option>
+                  <option value="electrical">Electrical</option>
+                  <option value="plumbing">Plumbing</option>
+                  <option value="civil">Civil</option>
+                  <option value="site">Site Plan</option>
+                  <option value="roof">Roof Plan</option>
+                  <option value="floor">Floor Plan</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            {uploading && (
+              <div>
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                  <span>{uploadStatus}</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className="h-2.5 rounded-full bg-blue-600 transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {uploadStatus && !uploading && uploadProgress === 0 && (
+              <p className={`text-sm ${uploadStatus.startsWith('Error') ? 'text-red-600' : 'text-emerald-600'}`}>
+                {uploadStatus}
+              </p>
+            )}
+
+            {/* Upload button */}
+            {!uploading && uploadProgress !== 100 && (
+              <button
+                onClick={handleUpload}
+                disabled={!selectedFile}
+                className="w-full py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Upload Blueprint {selectedFile && `(${formatSize(selectedFile.size)})`}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Blueprint Grid */}
+      {localBlueprints.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {localBlueprints.map((bp: any) => (
+            <div key={bp.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-blue-300 hover:shadow-sm transition-all">
+              <div className="aspect-[4/3] bg-gray-100 flex items-center justify-center">
+                {bp.public_url && (bp.public_url.endsWith('.png') || bp.public_url.endsWith('.jpg') || bp.public_url.endsWith('.jpeg') || bp.public_url.endsWith('.webp')) ? (
+                  <img src={bp.public_url} alt={bp.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-center">
+                    <FileText className="w-12 h-12 text-gray-300 mx-auto" />
+                    <p className="text-xs text-gray-400 mt-2">PDF Blueprint</p>
+                  </div>
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className="text-sm font-semibold text-gray-900 truncate">{bp.name}</h3>
+                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                  {bp.project && <span>{bp.project.name}</span>}
+                  {bp.discipline && <span className="capitalize">{bp.discipline}</span>}
+                  {bp.page_count && <span>{bp.page_count} pages</span>}
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  {bp.uploader && `${bp.uploader.first_name} ${bp.uploader.last_name} · `}
+                  {formatDate(bp.created_at, { month: 'short', day: 'numeric' })}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+          <FileText className="w-10 h-10 text-gray-300 mx-auto" />
+          <p className="text-sm text-gray-500 mt-3">No blueprints uploaded yet</p>
+          <p className="text-xs text-gray-400 mt-1">Upload your first blueprint above to get started</p>
         </div>
       )}
     </div>

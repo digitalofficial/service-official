@@ -12,7 +12,7 @@ const ALLOWED_TYPES = [
   'application/octet-stream', // fallback for unknown types
 ]
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 
 export async function POST(request: NextRequest) {
   try {

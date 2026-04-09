@@ -2,6 +2,10 @@
 const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
+  // Increase API body size limit for large file uploads (blueprints)
+  serverRuntimeConfig: {
+    bodySizeLimit: '500mb',
+  },
   transpilePackages: [
     '@service-official/database',
     '@service-official/types',
