@@ -146,7 +146,7 @@ export function EstimateTemplate({ estimate, organization, customer, lineItems }
 
         {/* Totals */}
         <div className="flex justify-end mb-8">
-          <div className="w-72 space-y-2">
+          <div className="w-full sm:w-72 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Subtotal</span>
               <span className="font-medium">{formatCurrency(estimate.subtotal)}</span>

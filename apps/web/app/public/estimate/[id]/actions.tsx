@@ -9,11 +9,23 @@ interface PublicEstimateActionsProps {
   signatureUrl?: string
 }
 
-export function PublicEstimateActions({ estimateId, estimateStatus, signatureUrl }: PublicEstimateActionsProps) {
+export function PublicEstimateActions({ estimateId, estimateStatus }: PublicEstimateActionsProps) {
   const [showApproveModal, setShowApproveModal] = useState(false)
   const [showDeclineModal, setShowDeclineModal] = useState(false)
+  const [approved, setApproved] = useState(false)
 
-  const canRespond = ['sent', 'viewed'].includes(estimateStatus)
+  const canRespond = ['sent', 'viewed'].includes(estimateStatus) && !approved
+
+  if (approved) {
+    return (
+      <div className="flex items-center gap-2 no-print">
+        <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4" />
+          Approved! Reloading...
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
@@ -33,7 +45,7 @@ export function PublicEstimateActions({ estimateId, estimateStatus, signatureUrl
               className="px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
             >
               <XCircle className="w-4 h-4" />
-              <span>Decline</span>
+              Decline
             </button>
           </>
         )}
@@ -46,21 +58,27 @@ export function PublicEstimateActions({ estimateId, estimateStatus, signatureUrl
         </button>
       </div>
 
-      {/* Approve Modal with Signature */}
       {showApproveModal && (
         <ApproveModal
           estimateId={estimateId}
           onClose={() => setShowApproveModal(false)}
-          onApproved={() => { setShowApproveModal(false); window.location.reload() }}
+          onApproved={() => {
+            setShowApproveModal(false)
+            setApproved(true)
+            // Hard reload after a brief delay to show success state
+            setTimeout(() => { window.location.href = window.location.href }, 800)
+          }}
         />
       )}
 
-      {/* Decline Modal */}
       {showDeclineModal && (
         <DeclineModal
           estimateId={estimateId}
           onClose={() => setShowDeclineModal(false)}
-          onDeclined={() => { setShowDeclineModal(false); window.location.reload() }}
+          onDeclined={() => {
+            setShowDeclineModal(false)
+            setTimeout(() => { window.location.href = window.location.href }, 500)
+          }}
         />
       )}
     </>
@@ -69,35 +87,45 @@ export function PublicEstimateActions({ estimateId, estimateStatus, signatureUrl
 
 function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string; onClose: () => void; onApproved: () => void }) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [hasSignature, setHasSignature] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const isDrawing = useRef(false)
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+
+    // Size canvas to match CSS size
+    const rect = canvas.getBoundingClientRect()
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    canvas.width = rect.width * dpr
+    canvas.height = rect.height * dpr
+
     const ctx = canvas.getContext('2d')
     if (!ctx) return
+    ctxRef.current = ctx
 
-    // Set up canvas
-    const rect = canvas.getBoundingClientRect()
-    canvas.width = rect.width * 2
-    canvas.height = rect.height * 2
-    ctx.scale(2, 2)
+    ctx.scale(dpr, dpr)
     ctx.strokeStyle = '#1e293b'
-    ctx.lineWidth = 2
+    ctx.lineWidth = 2.5
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
 
     function getPos(e: MouseEvent | TouchEvent) {
-      const rect = canvas!.getBoundingClientRect()
-      if ('touches' in e) {
-        return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top }
+      const r = canvas!.getBoundingClientRect()
+      if ('touches' in e && e.touches.length > 0) {
+        return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top }
       }
-      return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+      if ('clientX' in e) {
+        return { x: (e as MouseEvent).clientX - r.left, y: (e as MouseEvent).clientY - r.top }
+      }
+      return { x: 0, y: 0 }
     }
 
     function startDraw(e: MouseEvent | TouchEvent) {
+      e.preventDefault()
       isDrawing.current = true
       const pos = getPos(e)
       ctx!.beginPath()
@@ -113,7 +141,8 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
       setHasSignature(true)
     }
 
-    function endDraw() {
+    function endDraw(e: Event) {
+      e.preventDefault()
       isDrawing.current = false
     }
 
@@ -123,7 +152,7 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
     canvas.addEventListener('mouseleave', endDraw)
     canvas.addEventListener('touchstart', startDraw, { passive: false })
     canvas.addEventListener('touchmove', draw, { passive: false })
-    canvas.addEventListener('touchend', endDraw)
+    canvas.addEventListener('touchend', endDraw, { passive: false })
 
     return () => {
       canvas.removeEventListener('mousedown', startDraw)
@@ -138,46 +167,75 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
 
   function clearSignature() {
     const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    const ctx = ctxRef.current
+    if (!canvas || !ctx) return
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     setHasSignature(false)
   }
 
   async function handleApprove() {
     setLoading(true)
+    setError('')
 
-    let signatureUrl: string | undefined
-    if (hasSignature && canvasRef.current) {
-      signatureUrl = canvasRef.current.toDataURL('image/png')
-    }
+    try {
+      // Get signature as compressed JPEG (much smaller than PNG)
+      let signatureDataUrl: string | undefined
+      if (hasSignature && canvasRef.current) {
+        signatureDataUrl = canvasRef.current.toDataURL('image/jpeg', 0.5)
+      }
 
-    const res = await fetch(`/api/public/estimates/${estimateId}/approve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ signature_url: signatureUrl }),
-    })
+      const response = await fetch(`/api/public/estimates/${estimateId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          signature_url: signatureDataUrl || undefined,
+        }),
+      })
 
-    if (res.ok) {
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || `Failed to approve (${response.status})`)
+        setLoading(false)
+        return
+      }
+
+      // Success
       onApproved()
-    } else {
-      const err = await res.json()
-      alert(err.error || 'Failed to approve')
+    } catch (err: any) {
+      console.error('Approve error:', err)
+      // If JSON body was too large, try again without signature
+      if (err.message?.includes('body') || err.message?.includes('size')) {
+        try {
+          const retryRes = await fetch(`/api/public/estimates/${estimateId}/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+          })
+          if (retryRes.ok) {
+            onApproved()
+            return
+          }
+        } catch {}
+      }
+      setError(err.message || 'Network error — please check your connection and try again')
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
+      <div
+        className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto p-5 sm:p-6"
+        onClick={e => e.stopPropagation()}
+      >
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900">Approve Estimate</h2>
-            <p className="text-sm text-gray-500">Sign below to approve this estimate</p>
+            <p className="text-sm text-gray-500">Sign below to approve</p>
           </div>
         </div>
 
@@ -185,7 +243,7 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
-              <Pen className="w-3.5 h-3.5" /> Your Signature
+              <Pen className="w-3.5 h-3.5" /> Your Signature (optional)
             </label>
             {hasSignature && (
               <button onClick={clearSignature} className="text-xs text-blue-600 hover:underline">Clear</button>
@@ -194,28 +252,35 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
           <div className="border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 overflow-hidden">
             <canvas
               ref={canvasRef}
-              className="w-full cursor-crosshair touch-none"
-              style={{ height: 140 }}
+              className="w-full cursor-crosshair"
+              style={{ height: 120, touchAction: 'none' }}
             />
           </div>
-          <p className="text-xs text-gray-400 mt-1">Draw your signature with your mouse or finger</p>
+          <p className="text-xs text-gray-400 mt-1">Draw with your finger or mouse</p>
         </div>
 
         <p className="text-xs text-gray-500 mb-4 bg-gray-50 rounded-lg p-3">
-          By clicking "Approve & Sign", you agree to the terms and scope of work outlined in this estimate and authorize the work to proceed.
+          By clicking &quot;Approve&quot;, you agree to the terms and scope of work and authorize the work to proceed.
         </p>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            disabled={loading}
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleApprove}
             disabled={loading}
-            className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             {loading ? 'Approving...' : 'Approve & Sign'}
@@ -228,28 +293,38 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
 
 function DeclineModal({ estimateId, onClose, onDeclined }: { estimateId: string; onClose: () => void; onDeclined: () => void }) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [reason, setReason] = useState('')
 
   async function handleDecline() {
     setLoading(true)
-    const res = await fetch(`/api/public/estimates/${estimateId}/decline`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason: reason || undefined }),
-    })
-    if (res.ok) {
-      onDeclined()
-    } else {
-      alert('Failed to decline')
+    setError('')
+    try {
+      const res = await fetch(`/api/public/estimates/${estimateId}/decline`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reason || undefined }),
+      })
+      if (res.ok) {
+        onDeclined()
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Failed to decline')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Network error')
     }
     setLoading(false)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
+      <div
+        className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6"
+        onClick={e => e.stopPropagation()}
+      >
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
             <XCircle className="w-5 h-5 text-red-600" />
           </div>
           <div>
@@ -263,23 +338,30 @@ function DeclineModal({ estimateId, onClose, onDeclined }: { estimateId: string;
           onChange={e => setReason(e.target.value)}
           placeholder="Reason for declining (optional)..."
           rows={3}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm mb-4 focus:ring-2 focus:ring-red-500 focus:border-red-500"
         />
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            disabled={loading}
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleDecline}
             disabled={loading}
-            className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-            {loading ? 'Declining...' : 'Decline Estimate'}
+            {loading ? 'Declining...' : 'Decline'}
           </button>
         </div>
       </div>
