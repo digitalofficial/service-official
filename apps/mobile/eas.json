@@ -24,10 +24,7 @@
       "ios": {
         "buildConfiguration": "Release"
       },
-      "node": "20.18.0",
-      "pnpm": {
-        "version": "9.15.9"
-      }
+      "node": "20.18.0"
     }
   }
 }
