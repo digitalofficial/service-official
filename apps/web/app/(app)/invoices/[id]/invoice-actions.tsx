@@ -62,12 +62,12 @@ export function InvoiceActions({ invoiceId, status, hasEmail, hasPhone }: Invoic
       <Button variant="outline" size="sm" onClick={handleCopyLink}>
         <Copy className="w-4 h-4 mr-1" /> Copy Link
       </Button>
-      {status === 'draft' && (
+      {!['paid', 'voided', 'refunded'].includes(status) && (hasEmail || hasPhone) && (
         <SendChannelDialog
           onSend={handleSend}
           hasEmail={hasEmail}
           hasPhone={hasPhone}
-          label="Send Invoice"
+          label={status === 'draft' ? 'Send Invoice' : 'Resend'}
         />
       )}
       {status !== 'paid' && status !== 'voided' && (
