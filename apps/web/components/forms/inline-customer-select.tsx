@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+const CUSTOMER_TYPES = [
+  { label: 'Residential', value: 'residential' },
+  { label: 'Commercial', value: 'commercial' },
+  { label: 'Property Manager', value: 'property_manager' },
+  { label: 'HOA', value: 'hoa' },
+  { label: 'Government', value: 'government' },
+]
+
 interface Props {
   name?: string
   defaultValue?: string
@@ -17,7 +25,7 @@ export function InlineCustomerSelect({ name = 'customer_id', defaultValue = '', 
   const [selectedId, setSelectedId] = useState(defaultValue)
   const [showNew, setShowNew] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form, setForm] = useState({ first_name: '', last_name: '', company_name: '', email: '', phone: '' })
+  const [form, setForm] = useState({ type: 'residential', first_name: '', last_name: '', company_name: '', email: '', phone: '' })
 
   useEffect(() => {
     fetch('/api/customers').then(r => r.json()).then(d => setCustomers(d.data ?? []))
@@ -28,7 +36,7 @@ export function InlineCustomerSelect({ name = 'customer_id', defaultValue = '', 
     setSaving(true)
     try {
       // Strip empty strings so they don't fail validation
-      const payload: Record<string, string> = { type: 'residential' }
+      const payload: Record<string, string> = {}
       for (const [k, v] of Object.entries(form)) {
         if (v.trim()) payload[k] = v.trim()
       }
@@ -43,7 +51,7 @@ export function InlineCustomerSelect({ name = 'customer_id', defaultValue = '', 
       setSelectedId(data.id)
       onChange?.(data.id)
       setShowNew(false)
-      setForm({ first_name: '', last_name: '', company_name: '', email: '', phone: '' })
+      setForm({ type: 'residential', first_name: '', last_name: '', company_name: '', email: '', phone: '' })
       toast.success('Customer created')
     } catch { toast.error('Failed to create customer') }
     finally { setSaving(false) }
@@ -60,6 +68,15 @@ export function InlineCustomerSelect({ name = 'customer_id', defaultValue = '', 
 
       {showNew ? (
         <div className="space-y-2 p-3 bg-blue-50/50 rounded-lg border border-blue-200">
+          <select
+            value={form.type}
+            onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
+            className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg bg-white"
+          >
+            {CUSTOMER_TYPES.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
           <div className="grid grid-cols-2 gap-2">
             <input type="text" placeholder="First name" value={form.first_name} onChange={e => setForm(p => ({ ...p, first_name: e.target.value }))} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg" />
             <input type="text" placeholder="Last name" value={form.last_name} onChange={e => setForm(p => ({ ...p, last_name: e.target.value }))} className="px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg" />

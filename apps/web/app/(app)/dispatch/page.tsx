@@ -19,6 +19,14 @@ const PRIORITY_OPTIONS = [
   { label: 'Urgent', value: 'urgent' },
 ]
 
+const CUSTOMER_TYPE_OPTIONS = [
+  { label: 'Residential', value: 'residential' },
+  { label: 'Commercial', value: 'commercial' },
+  { label: 'Property Manager', value: 'property_manager' },
+  { label: 'HOA', value: 'hoa' },
+  { label: 'Government', value: 'government' },
+]
+
 export default function DispatchPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -29,7 +37,7 @@ export default function DispatchPage() {
   const [customers, setCustomers] = useState<any[]>([])
   const [customerSearch, setCustomerSearch] = useState('')
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
-  const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', phone: '', email: '', company_name: '', source: '' })
+  const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', phone: '', email: '', company_name: '', source: '', type: 'residential' })
 
   // Team
   const [team, setTeam] = useState<any[]>([])
@@ -242,6 +250,10 @@ export default function DispatchPage() {
             </div>
           ) : (
             <div className="space-y-3">
+              <div>
+                <Label>Customer Type</Label>
+                <Select value={newCustomer.type} onChange={e => setNewCustomer(p => ({ ...p, type: e.target.value }))} options={CUSTOMER_TYPE_OPTIONS} />
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <div><Label>First Name</Label><Input value={newCustomer.first_name} onChange={e => setNewCustomer(p => ({ ...p, first_name: e.target.value }))} placeholder="John" /></div>
                 <div><Label>Last Name</Label><Input value={newCustomer.last_name} onChange={e => setNewCustomer(p => ({ ...p, last_name: e.target.value }))} placeholder="Smith" /></div>
