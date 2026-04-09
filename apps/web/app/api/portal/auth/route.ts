@@ -3,6 +3,7 @@ import { createServiceRoleClient } from '@service-official/database'
 import { randomBytes, createHash, scrypt, timingSafeEqual } from 'crypto'
 import { promisify } from 'util'
 import { getPortalPermissions } from '@/lib/portal/permissions'
+import { sendEmail } from '@service-official/notifications'
 
 const scryptAsync = promisify(scrypt)
 
@@ -58,20 +59,19 @@ export async function POST(request: NextRequest) {
     const customerName = customer?.first_name || 'there'
     const companyName = org?.name || 'Service Official'
 
-    try {
-      const { sendEmail } = await import('@service-official/notifications')
-      await sendEmail({
-        to: portalUser.email,
-        subject: `Sign in to your portal — ${companyName}`,
-        template: 'portal_login',
-        variables: {
-          customer_name: customerName,
-          company_name: companyName,
-          login_url: loginUrl,
-        },
-      })
-    } catch (err) {
-      console.error('Portal login email failed:', err)
+    const emailResult = await sendEmail({
+      to: portalUser.email,
+      subject: `Sign in to your portal — ${companyName}`,
+      template: 'portal_login',
+      variables: {
+        customer_name: customerName,
+        company_name: companyName,
+        login_url: loginUrl,
+      },
+    })
+
+    if (!emailResult.success) {
+      console.error('Portal login email failed:', emailResult.error)
     }
 
     return NextResponse.json({
