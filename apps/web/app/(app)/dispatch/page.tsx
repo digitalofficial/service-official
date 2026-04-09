@@ -81,6 +81,16 @@ export default function DispatchPage() {
       return
     }
 
+    // Require schedule
+    if (!date) {
+      toast.error('Please select a date')
+      return
+    }
+    if (!startTime) {
+      toast.error('Please select a start time')
+      return
+    }
+
     setLoading(true)
 
     let customerId = selectedCustomerId
@@ -297,10 +307,10 @@ export default function DispatchPage() {
 
           {/* Schedule */}
           <div className="space-y-2 pt-2 border-t border-gray-100">
-            <Label className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Schedule</Label>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <Label required className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Schedule</Label>
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} required />
             <div className="grid grid-cols-2 gap-2">
-              <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} placeholder="Start" />
+              <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} placeholder="Start" required />
               <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} placeholder="End" />
             </div>
           </div>
