@@ -654,6 +654,7 @@ CREATE TABLE invoices (
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   project_id UUID REFERENCES projects(id),
   customer_id UUID REFERENCES customers(id),
+  job_id UUID REFERENCES jobs(id),
   estimate_id UUID REFERENCES estimates(id),
   -- Invoice Info
   invoice_number TEXT,

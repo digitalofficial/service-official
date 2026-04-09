@@ -43,6 +43,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       organization_id: profile!.organization_id,
       project_id: estimate.project_id,
       customer_id: estimate.customer_id,
+      job_id: estimate.job_id || null,
       estimate_id: estimate.id,
       invoice_number,
       title: estimate.title,

@@ -444,6 +444,7 @@ export interface Invoice extends BaseRecord {
   organization_id: string
   project_id?: string
   customer_id?: string
+  job_id?: string
   estimate_id?: string
   invoice_number?: string
   title?: string
