@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@service-official/database'
 import { sendEmail } from '@service-official/notifications'
 import { sendOrgSms } from '@/lib/sms'
+import { logMessage } from '@/lib/log-message'
 import Stripe from 'stripe'
 
 // POST /api/invoices/[id]/send
@@ -21,7 +22,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   if (!invoice) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  // Parse channel preference from request body
+  let channel: 'email' | 'sms' | 'both' = 'both'
+  try {
+    const body = await request.json()
+    if (body.channel) channel = body.channel
+  } catch {
+    // No body sent — default to 'both'
+  }
+
   const org = invoice.organization as any
+  const customer = invoice.customer as any
+  const customerName = `${customer?.first_name ?? ''} ${customer?.last_name ?? ''}`.trim() || 'there'
 
   // Create Stripe Payment Intent using per-org Stripe key
   let paymentUrl: string | undefined
@@ -42,7 +54,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         },
       })
 
-      // Save to payments table
       await supabase.from('payments').insert({
         organization_id: invoice.organization_id,
         invoice_id: invoice.id,
@@ -56,21 +67,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       paymentUrl = `${process.env.NEXT_PUBLIC_APP_URL}/pay/${paymentIntent.id}`
     } catch (err: any) {
       console.error('Stripe payment intent creation failed:', err.message)
-      // Continue without payment link — invoice will still be sent
     }
   }
 
-  // Build invoice view link (always available, even without Stripe)
   const invoiceViewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invoices/${invoice.id}/view`
+  const results: { email?: boolean; sms?: boolean } = {}
 
   // Send email
-  if (invoice.customer?.email) {
-    await sendEmail({
-      to: invoice.customer.email,
+  if ((channel === 'email' || channel === 'both') && customer?.email) {
+    const emailResult = await sendEmail({
+      to: customer.email,
       subject: `Invoice #${invoice.invoice_number} — $${invoice.total.toFixed(2)} due`,
       template: 'invoice',
       variables: {
-        customer_name: `${invoice.customer.first_name ?? ''} ${invoice.customer.last_name ?? ''}`.trim(),
+        customer_name: customerName,
         company_name: org.name,
         invoice_number: invoice.invoice_number,
         total: invoice.total,
@@ -80,19 +90,48 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         invoice_url: invoiceViewUrl,
       },
     })
+    results.email = emailResult.success
+
+    // Log to messages
+    await logMessage({
+      supabase,
+      organization_id: invoice.organization_id,
+      customer_id: invoice.customer_id,
+      channel: 'email',
+      direction: 'outbound',
+      body: `Invoice #${invoice.invoice_number} for $${invoice.amount_due.toFixed(2)} sent via email`,
+      email_address: customer.email,
+      sent_by: user.id,
+      status: emailResult.success ? 'sent' : 'failed',
+    })
   }
 
-  // Send SMS if customer has phone number
-  if (invoice.customer?.phone) {
-    const customerName = invoice.customer.first_name ?? 'there'
+  // Send SMS
+  if ((channel === 'sms' || channel === 'both') && customer?.phone) {
     const payPart = paymentUrl
       ? `Pay online: ${paymentUrl}`
       : `View invoice: ${invoiceViewUrl}`
 
-    await sendOrgSms({
+    const smsBody = `Hi ${customer.first_name ?? 'there'}! Invoice #${invoice.invoice_number} for $${invoice.amount_due.toFixed(2)} from ${org.name}. ${payPart}`
+
+    const smsResult = await sendOrgSms({
       organizationId: invoice.organization_id,
-      to: invoice.customer.phone,
-      body: `Hi ${customerName}! Invoice #${invoice.invoice_number} for $${invoice.amount_due.toFixed(2)} from ${org.name}. ${payPart}`,
+      to: customer.phone,
+      body: smsBody,
+    })
+    results.sms = smsResult.success
+
+    // Log to messages
+    await logMessage({
+      supabase,
+      organization_id: invoice.organization_id,
+      customer_id: invoice.customer_id,
+      channel: 'sms',
+      direction: 'outbound',
+      body: smsBody,
+      phone_number: customer.phone,
+      sent_by: user.id,
+      status: smsResult.success ? 'sent' : 'failed',
     })
   }
 
@@ -102,5 +141,5 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .eq('id', params.id)
     .eq('organization_id', profile!.organization_id)
 
-  return NextResponse.json({ success: true, payment_url: paymentUrl })
+  return NextResponse.json({ success: true, payment_url: paymentUrl, channels: results })
 }

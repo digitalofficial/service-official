@@ -3,17 +3,19 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Printer, Send, Copy, Download, CheckCircle } from 'lucide-react'
+import { SendChannelDialog, type SendChannel } from '@/components/ui/send-channel-dialog'
+import { Printer, Copy, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface InvoiceActionsProps {
   invoiceId: string
   status: string
+  hasEmail: boolean
+  hasPhone: boolean
 }
 
-export function InvoiceActions({ invoiceId, status }: InvoiceActionsProps) {
+export function InvoiceActions({ invoiceId, status, hasEmail, hasPhone }: InvoiceActionsProps) {
   const router = useRouter()
-  const [sending, setSending] = useState(false)
 
   const handlePrint = () => {
     window.print()
@@ -25,16 +27,19 @@ export function InvoiceActions({ invoiceId, status }: InvoiceActionsProps) {
     toast.success('Invoice link copied — share with customer')
   }
 
-  const handleSend = async () => {
-    setSending(true)
-    const res = await fetch(`/api/invoices/${invoiceId}/send`, { method: 'POST' })
+  const handleSend = async (channel: SendChannel) => {
+    const res = await fetch(`/api/invoices/${invoiceId}/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel }),
+    })
     if (res.ok) {
-      toast.success('Invoice sent to customer')
+      const channelLabel = channel === 'both' ? 'email & text' : channel === 'sms' ? 'text' : 'email'
+      toast.success(`Invoice sent via ${channelLabel}`)
       router.refresh()
     } else {
       toast.error('Failed to send invoice')
     }
-    setSending(false)
   }
 
   const handleMarkPaid = async () => {
@@ -58,9 +63,12 @@ export function InvoiceActions({ invoiceId, status }: InvoiceActionsProps) {
         <Copy className="w-4 h-4 mr-1" /> Copy Link
       </Button>
       {status === 'draft' && (
-        <Button size="sm" onClick={handleSend} disabled={sending}>
-          <Send className="w-4 h-4 mr-1" /> {sending ? 'Sending...' : 'Send Invoice'}
-        </Button>
+        <SendChannelDialog
+          onSend={handleSend}
+          hasEmail={hasEmail}
+          hasPhone={hasPhone}
+          label="Send Invoice"
+        />
       )}
       {status !== 'paid' && status !== 'voided' && (
         <Button variant="secondary" size="sm" onClick={handleMarkPaid}>

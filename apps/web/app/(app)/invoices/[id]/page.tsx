@@ -48,7 +48,12 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
             <p className="text-sm text-gray-500">{invoice.title}</p>
           </div>
         </div>
-        <InvoiceActions invoiceId={params.id} status={invoice.status} />
+        <InvoiceActions
+          invoiceId={params.id}
+          status={invoice.status}
+          hasEmail={!!customer?.email}
+          hasPhone={!!customer?.phone}
+        />
       </div>
 
       {/* Invoice Preview */}

@@ -47,7 +47,12 @@ export default async function EstimateDetailPage({ params }: { params: { id: str
             <p className="text-sm text-gray-500">{estimate.title}</p>
           </div>
         </div>
-        <EstimateActions estimateId={params.id} status={estimate.status} />
+        <EstimateActions
+          estimateId={params.id}
+          status={estimate.status}
+          hasEmail={!!customer?.email}
+          hasPhone={!!customer?.phone}
+        />
       </div>
 
       <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">

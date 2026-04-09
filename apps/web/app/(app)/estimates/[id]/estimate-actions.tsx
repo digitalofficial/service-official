@@ -1,14 +1,20 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Printer, Send, Copy, CheckCircle, XCircle } from 'lucide-react'
+import { SendChannelDialog, type SendChannel } from '@/components/ui/send-channel-dialog'
+import { Printer, Copy } from 'lucide-react'
 import { toast } from 'sonner'
 
-export function EstimateActions({ estimateId, status }: { estimateId: string; status: string }) {
+interface EstimateActionsProps {
+  estimateId: string
+  status: string
+  hasEmail: boolean
+  hasPhone: boolean
+}
+
+export function EstimateActions({ estimateId, status, hasEmail, hasPhone }: EstimateActionsProps) {
   const router = useRouter()
-  const [sending, setSending] = useState(false)
 
   const handlePrint = () => window.print()
 
@@ -18,16 +24,19 @@ export function EstimateActions({ estimateId, status }: { estimateId: string; st
     toast.success('Estimate link copied — share with customer')
   }
 
-  const handleSend = async () => {
-    setSending(true)
-    const res = await fetch(`/api/estimates/${estimateId}/send`, { method: 'POST' })
+  const handleSend = async (channel: SendChannel) => {
+    const res = await fetch(`/api/estimates/${estimateId}/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channel }),
+    })
     if (res.ok) {
-      toast.success('Estimate sent to customer')
+      const channelLabel = channel === 'both' ? 'email & text' : channel === 'sms' ? 'text' : 'email'
+      toast.success(`Estimate sent via ${channelLabel}`)
       router.refresh()
     } else {
-      toast.error('Failed to send')
+      toast.error('Failed to send estimate')
     }
-    setSending(false)
   }
 
   return (
@@ -39,9 +48,12 @@ export function EstimateActions({ estimateId, status }: { estimateId: string; st
         <Copy className="w-4 h-4 mr-1" /> Copy Link
       </Button>
       {status === 'draft' && (
-        <Button size="sm" onClick={handleSend} disabled={sending}>
-          <Send className="w-4 h-4 mr-1" /> {sending ? 'Sending...' : 'Send Estimate'}
-        </Button>
+        <SendChannelDialog
+          onSend={handleSend}
+          hasEmail={hasEmail}
+          hasPhone={hasPhone}
+          label="Send Estimate"
+        />
       )}
     </div>
   )

@@ -256,7 +256,6 @@ export async function notifyTeam(options: {
 
 // ── Render Email Template ────────────────────────────────────
 
-function renderEmailTemplate(template: string, variables: Record<string, unknown>): string {
-  // TODO: Replace with proper template engine (react-email, etc.)
-  return `<html><body>${template}</body></html>`
-}
+import { renderEmailTemplate } from './email'
+export { renderEmailTemplate }
+export * from './email'

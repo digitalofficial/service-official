@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@service-official/database'
+import { sendEmail } from '@service-official/notifications'
 import { z } from 'zod'
 import crypto from 'crypto'
 import { getTierMaxUsers } from '@/lib/auth/tier-access'
@@ -120,8 +121,30 @@ export async function POST(request: NextRequest) {
   const orgName = (profile.organization as any)?.name ?? 'your organization'
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/accept-invite?token=${token}`
 
-  // TODO: Send email via Resend
-  // For now, return the invite link
+  // Get inviter name for the email
+  const { data: inviterProfile } = await supabase
+    .from('profiles')
+    .select('first_name, last_name')
+    .eq('id', user.id)
+    .single()
+
+  const inviterName = inviterProfile
+    ? `${inviterProfile.first_name ?? ''} ${inviterProfile.last_name ?? ''}`.trim()
+    : undefined
+
+  // Send invitation email
+  await sendEmail({
+    to: validated.email,
+    subject: `You're invited to join ${orgName} on Service Official`,
+    template: 'invitation',
+    variables: {
+      org_name: orgName,
+      role: validated.role,
+      invite_url: inviteUrl,
+      inviter_name: inviterName,
+    },
+  })
+
   return NextResponse.json({
     data: invitation,
     invite_url: inviteUrl,
