@@ -192,9 +192,9 @@ export default function DispatchPage() {
         <p className="text-sm text-gray-500 mt-0.5">Create a job and assign it in one step — customer gets notified automatically</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:items-start">
         {/* Left: Customer */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4 flex flex-col lg:self-stretch">
           <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
             <Phone className="w-4 h-4 text-blue-600" /> Customer
           </h2>
@@ -215,7 +215,7 @@ export default function DispatchPage() {
           </div>
 
           {customerMode === 'existing' ? (
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1 flex flex-col">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -224,8 +224,8 @@ export default function DispatchPage() {
                   className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div className="max-h-40 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
-                {filteredCustomers.slice(0, 8).map(c => (
+              <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                {filteredCustomers.map(c => (
                   <button
                     key={c.id}
                     onClick={() => setSelectedCustomerId(c.id)}
