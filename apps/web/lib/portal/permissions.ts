@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { createServiceRoleClient } from '@service-official/database'
 
 export const DEFAULT_PORTAL_PERMISSIONS = {
   view_invoices: true,
@@ -23,7 +23,7 @@ export async function getPortalUserWithPermissions(request: NextRequest) {
   if (!sessionCookie) return null
 
   const portalUserId = sessionCookie.split(':')[0]
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
 
   const { data: portalUser } = await supabase
     .from('portal_users')

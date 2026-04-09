@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { createServiceRoleClient } from '@service-official/database'
 import { getPortalUserWithPermissions } from '@/lib/portal/permissions'
 import Stripe from 'stripe'
 
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const { portalUser, permissions } = result
   if (!permissions.pay_invoices) return NextResponse.json({ error: 'Access denied' }, { status: 403 })
 
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
 
   // Fetch invoice scoped to this customer
   const { data: invoice } = await supabase

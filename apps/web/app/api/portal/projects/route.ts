@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { createServiceRoleClient } from '@service-official/database'
 import { getPortalUserWithPermissions } from '@/lib/portal/permissions'
 
 export async function GET(request: NextRequest) {
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const { portalUser, permissions } = result
   if (!permissions.view_projects) return NextResponse.json({ data: [] })
 
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
 
   // Get projects for this customer with portal enabled
   const { data: projects, error } = await supabase

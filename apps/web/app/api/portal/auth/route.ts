@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { createServiceRoleClient } from '@service-official/database'
 import { randomBytes, createHash, scrypt, timingSafeEqual } from 'crypto'
 import { promisify } from 'util'
 import { getPortalPermissions } from '@/lib/portal/permissions'
@@ -20,7 +20,7 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
 
 // POST /api/portal/auth — magic link or verify
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
   const body = await request.json()
   const { action } = body
 
