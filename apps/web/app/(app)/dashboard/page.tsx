@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from '@service-official/database'
 import Link from 'next/link'
 import {
-  DollarSign, FolderKanban, Briefcase, AlertCircle, TrendingUp, MapPin,
+  FolderKanban, Briefcase, AlertCircle, TrendingUp, MapPin,
   Clock, Users, CalendarDays, ArrowRight, FileText, Bell
 } from 'lucide-react'
 import { DashboardJobMap } from './dashboard-job-map'
@@ -51,25 +51,19 @@ export default async function DashboardPage() {
   // Date ranges
   const now = new Date()
   const today = now.toISOString().split('T')[0]
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
-  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0).toISOString()
-  const startOfYear = new Date(now.getFullYear(), 0, 1).toISOString()
   const next7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
   // Parallel data fetches
   const [
-    { data: currentInvoices },
-    { data: lastMonthInvoices },
-    { data: ytdInvoices },
+    { data: pendingEstimates },
+    { data: approvedEstimates },
     { data: outstandingInvoices },
     { data: recentProjects },
     { data: notifications },
     { data: overdueInvoices },
   ] = await Promise.all([
-    supabase.from('invoices').select('amount_paid').eq('organization_id', orgId).gte('created_at', startOfMonth),
-    supabase.from('invoices').select('amount_paid').eq('organization_id', orgId).gte('created_at', startOfLastMonth).lte('created_at', endOfLastMonth),
-    supabase.from('invoices').select('amount_paid').eq('organization_id', orgId).gte('created_at', startOfYear),
+    supabase.from('estimates').select('id, total, status').eq('organization_id', orgId).in('status', ['sent', 'viewed']),
+    supabase.from('estimates').select('id, total, status').eq('organization_id', orgId).eq('status', 'approved'),
     supabase.from('invoices').select('amount_paid, amount_due, total, status').eq('organization_id', orgId).in('status', ['sent', 'viewed', 'partial', 'overdue']),
     supabase.from('projects').select('id, name, status, contract_value, customer:customers(first_name, last_name, company_name)').eq('organization_id', orgId).in('status', ['in_progress', 'approved', 'punch_list']).order('updated_at', { ascending: false }).limit(5),
     supabase.from('notifications').select('*').eq('user_id', user.id).eq('is_read', false).order('created_at', { ascending: false }).limit(5),
@@ -142,14 +136,11 @@ export default async function DashboardPage() {
   }
 
   // Calculations
-  const currentMonthRevenue = (currentInvoices ?? []).reduce((sum, i) => sum + (i.amount_paid ?? 0), 0)
-  const lastMonthRevenue = (lastMonthInvoices ?? []).reduce((sum, i) => sum + (i.amount_paid ?? 0), 0)
-  const ytdRevenue = (ytdInvoices ?? []).reduce((sum, i) => sum + (i.amount_paid ?? 0), 0)
+  const pendingEstimateCount = pendingEstimates?.length ?? 0
+  const pendingEstimateValue = (pendingEstimates ?? []).reduce((sum, e) => sum + (e.total ?? 0), 0)
+  const approvedEstimateCount = approvedEstimates?.length ?? 0
+  const approvedEstimateValue = (approvedEstimates ?? []).reduce((sum, e) => sum + (e.total ?? 0), 0)
   const outstanding = (outstandingInvoices ?? []).reduce((sum, i) => sum + (i.amount_due ?? ((i.total ?? 0) - (i.amount_paid ?? 0))), 0)
-
-  const revenueTrend = lastMonthRevenue > 0
-    ? `${currentMonthRevenue >= lastMonthRevenue ? '+' : ''}${Math.round(((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100)}% vs last month`
-    : currentMonthRevenue > 0 ? 'Up from last month' : undefined
 
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening'
 
@@ -192,8 +183,8 @@ export default async function DashboardPage() {
 
       {/* Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <MetricCard label="Revenue This Month" value={formatCurrency(currentMonthRevenue)} icon={DollarSign} iconColor="text-green-600" iconBg="bg-green-50" trend={revenueTrend} />
-        <MetricCard label="Revenue This Year" value={formatCurrency(ytdRevenue)} icon={TrendingUp} iconColor="text-emerald-600" iconBg="bg-emerald-50" />
+        <MetricCard label="Estimates Pending" value={String(pendingEstimateCount)} icon={FileText} iconColor="text-amber-600" iconBg="bg-amber-50" trend={pendingEstimateValue > 0 ? formatCurrency(pendingEstimateValue) + ' value' : undefined} />
+        <MetricCard label="Estimates Approved" value={String(approvedEstimateCount)} icon={TrendingUp} iconColor="text-emerald-600" iconBg="bg-emerald-50" trend={approvedEstimateValue > 0 ? formatCurrency(approvedEstimateValue) + ' value' : undefined} />
         <MetricCard label="Active Projects" value={String(recentProjects?.length ?? 0)} icon={FolderKanban} iconColor="text-blue-600" iconBg="bg-blue-50" />
         <MetricCard label="Jobs Today" value={String(todayJobs?.length ?? 0)} icon={Briefcase} iconColor="text-purple-600" iconBg="bg-purple-50" />
         <MetricCard label="Outstanding" value={formatCurrency(outstanding)} icon={AlertCircle} iconColor="text-amber-600" iconBg="bg-amber-50" />
@@ -407,7 +398,7 @@ export default async function DashboardPage() {
                 { label: 'Dispatch a Job', href: '/dispatch', icon: Briefcase },
                 { label: 'Create Invoice', href: '/invoices/new', icon: FileText },
                 { label: 'Add Customer', href: '/customers/new', icon: Users },
-                { label: 'New Estimate', href: '/estimates/new', icon: DollarSign },
+                { label: 'New Estimate', href: '/estimates/new', icon: FileText },
               ].map(link => (
                 <Link key={link.href} href={link.href} className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg transition-colors group">
                   <link.icon className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
