@@ -9,18 +9,24 @@
       "distribution": "internal",
       "ios": {
         "simulator": false
-      }
+      },
+      "node": "20.18.0"
     },
     "preview": {
       "distribution": "internal",
       "ios": {
         "simulator": false
-      }
+      },
+      "node": "20.18.0"
     },
     "production": {
       "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Release"
+      },
+      "node": "20.18.0",
+      "pnpm": {
+        "version": "9.15.9"
       }
     }
   }
