@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Building2, Users, CreditCard, Palette, Bell, Plug, Shield, DollarSign } from 'lucide-react'
+import { Building2, Users, CreditCard, Palette, Bell, Plug, Shield, DollarSign, Upload } from 'lucide-react'
 
 const SETTINGS_NAV = [
   { label: 'General', href: '/settings', icon: Building2 },
@@ -10,6 +10,7 @@ const SETTINGS_NAV = [
   { label: 'Notifications', href: '/settings/notifications', icon: Bell },
   { label: 'Integrations', href: '/settings/integrations', icon: Plug },
   { label: 'Permissions', href: '/settings/permissions', icon: Shield },
+  { label: 'Import Data', href: '/settings/import', icon: Upload },
 ]
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
