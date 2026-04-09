@@ -84,7 +84,7 @@ export default function NewJobPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <InlineCustomerSelect defaultValue={prefillCustomerId ?? ''} />
+          <InlineCustomerSelect defaultValue={prefillCustomerId ?? ''} required />
           <InlineProjectSelect defaultValue={prefillProjectId ?? ''} />
         </div>
 

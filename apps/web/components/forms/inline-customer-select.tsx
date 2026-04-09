@@ -9,9 +9,10 @@ interface Props {
   defaultValue?: string
   required?: boolean
   label?: string
+  onChange?: (customerId: string) => void
 }
 
-export function InlineCustomerSelect({ name = 'customer_id', defaultValue = '', required, label = 'Customer' }: Props) {
+export function InlineCustomerSelect({ name = 'customer_id', defaultValue = '', required, label = 'Customer', onChange }: Props) {
   const [customers, setCustomers] = useState<any[]>([])
   const [selectedId, setSelectedId] = useState(defaultValue)
   const [showNew, setShowNew] = useState(false)
@@ -35,6 +36,7 @@ export function InlineCustomerSelect({ name = 'customer_id', defaultValue = '', 
       const { data } = await res.json()
       setCustomers(prev => [...prev, data])
       setSelectedId(data.id)
+      onChange?.(data.id)
       setShowNew(false)
       setForm({ first_name: '', last_name: '', company_name: '', email: '', phone: '' })
       toast.success('Customer created')
@@ -68,7 +70,7 @@ export function InlineCustomerSelect({ name = 'customer_id', defaultValue = '', 
         </div>
       ) : (
         <select
-          name={name} value={selectedId} onChange={e => setSelectedId(e.target.value)} required={required}
+          name={name} value={selectedId} onChange={e => { setSelectedId(e.target.value); onChange?.(e.target.value) }} required={required}
           className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-blue-400"
         >
           <option value="">Select customer...</option>

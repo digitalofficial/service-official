@@ -6,9 +6,10 @@ interface Props {
   name?: string
   defaultValue?: string
   label?: string
+  onChange?: (projectId: string) => void
 }
 
-export function InlineProjectSelect({ name = 'project_id', defaultValue = '', label = 'Project' }: Props) {
+export function InlineProjectSelect({ name = 'project_id', defaultValue = '', label = 'Project', onChange }: Props) {
   const [projects, setProjects] = useState<any[]>([])
   const [selectedId, setSelectedId] = useState(defaultValue)
 
@@ -20,7 +21,7 @@ export function InlineProjectSelect({ name = 'project_id', defaultValue = '', la
     <div className="space-y-1.5">
       <label className="text-xs font-medium text-gray-700">{label}</label>
       <select
-        name={name} value={selectedId} onChange={e => setSelectedId(e.target.value)}
+        name={name} value={selectedId} onChange={e => { setSelectedId(e.target.value); onChange?.(e.target.value) }}
         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:border-blue-400"
       >
         <option value="">No project — standalone</option>

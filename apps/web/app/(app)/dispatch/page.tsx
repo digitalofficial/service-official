@@ -61,6 +61,17 @@ export default function DispatchPage() {
 
   const handleSubmit = async () => {
     if (!title) { toast.error('Job title is required'); return }
+
+    // Require customer
+    if (customerMode === 'existing' && !selectedCustomerId) {
+      toast.error('Please select a customer')
+      return
+    }
+    if (customerMode === 'new' && !newCustomer.first_name && !newCustomer.company_name) {
+      toast.error('Please enter customer name or company')
+      return
+    }
+
     setLoading(true)
 
     let customerId = selectedCustomerId

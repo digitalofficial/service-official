@@ -14,7 +14,7 @@ import { ActivityFeed } from './activity-feed'
 import {
   ArrowLeft, MapPin, Clock, User, Phone, Calendar, FileText,
   Camera, DollarSign, MessageSquare, Briefcase, Mail, ExternalLink,
-  Hash, Tag,
+  Hash, Tag, Pencil,
 } from 'lucide-react'
 import type { Metadata } from 'next'
 
@@ -89,6 +89,11 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             </div>
           </div>
         </div>
+        <Link href={`/jobs/${params.id}/edit`}>
+          <Button variant="outline" size="sm">
+            <Pencil className="w-4 h-4 mr-1" /> Edit
+          </Button>
+        </Link>
       </div>
 
       {/* Workflow Status Bar */}
