@@ -30,23 +30,26 @@ export default function CalendarPage() {
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
 
+  // Format date as YYYY-MM-DD in local timezone (avoids UTC conversion issues)
+  const toLocalDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
   useEffect(() => {
     async function fetchJobs() {
       setLoading(true)
       const params = new URLSearchParams()
 
       if (view === 'day') {
-        params.set('date', currentDate.toISOString().split('T')[0])
+        params.set('date', toLocalDate(currentDate))
       } else if (view === 'month') {
-        params.set('from', new Date(year, month, 1).toISOString().split('T')[0])
-        params.set('to', new Date(year, month + 1, 0).toISOString().split('T')[0])
+        params.set('from', toLocalDate(new Date(year, month, 1)))
+        params.set('to', toLocalDate(new Date(year, month + 1, 0)))
       } else if (view === 'week') {
         const weekStart = new Date(currentDate)
         weekStart.setDate(weekStart.getDate() - weekStart.getDay())
         const weekEnd = new Date(weekStart)
         weekEnd.setDate(weekEnd.getDate() + 6)
-        params.set('from', weekStart.toISOString().split('T')[0])
-        params.set('to', weekEnd.toISOString().split('T')[0])
+        params.set('from', toLocalDate(weekStart))
+        params.set('to', toLocalDate(weekEnd))
       }
 
       const res = await fetch(`/api/jobs?${params.toString()}`)
@@ -89,11 +92,11 @@ export default function CalendarPage() {
   }, [year, month])
 
   const getJobsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0]
+    const dateStr = toLocalDate(date)
     return jobs.filter((j) => j.scheduled_start?.startsWith(dateStr))
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = toLocalDate(new Date())
 
   const PRIORITY_COLORS: Record<string, string> = {
     urgent: 'bg-red-500',
@@ -167,7 +170,7 @@ export default function CalendarPage() {
           {/* Calendar grid */}
           <div className="grid grid-cols-7">
             {calendarDays.map((date, i) => {
-              const dateStr = date.toISOString().split('T')[0]
+              const dateStr = toLocalDate(date)
               const isCurrentMonth = date.getMonth() === month
               const isToday = dateStr === today
               const dayJobs = getJobsForDate(date)
@@ -217,7 +220,7 @@ export default function CalendarPage() {
           ) : (
             <div className="space-y-3">
               {jobs
-                .filter((j) => j.scheduled_start?.startsWith(currentDate.toISOString().split('T')[0]))
+                .filter((j) => j.scheduled_start?.startsWith(toLocalDate(currentDate)))
                 .map((job) => {
                   const colors = statusColor(job.status)
                   return (
@@ -264,7 +267,7 @@ export default function CalendarPage() {
             {Array.from({ length: 7 }).map((_, i) => {
               const d = new Date(currentDate)
               d.setDate(d.getDate() - d.getDay() + i)
-              const dateStr = d.toISOString().split('T')[0]
+              const dateStr = toLocalDate(d)
               const dayJobs = getJobsForDate(d)
               const isToday = dateStr === today
 
