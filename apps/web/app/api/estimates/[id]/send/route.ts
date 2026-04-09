@@ -35,7 +35,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const org = estimate.organization as any
   const customerName = `${customer?.first_name ?? ''} ${customer?.last_name ?? ''}`.trim() || 'there'
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
-  const estimateUrl = `${appUrl}/portal/estimates/${params.id}`
+  const estimateUrl = `${appUrl}/public/estimate/${params.id}`
   const results: { email?: boolean; sms?: boolean } = {}
 
   // Update to sent

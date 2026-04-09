@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePortalSession } from '../layout'
-import { FolderKanban, Calendar, DollarSign, TrendingUp } from 'lucide-react'
+import { FolderKanban, Calendar, DollarSign, TrendingUp, FileText, CheckCircle2, ArrowRight } from 'lucide-react'
 
 const STATUS_COLORS: Record<string, string> = {
   estimating: 'bg-blue-100 text-blue-700',
@@ -18,15 +18,18 @@ export default function PortalDashboardPage() {
   const { session } = usePortalSession()
   const [projects, setProjects] = useState<any[]>([])
   const [invoices, setInvoices] = useState<any[]>([])
+  const [estimates, setEstimates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       fetch('/api/portal/projects').then(r => r.json()),
       fetch('/api/portal/invoices').then(r => r.json()),
-    ]).then(([projData, invData]) => {
+      fetch('/api/portal/estimates').then(r => r.json()),
+    ]).then(([projData, invData, estData]) => {
       setProjects(projData.data || [])
       setInvoices(invData.data || [])
+      setEstimates(estData.data || [])
       setLoading(false)
     })
   }, [])
@@ -77,6 +80,41 @@ export default function PortalDashboardPage() {
           <p className="text-2xl font-bold text-gray-900">{invoices.length}</p>
         </div>
       </div>
+
+      {/* Pending Estimates Alert */}
+      {estimates.filter(e => ['sent', 'viewed'].includes(e.status)).length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-600" />
+              <h2 className="font-semibold text-blue-900">Estimates Awaiting Your Approval</h2>
+            </div>
+            <Link href="/public/portal/estimates" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+              View all <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {estimates.filter(e => ['sent', 'viewed'].includes(e.status)).map(est => (
+              <div key={est.id} className="flex items-center justify-between bg-white rounded-lg border border-blue-100 p-3">
+                <div>
+                  <p className="font-medium text-gray-900 text-sm">{est.title || est.estimate_number}</p>
+                  <p className="text-xs text-gray-500">{est.estimate_number} — Issued {est.issue_date}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-gray-900">{fmt(est.total)}</span>
+                  <a
+                    href={`/public/estimate/${est.id}`}
+                    className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Review
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Projects */}
       <div>

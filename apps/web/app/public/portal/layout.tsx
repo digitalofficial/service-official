@@ -4,7 +4,7 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { LogOut, FolderKanban, Receipt, Home } from 'lucide-react'
+import { LogOut, FolderKanban, Receipt, Home, FileText } from 'lucide-react'
 
 interface PortalSession {
   id: string
@@ -79,6 +79,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                 <nav className="flex items-center gap-1">
                   <Link href="/public/portal/dashboard" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname === '/public/portal/dashboard' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
                     <Home className="w-4 h-4 inline mr-1.5" />Dashboard
+                  </Link>
+                  <Link href="/public/portal/estimates" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname.startsWith('/public/portal/estimates') ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+                    <FileText className="w-4 h-4 inline mr-1.5" />Estimates
                   </Link>
                   <Link href="/public/portal/invoices" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname.startsWith('/public/portal/invoices') ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
                     <Receipt className="w-4 h-4 inline mr-1.5" />Invoices
