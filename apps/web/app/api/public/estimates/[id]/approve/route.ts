@@ -150,6 +150,64 @@ async function handleApprove(request: NextRequest, estimateId: string) {
     // Estimate is still approved even if invoice creation fails
   }
 
+  // ── Auto-create portal user if customer has email ─────────
+  let portalUser = null
+  let portalToken = null
+  try {
+    if (estimate.customer_id) {
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('id, email, first_name, last_name')
+        .eq('id', estimate.customer_id)
+        .single()
+
+      if (customer?.email) {
+        // Check if portal user already exists
+        const { data: existing } = await supabase
+          .from('portal_users')
+          .select('id')
+          .eq('customer_id', customer.id)
+          .eq('email', customer.email.toLowerCase())
+          .limit(1)
+          .single()
+
+        if (!existing) {
+          // Create portal user with magic link token
+          const { randomBytes } = await import('crypto')
+          const token = randomBytes(32).toString('hex')
+          const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+
+          const { data: newPortalUser } = await supabase
+            .from('portal_users')
+            .insert({
+              customer_id: customer.id,
+              organization_id: estimate.organization_id,
+              email: customer.email.toLowerCase(),
+              magic_link_token: token,
+              magic_link_expires_at: expiresAt,
+            })
+            .select()
+            .single()
+
+          if (newPortalUser) {
+            portalUser = newPortalUser
+            portalToken = token
+
+            // Enable portal access on customer
+            await supabase
+              .from('customers')
+              .update({ portal_access: true })
+              .eq('id', customer.id)
+          }
+        } else {
+          portalUser = existing
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Portal user creation error (non-critical):', e)
+  }
+
   // Trigger workflow (non-blocking)
   try {
     const { trigger } = await import('@service-official/workflows')
@@ -162,6 +220,7 @@ async function handleApprove(request: NextRequest, estimateId: string) {
   return NextResponse.json({
     data: { estimateId, status: invoice ? 'converted' : 'approved' },
     invoice: invoice ? { id: invoice.id, invoice_number: invoice.invoice_number } : null,
+    portal: portalToken ? { token: portalToken, portal_user_id: portalUser?.id } : (portalUser ? { existing: true } : null),
     success: true,
   })
 }

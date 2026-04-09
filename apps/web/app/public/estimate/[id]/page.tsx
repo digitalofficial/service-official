@@ -68,7 +68,8 @@ export default async function PublicEstimatePage({ params }: { params: { id: str
           <PublicEstimateActions
             estimateId={params.id}
             estimateStatus={estimate.status}
-            signatureUrl={estimate.signature_url}
+            customerEmail={customer?.email}
+            organizationName={organization?.name}
           />
         </div>
 

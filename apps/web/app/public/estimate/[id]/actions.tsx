@@ -1,18 +1,21 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { CheckCircle2, XCircle, Printer, Loader2, Pen } from 'lucide-react'
+import { CheckCircle2, XCircle, Printer, Loader2, Pen, UserPlus, ArrowRight, LogIn } from 'lucide-react'
 
 interface PublicEstimateActionsProps {
   estimateId: string
   estimateStatus: string
-  signatureUrl?: string
+  customerEmail?: string
+  organizationName?: string
 }
 
-export function PublicEstimateActions({ estimateId, estimateStatus }: PublicEstimateActionsProps) {
+export function PublicEstimateActions({ estimateId, estimateStatus, customerEmail, organizationName }: PublicEstimateActionsProps) {
   const [showApproveModal, setShowApproveModal] = useState(false)
   const [showDeclineModal, setShowDeclineModal] = useState(false)
-  // Track status client-side so we don't depend on page reload
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [portalToken, setPortalToken] = useState<string | null>(null)
+  const [portalExisting, setPortalExisting] = useState(false)
   const [status, setStatus] = useState(estimateStatus)
 
   const canRespond = ['sent', 'viewed'].includes(status)
@@ -39,7 +42,7 @@ export function PublicEstimateActions({ estimateId, estimateStatus }: PublicEsti
             </button>
           </>
         )}
-        {status === 'approved' && (
+        {(status === 'approved' || status === 'converted') && (
           <div className="px-3 sm:px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-sm font-medium flex items-center gap-1.5">
             <CheckCircle2 className="w-4 h-4" />
             Approved
@@ -64,13 +67,22 @@ export function PublicEstimateActions({ estimateId, estimateStatus }: PublicEsti
         <ApproveModal
           estimateId={estimateId}
           onClose={() => setShowApproveModal(false)}
-          onApproved={() => {
+          onApproved={(data) => {
             setShowApproveModal(false)
-            setStatus('approved')
-            // Force a fresh page load with cache-busting query param
-            setTimeout(() => {
-              window.location.href = window.location.pathname + '?v=' + Date.now()
-            }, 1200)
+            setStatus(data?.status || 'approved')
+            // Show onboarding if portal was created
+            if (data?.portal?.token) {
+              setPortalToken(data.portal.token)
+              setShowOnboarding(true)
+            } else if (data?.portal?.existing) {
+              setPortalExisting(true)
+              setShowOnboarding(true)
+            } else {
+              // No portal — just reload
+              setTimeout(() => {
+                window.location.href = window.location.pathname + '?v=' + Date.now()
+              }, 1200)
+            }
           }}
         />
       )}
@@ -88,11 +100,118 @@ export function PublicEstimateActions({ estimateId, estimateStatus }: PublicEsti
           }}
         />
       )}
+
+      {showOnboarding && (
+        <OnboardingModal
+          portalToken={portalToken}
+          portalExisting={portalExisting}
+          customerEmail={customerEmail}
+          organizationName={organizationName}
+          onClose={() => {
+            setShowOnboarding(false)
+            window.location.href = window.location.pathname + '?v=' + Date.now()
+          }}
+        />
+      )}
     </>
   )
 }
 
-function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string; onClose: () => void; onApproved: () => void }) {
+// ── Onboarding Modal ─────────────────────────────────────────
+
+function OnboardingModal({ portalToken, portalExisting, customerEmail, organizationName, onClose }: {
+  portalToken: string | null
+  portalExisting: boolean
+  customerEmail?: string
+  organizationName?: string
+  onClose: () => void
+}) {
+  const [loggingIn, setLoggingIn] = useState(false)
+
+  async function handleGoToPortal() {
+    if (portalToken) {
+      setLoggingIn(true)
+      // Verify the token to set session cookie, then redirect to portal
+      const res = await fetch('/api/portal/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify', token: portalToken }),
+      })
+      if (res.ok) {
+        window.location.href = '/public/portal/dashboard'
+        return
+      }
+    }
+    // Fallback — go to portal login
+    window.location.href = '/public/portal/login'
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={onClose}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg p-6 sm:p-8" onClick={e => e.stopPropagation()}>
+        {/* Success header */}
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900">Estimate Approved!</h2>
+          <p className="text-sm text-gray-500 mt-1">An invoice will be sent to you shortly.</p>
+        </div>
+
+        {/* Portal account setup */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+              <UserPlus className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-blue-900">
+                {portalExisting ? 'Access Your Portal' : 'Your Client Portal is Ready'}
+              </h3>
+              <p className="text-sm text-blue-700 mt-1">
+                {portalExisting
+                  ? `Sign in to track your project, view invoices, and make payments.`
+                  : `We've created your account${customerEmail ? ` (${customerEmail})` : ''}. Track your project progress, view documents, and pay invoices online.`
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <button
+            onClick={handleGoToPortal}
+            disabled={loggingIn}
+            className="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
+            {loggingIn ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Setting up...</>
+            ) : (
+              <><LogIn className="w-4 h-4" /> Go to My Portal</>
+            )}
+          </button>
+
+          <button
+            onClick={onClose}
+            className="w-full py-3 border border-gray-300 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Maybe Later
+          </button>
+        </div>
+
+        {organizationName && (
+          <p className="text-xs text-gray-400 text-center mt-4">
+            Client portal powered by {organizationName}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Approve Modal ────────────────────────────────────────────
+
+function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string; onClose: () => void; onApproved: (data: any) => void }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [hasSignature, setHasSignature] = useState(false)
@@ -161,12 +280,10 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
     setLoading(true)
     setError('')
 
-    // Step 1: Try with signature
     try {
       let sig: string | undefined
       if (hasSignature && canvasRef.current) {
         sig = canvasRef.current.toDataURL('image/jpeg', 0.4)
-        // If signature data URL is too large, skip it
         if (sig.length > 200000) sig = undefined
       }
 
@@ -179,11 +296,10 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
       const data = await res.json()
 
       if (res.ok && data.success) {
-        onApproved()
+        onApproved(data)
         return
       }
 
-      // If failed with signature, retry without
       if (!res.ok && sig) {
         const retry = await fetch(`/api/public/estimates/${estimateId}/approve`, {
           method: 'POST',
@@ -192,7 +308,7 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
         })
         const retryData = await retry.json()
         if (retry.ok && retryData.success) {
-          onApproved()
+          onApproved(retryData)
           return
         }
         setError(retryData.error || `Server error (${retry.status})`)
@@ -201,7 +317,6 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
       }
     } catch (err: any) {
       console.error('Approve fetch error:', err)
-      // Network error — try one more time without signature
       try {
         const retry = await fetch(`/api/public/estimates/${estimateId}/approve`, {
           method: 'POST',
@@ -210,7 +325,7 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
         })
         const retryData = await retry.json()
         if (retry.ok && retryData.success) {
-          onApproved()
+          onApproved(retryData)
           return
         }
         setError(retryData.error || 'Failed to approve')
@@ -218,7 +333,6 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
         setError('Network error — please check your connection and try again')
       }
     }
-
     setLoading(false)
   }
 
@@ -270,6 +384,8 @@ function ApproveModal({ estimateId, onClose, onApproved }: { estimateId: string;
     </div>
   )
 }
+
+// ── Decline Modal ────────────────────────────────────────────
 
 function DeclineModal({ estimateId, onClose, onDeclined }: { estimateId: string; onClose: () => void; onDeclined: () => void }) {
   const [loading, setLoading] = useState(false)
