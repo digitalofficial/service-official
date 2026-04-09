@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { CheckCircle2, XCircle, Printer, Loader2, Pen } from 'lucide-react'
 
 interface PublicEstimateActionsProps {
@@ -11,40 +10,39 @@ interface PublicEstimateActionsProps {
 }
 
 export function PublicEstimateActions({ estimateId, estimateStatus, signatureUrl }: PublicEstimateActionsProps) {
-  const router = useRouter()
   const [showApproveModal, setShowApproveModal] = useState(false)
   const [showDeclineModal, setShowDeclineModal] = useState(false)
-  const [loading, setLoading] = useState(false)
 
   const canRespond = ['sent', 'viewed'].includes(estimateStatus)
 
   return (
     <>
-      <div className="flex items-center gap-2 no-print">
+      <div className="flex items-center gap-2 no-print flex-wrap justify-end">
         {canRespond && (
           <>
             <button
               onClick={() => setShowApproveModal(true)}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center gap-2"
+              className="px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center gap-1.5"
             >
               <CheckCircle2 className="w-4 h-4" />
-              Approve Estimate
+              <span className="hidden sm:inline">Approve Estimate</span>
+              <span className="sm:hidden">Approve</span>
             </button>
             <button
               onClick={() => setShowDeclineModal(true)}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+              className="px-3 sm:px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
             >
               <XCircle className="w-4 h-4" />
-              Decline
+              <span>Decline</span>
             </button>
           </>
         )}
         <button
           onClick={() => window.print()}
-          className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1.5"
         >
-          <Printer className="w-4 h-4 inline mr-1.5" />
-          PDF
+          <Printer className="w-4 h-4" />
+          <span className="hidden sm:inline">PDF</span>
         </button>
       </div>
 
@@ -53,7 +51,7 @@ export function PublicEstimateActions({ estimateId, estimateStatus, signatureUrl
         <ApproveModal
           estimateId={estimateId}
           onClose={() => setShowApproveModal(false)}
-          onApproved={() => { setShowApproveModal(false); router.refresh() }}
+          onApproved={() => { setShowApproveModal(false); window.location.reload() }}
         />
       )}
 
@@ -62,7 +60,7 @@ export function PublicEstimateActions({ estimateId, estimateStatus, signatureUrl
         <DeclineModal
           estimateId={estimateId}
           onClose={() => setShowDeclineModal(false)}
-          onDeclined={() => { setShowDeclineModal(false); router.refresh() }}
+          onDeclined={() => { setShowDeclineModal(false); window.location.reload() }}
         />
       )}
     </>

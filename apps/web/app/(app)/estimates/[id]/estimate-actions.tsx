@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { SendChannelDialog, type SendChannel } from '@/components/ui/send-channel-dialog'
-import { Printer, Copy } from 'lucide-react'
+import { Printer, Copy, Send } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface EstimateActionsProps {
@@ -39,6 +39,9 @@ export function EstimateActions({ estimateId, status, hasEmail, hasPhone }: Esti
     }
   }
 
+  // Show send button on all non-terminal statuses (can always re-send)
+  const canSend = !['converted', 'expired'].includes(status) && (hasEmail || hasPhone)
+
   return (
     <div className="flex items-center gap-2 no-print">
       <Button variant="outline" size="sm" onClick={handlePrint}>
@@ -47,12 +50,12 @@ export function EstimateActions({ estimateId, status, hasEmail, hasPhone }: Esti
       <Button variant="outline" size="sm" onClick={handleCopyLink}>
         <Copy className="w-4 h-4 mr-1" /> Copy Link
       </Button>
-      {status === 'draft' && (
+      {canSend && (
         <SendChannelDialog
           onSend={handleSend}
           hasEmail={hasEmail}
           hasPhone={hasPhone}
-          label="Send Estimate"
+          label={status === 'draft' ? 'Send Estimate' : 'Resend Estimate'}
         />
       )}
     </div>

@@ -44,22 +44,22 @@ export default async function PublicEstimatePage({ params }: { params: { id: str
   const customer = (estimate as any)?.customer
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <div className="min-h-screen bg-gray-100 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-[850px] mx-auto">
-        {/* Actions bar */}
-        <div className="flex items-center justify-between mb-4 no-print">
-          <div className="flex items-center gap-3">
+        {/* Actions bar — stacks on mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 no-print">
+          <div className="flex items-center gap-3 min-w-0">
             {organization?.logo_url ? (
-              <img src={organization.logo_url} alt="" className="h-8 w-auto" />
+              <img src={organization.logo_url} alt="" className="h-8 w-auto shrink-0" />
             ) : (
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold shrink-0"
                 style={{ backgroundColor: organization?.primary_color ?? '#2563eb' }}
               >
                 {organization?.name?.[0]}
               </div>
             )}
-            <span className="text-sm text-gray-500">Estimate from <strong className="text-gray-900">{organization?.name}</strong></span>
+            <span className="text-sm text-gray-500 truncate">Estimate from <strong className="text-gray-900">{organization?.name}</strong></span>
           </div>
           <PublicEstimateActions
             estimateId={params.id}
