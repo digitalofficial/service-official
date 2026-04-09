@@ -107,13 +107,13 @@ export default function EditJobPage() {
     }
 
     if (scheduledDate && scheduledTime) {
-      updates.scheduled_start = `${scheduledDate}T${scheduledTime}:00`
+      updates.scheduled_start = new Date(`${scheduledDate}T${scheduledTime}:00`).toISOString()
     } else {
       updates.scheduled_start = null
     }
 
     if (scheduledDate && scheduledEndTime) {
-      updates.scheduled_end = `${scheduledDate}T${scheduledEndTime}:00`
+      updates.scheduled_end = new Date(`${scheduledDate}T${scheduledEndTime}:00`).toISOString()
     } else {
       updates.scheduled_end = null
     }

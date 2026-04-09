@@ -52,12 +52,12 @@ export default function NewJobPage() {
 
     // Combine date + time into ISO strings
     if (body.scheduled_date && body.scheduled_time) {
-      body.scheduled_start = `${body.scheduled_date}T${body.scheduled_time}:00`
+      body.scheduled_start = new Date(`${body.scheduled_date}T${body.scheduled_time}:00`).toISOString()
       delete body.scheduled_date
       delete body.scheduled_time
     }
     if (body.scheduled_end_time && body.scheduled_date) {
-      body.scheduled_end = `${body.scheduled_date ?? body.scheduled_start?.split('T')[0]}T${body.scheduled_end_time}:00`
+      body.scheduled_end = new Date(`${body.scheduled_date}T${body.scheduled_end_time}:00`).toISOString()
       delete body.scheduled_end_time
     }
 

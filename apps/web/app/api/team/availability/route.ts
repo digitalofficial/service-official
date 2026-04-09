@@ -20,14 +20,15 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const days = Math.min(parseInt(searchParams.get('days') ?? '7'), 14)
 
-  // Use UTC-based date range to match Supabase timestamps
   const now = new Date()
-  // Start from beginning of today (UTC)
-  const todayStr = now.toISOString().split('T')[0]
-  const startDate = `${todayStr}T00:00:00Z`
+  // Start from 24 hours ago to catch jobs that might span timezone boundaries
+  const startDate = new Date(now)
+  startDate.setDate(startDate.getDate() - 1)
 
   const endDate = new Date(now)
-  endDate.setDate(endDate.getDate() + days)
+  endDate.setDate(endDate.getDate() + days + 1)
+
+  const startStr = startDate.toISOString()
   const endStr = endDate.toISOString()
 
   // Fetch active team members (any role that could be assigned jobs)
@@ -50,27 +51,30 @@ export async function GET(request: NextRequest) {
     .eq('organization_id', orgId)
     .not('assigned_to', 'is', null)
     .not('scheduled_start', 'is', null)
-    .gte('scheduled_start', startDate)
+    .gte('scheduled_start', startStr)
     .lt('scheduled_start', endStr)
     .not('status', 'eq', 'canceled')
     .order('scheduled_start', { ascending: true })
 
-  // Build days array using local date strings
+  // Helper: format date as YYYY-MM-DD in a consistent way
+  const toDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
+  // Build days array
   const daysRange: string[] = []
   for (let i = 0; i < days; i++) {
     const d = new Date(now)
     d.setDate(d.getDate() + i)
-    daysRange.push(d.toISOString().split('T')[0])
+    daysRange.push(toDateStr(d))
   }
 
-  // Group jobs by assigned_to → date
+  // Group jobs by assigned_to → date (using server local date for the scheduled_start)
   const jobsByMember = new Map<string, Map<string, any[]>>()
 
   for (const job of jobs ?? []) {
     if (!job.assigned_to || !job.scheduled_start) continue
 
-    // Get the date portion from the scheduled_start
-    const dateKey = job.scheduled_start.split('T')[0]
+    // Convert UTC timestamp to local date on the server
+    const dateKey = toDateStr(new Date(job.scheduled_start))
 
     if (!jobsByMember.has(job.assigned_to)) {
       jobsByMember.set(job.assigned_to, new Map())

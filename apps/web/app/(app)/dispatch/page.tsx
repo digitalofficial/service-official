@@ -148,10 +148,10 @@ export default function DispatchPage() {
     }
 
     if (date && startTime) {
-      jobData.scheduled_start = `${date}T${startTime}:00`
+      jobData.scheduled_start = new Date(`${date}T${startTime}:00`).toISOString()
     }
     if (date && endTime) {
-      jobData.scheduled_end = `${date}T${endTime}:00`
+      jobData.scheduled_end = new Date(`${date}T${endTime}:00`).toISOString()
     }
 
     // Create job
