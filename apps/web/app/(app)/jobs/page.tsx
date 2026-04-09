@@ -28,9 +28,11 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 export default async function JobsPage({ searchParams }: Props) {
+  try {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user!.id).single()
+  if (!user) return <div className="p-8 text-center text-gray-500">Please log in</div>
+  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
 
   const selfOnlyRoles = ['technician', 'foreman', 'subcontractor']
 
@@ -52,10 +54,13 @@ export default async function JobsPage({ searchParams }: Props) {
 
   if (searchParams.status) query = query.eq('status', searchParams.status)
 
-  const [{ data: jobs }, { data: org }] = await Promise.all([
-    query,
-    supabase.from('organizations').select('name, address_line1, city, state, zip').eq('id', profile!.organization_id).single(),
-  ])
+  const { data: jobs } = await query
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('name, address_line1, city, state, zip')
+    .eq('id', profile!.organization_id)
+    .single()
+
   const isMapView = searchParams.view === 'map'
 
   // Serialize org address for client-side map component
@@ -177,4 +182,13 @@ export default async function JobsPage({ searchParams }: Props) {
       )}
     </div>
   )
+  } catch (err: any) {
+    console.error('JOBS PAGE ERROR:', err.message, err.stack)
+    return (
+      <div className="p-8 text-center">
+        <h1 className="text-lg font-bold text-red-600">Something went wrong</h1>
+        <p className="text-sm text-gray-500 mt-2">{err.message}</p>
+      </div>
+    )
+  }
 }
