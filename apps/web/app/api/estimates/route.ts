@@ -21,6 +21,7 @@ const lineItemSchema = z.object({
 const estimateSchema = z.object({
   project_id: z.string().uuid().optional(),
   customer_id: z.string().uuid().optional(),
+  job_id: z.string().uuid().optional(),
   title: z.string().min(1),
   description: z.string().optional(),
   issue_date: z.string().optional(),

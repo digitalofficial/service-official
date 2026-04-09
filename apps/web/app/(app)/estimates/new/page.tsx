@@ -35,6 +35,7 @@ export default function NewEstimatePage() {
   const searchParams = useSearchParams()
   const prefillProjectId = searchParams.get('project_id')
   const prefillCustomerId = searchParams.get('customer_id')
+  const prefillJobId = searchParams.get('job_id')
 
   const [loading, setLoading] = useState(false)
   const [items, setItems] = useState<LineItem[]>([emptyItem()])
@@ -69,6 +70,7 @@ export default function NewEstimatePage() {
       description: fd.get('description') || undefined,
       customer_id: fd.get('customer_id') || undefined,
       project_id: fd.get('project_id') || undefined,
+      job_id: fd.get('job_id') || undefined,
       issue_date: fd.get('issue_date') || undefined,
       expiry_date: fd.get('expiry_date') || undefined,
       terms: fd.get('terms') || undefined,
@@ -121,6 +123,7 @@ export default function NewEstimatePage() {
             <InlineCustomerSelect defaultValue={prefillCustomerId ?? ''} />
             <InlineProjectSelect defaultValue={prefillProjectId ?? ''} />
           </div>
+          <input type="hidden" name="job_id" value={prefillJobId ?? ''} />
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">

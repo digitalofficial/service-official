@@ -9,6 +9,7 @@ import { JobPhotos } from './job-photos'
 import { JobFiles } from './job-files'
 import { JobExpenses } from './job-expenses'
 import { JobTimeEntries } from './job-time-entries'
+import { ConvertEstimateButton } from './convert-estimate-button'
 import { WorkflowBar } from './workflow-bar'
 import { ActivityFeed } from './activity-feed'
 import {
@@ -44,11 +45,12 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   if (!job) notFound()
 
-  // Get photos, files, expenses, and invoices for this job
-  const [{ data: photos }, { data: files }, { data: expenses }, { data: invoices }] = await Promise.all([
+  // Get photos, files, expenses, estimates, and invoices for this job
+  const [{ data: photos }, { data: files }, { data: expenses }, { data: estimates }, { data: invoices }] = await Promise.all([
     supabase.from('photos').select('*').eq('job_id', params.id).order('created_at', { ascending: false }),
     supabase.from('files').select('*').eq('job_id', params.id).order('created_at', { ascending: false }),
     supabase.from('expenses').select('*').eq('job_id', params.id).order('created_at', { ascending: false }),
+    supabase.from('estimates').select('id, estimate_number, status, total, created_at').eq('job_id', params.id).order('created_at', { ascending: false }),
     supabase.from('invoices').select('id, invoice_number, status, total, created_at').eq('job_id', params.id).order('created_at', { ascending: false }),
   ])
 
@@ -61,6 +63,10 @@ export default async function JobDetailPage({ params }: { params: { id: string }
   const customerAddress = customer
     ? [customer.address_line1, customer.city, customer.state, customer.zip].filter(Boolean).join(', ')
     : ''
+
+  const estimateParams = new URLSearchParams()
+  estimateParams.set('job_id', params.id)
+  if (customer?.id) estimateParams.set('customer_id', customer.id)
 
   const invoiceParams = new URLSearchParams()
   invoiceParams.set('job_id', params.id)
@@ -162,6 +168,49 @@ export default async function JobDetailPage({ params }: { params: { id: string }
               )}
             </div>
           )}
+
+          {/* Estimates */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <FileText className="w-4 h-4" /> Estimates ({estimates?.length ?? 0})
+              </h2>
+              <Link href={`/estimates/new?${estimateParams.toString()}`}>
+                <Button size="sm" variant="outline">Create Estimate</Button>
+              </Link>
+            </div>
+            {estimates && estimates.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {estimates.map((est: any) => {
+                  const estColors = statusColor(est.status)
+                  const canConvert = ['approved', 'sent'].includes(est.status)
+                  return (
+                    <div key={est.id} className="flex items-center justify-between py-2.5">
+                      <div>
+                        <Link href={`/estimates/${est.id}`} className="text-sm font-medium text-blue-600 hover:underline">
+                          {est.estimate_number || 'Draft Estimate'}
+                        </Link>
+                        <p className="text-xs text-gray-500">
+                          {formatDate(est.created_at, { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${estColors.bg} ${estColors.text}`}>
+                          {est.status}
+                        </span>
+                        <span className="text-sm font-medium text-gray-900">{formatCurrency(est.total ?? 0)}</span>
+                        {canConvert && (
+                          <ConvertEstimateButton estimateId={est.id} />
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 text-center py-4">No estimates yet</p>
+            )}
+          </div>
 
           {/* Invoices */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
