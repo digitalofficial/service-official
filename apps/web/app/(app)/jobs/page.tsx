@@ -52,8 +52,16 @@ export default async function JobsPage({ searchParams }: Props) {
 
   if (searchParams.status) query = query.eq('status', searchParams.status)
 
-  const { data: jobs } = await query
+  const [{ data: jobs }, { data: org }] = await Promise.all([
+    query,
+    supabase.from('organizations').select('name, address_line1, city, state, zip').eq('id', profile!.organization_id).single(),
+  ])
   const isMapView = searchParams.view === 'map'
+
+  // Serialize org address for client-side map component
+  const orgAddress = org?.address_line1
+    ? JSON.stringify({ address: [org.address_line1, org.city, org.state, org.zip].filter(Boolean).join(', '), name: org.name })
+    : null
 
   return (
     <div className="space-y-6">
@@ -111,12 +119,12 @@ export default async function JobsPage({ searchParams }: Props) {
         <>
           {/* Desktop: always show map */}
           <div className="hidden md:block">
-            <JobsMapView jobs={jobs as any} height="50vh" />
+            <JobsMapView jobs={jobs as any} height="50vh" orgAddress={orgAddress ?? undefined} />
           </div>
           {/* Mobile: show map only when toggled */}
           {isMapView && (
             <div className="md:hidden">
-              <JobsMapView jobs={jobs as any} />
+              <JobsMapView jobs={jobs as any} orgAddress={orgAddress ?? undefined} />
             </div>
           )}
           {/* Desktop: always show list / Mobile: show list only when not map view */}

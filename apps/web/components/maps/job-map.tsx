@@ -17,10 +17,17 @@ interface MapJob {
   assignee_name?: string
 }
 
+interface BaseLocation {
+  lat: number
+  lng: number
+  name?: string
+}
+
 interface JobMapProps {
   jobs: MapJob[]
   height?: string
   type?: 'jobs' | 'projects'
+  baseLocation?: BaseLocation
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -54,7 +61,21 @@ function createPin(color: string) {
   })
 }
 
-export function JobMap({ jobs, height = '400px', type = 'jobs' }: JobMapProps) {
+function createStarIcon() {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="#c9a84c" stroke="#fff" stroke-width="1.5">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+    </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -18],
+  })
+}
+
+export function JobMap({ jobs, height = '400px', type = 'jobs', baseLocation }: JobMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstance = useRef<L.Map | null>(null)
   const router = useRouter()
@@ -90,6 +111,15 @@ export function JobMap({ jobs, height = '400px', type = 'jobs' }: JobMapProps) {
     })
 
     const bounds: L.LatLngBoundsExpression = []
+
+    // Base location star marker
+    if (baseLocation) {
+      const starIcon = createStarIcon()
+      L.marker([baseLocation.lat, baseLocation.lng], { icon: starIcon, zIndexOffset: 1000 })
+        .addTo(map)
+        .bindPopup(`<div style="font-family:system-ui;font-size:13px;"><p style="font-weight:600;margin:0;">${baseLocation.name ?? 'Home Base'}</p><p style="color:#888;margin:2px 0 0;font-size:12px;">Company location</p></div>`)
+      bounds.push([baseLocation.lat, baseLocation.lng] as L.LatLngTuple)
+    }
 
     for (const job of jobs) {
       if (!job.lat || !job.lng) continue
@@ -133,7 +163,7 @@ export function JobMap({ jobs, height = '400px', type = 'jobs' }: JobMapProps) {
     if (bounds.length > 0) {
       map.fitBounds(bounds as L.LatLngBoundsExpression, { padding: [40, 40], maxZoom: 14 })
     }
-  }, [jobs, ready, router, type])
+  }, [jobs, ready, router, type, baseLocation])
 
   // Legend
   const statuses = [...new Set(jobs.map(j => j.status))]
@@ -141,8 +171,16 @@ export function JobMap({ jobs, height = '400px', type = 'jobs' }: JobMapProps) {
   return (
     <div className="rounded-xl overflow-hidden border border-gray-200 relative z-0">
       <div ref={mapRef} style={{ height, width: '100%' }} />
-      {statuses.length > 0 && (
+      {(statuses.length > 0 || baseLocation) && (
         <div className="flex flex-wrap gap-3 px-4 py-2.5 bg-white border-t border-gray-100">
+          {baseLocation && (
+            <div className="flex items-center gap-1.5 text-xs text-gray-600">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#c9a84c" stroke="#c9a84c" strokeWidth="1">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <span>Home Base</span>
+            </div>
+          )}
           {statuses.map(s => (
             <div key={s} className="flex items-center gap-1.5 text-xs text-gray-600">
               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[s] ?? '#9ca3af' }} />

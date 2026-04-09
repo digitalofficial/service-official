@@ -23,8 +23,34 @@ interface Job {
   assignee?: { first_name?: string; last_name?: string }
 }
 
-export function JobsMapView({ jobs, height = '500px' }: { jobs: Job[]; height?: string }) {
+interface BaseLocation {
+  lat: number
+  lng: number
+  name?: string
+}
+
+export function JobsMapView({ jobs, height = '500px', orgAddress }: { jobs: Job[]; height?: string; orgAddress?: string }) {
   const [mapJobs, setMapJobs] = useState<any[]>([])
+  const [baseLocation, setBaseLocation] = useState<BaseLocation | undefined>()
+
+  // Geocode org base location
+  useEffect(() => {
+    if (!orgAddress) return
+    try {
+      const parsed = JSON.parse(orgAddress)
+      if (!parsed.address) return
+      fetch(`https://nominatim.openstreetmap.org/search?${new URLSearchParams({ q: parsed.address, format: 'json', limit: '1' })}`, {
+        headers: { 'User-Agent': 'ServiceOfficial/1.0' },
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.length > 0) {
+            setBaseLocation({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: parsed.name })
+          }
+        })
+        .catch(() => {})
+    } catch {}
+  }, [orgAddress])
 
   useEffect(() => {
     async function geocodeJobs() {
@@ -92,7 +118,7 @@ export function JobsMapView({ jobs, height = '500px' }: { jobs: Job[]; height?: 
           Geocoding job locations...
         </div>
       ) : (
-        <JobMap jobs={mapJobs} height={height} type="jobs" />
+        <JobMap jobs={mapJobs} height={height} type="jobs" baseLocation={baseLocation} />
       )}
       <p className="text-xs text-gray-400 mt-2">
         {mapJobs.length} of {jobs.length} jobs mapped — double-click a pin to open the job
