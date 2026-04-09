@@ -14,6 +14,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'Customer Detail' }
 
 export default async function CustomerDetailPage({ params }: { params: { id: string } }) {
+  try {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) notFound()
@@ -418,4 +419,13 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
       </div>
     </div>
   )
+  } catch (err: any) {
+    console.error('CUSTOMER PAGE ERROR:', err.message, err.stack)
+    return (
+      <div className="p-8 text-center">
+        <h1 className="text-lg font-bold text-red-600">Something went wrong</h1>
+        <p className="text-sm text-gray-500 mt-2">{err.message}</p>
+      </div>
+    )
+  }
 }
