@@ -13,15 +13,16 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
 // Uses NEXT_PUBLIC_TIMEZONE env var if set, otherwise America/Phoenix (MST)
 const DEFAULT_TZ = process.env.NEXT_PUBLIC_TIMEZONE ?? 'America/Phoenix'
 
-export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOptions): string {
+export function formatDate(date: string | Date | null | undefined, options?: Intl.DateTimeFormatOptions): string {
+  if (!date || date === '') return ''
+  const parsed = typeof date === 'string' ? new Date(date) : date
+  if (isNaN(parsed.getTime())) return ''
   const opts: Intl.DateTimeFormatOptions = {
     timeZone: DEFAULT_TZ,
     ...(options ?? { month: 'short', day: 'numeric', year: 'numeric' }),
   }
-  // Don't override timeZone if caller explicitly set it
   if (options && !options.timeZone) opts.timeZone = DEFAULT_TZ
-  return new Intl.DateTimeFormat('en-US', opts)
-    .format(typeof date === 'string' ? new Date(date) : date)
+  return new Intl.DateTimeFormat('en-US', opts).format(parsed)
 }
 
 export function formatPhone(phone: string): string {
