@@ -184,11 +184,11 @@ export default async function DashboardPage() {
 
       {/* Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <MetricCard label="Estimates Pending" value={String(pendingEstimateCount)} icon={FileText} iconColor="text-amber-600" iconBg="bg-amber-50" trend={pendingEstimateValue > 0 ? formatCurrency(pendingEstimateValue) + ' value' : undefined} />
-        <MetricCard label="Estimates Approved" value={String(approvedEstimateCount)} icon={TrendingUp} iconColor="text-emerald-600" iconBg="bg-emerald-50" trend={approvedEstimateValue > 0 ? formatCurrency(approvedEstimateValue) + ' value' : undefined} />
-        <MetricCard label="Active Projects" value={String(recentProjects?.length ?? 0)} icon={FolderKanban} iconColor="text-blue-600" iconBg="bg-blue-50" />
-        <MetricCard label="Jobs Today" value={String(todayJobs?.length ?? 0)} icon={Briefcase} iconColor="text-purple-600" iconBg="bg-purple-50" />
-        <MetricCard label="Outstanding" value={formatCurrency(outstanding)} icon={AlertCircle} iconColor="text-amber-600" iconBg="bg-amber-50" />
+        <MetricCard label="Estimates Pending" value={String(pendingEstimateCount)} icon={FileText} iconColor="text-amber-600" iconBg="bg-amber-50" trend={pendingEstimateValue > 0 ? formatCurrency(pendingEstimateValue) + ' value' : undefined} href="/estimates?status=sent" />
+        <MetricCard label="Estimates Approved" value={String(approvedEstimateCount)} icon={TrendingUp} iconColor="text-emerald-600" iconBg="bg-emerald-50" trend={approvedEstimateValue > 0 ? formatCurrency(approvedEstimateValue) + ' value' : undefined} href="/estimates?status=approved" />
+        <MetricCard label="Active Projects" value={String(recentProjects?.length ?? 0)} icon={FolderKanban} iconColor="text-blue-600" iconBg="bg-blue-50" href="/projects" />
+        <MetricCard label="Jobs Today" value={String(todayJobs?.length ?? 0)} icon={Briefcase} iconColor="text-purple-600" iconBg="bg-purple-50" href="/jobs" />
+        <MetricCard label="Outstanding" value={formatCurrency(outstanding)} icon={AlertCircle} iconColor="text-amber-600" iconBg="bg-amber-50" href="/invoices?status=overdue" />
       </div>
 
       {/* Jobs Map — All Jobs */}
@@ -415,11 +415,11 @@ export default async function DashboardPage() {
   )
 }
 
-function MetricCard({ label, value, icon: Icon, iconColor, iconBg, trend }: {
-  label: string; value: string; icon: any; iconColor: string; iconBg: string; trend?: string
+function MetricCard({ label, value, icon: Icon, iconColor, iconBg, trend, href }: {
+  label: string; value: string; icon: any; iconColor: string; iconBg: string; trend?: string; href?: string
 }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-5">
+  const content = (
+    <>
       <div className="flex items-center justify-between mb-2 sm:mb-3">
         <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg ${iconBg} flex items-center justify-center`}>
           <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${iconColor}`} />
@@ -428,6 +428,16 @@ function MetricCard({ label, value, icon: Icon, iconColor, iconBg, trend }: {
       <p className="text-lg sm:text-2xl font-bold text-gray-900 truncate">{value}</p>
       <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">{label}</p>
       {trend && <p className="text-xs text-green-600 mt-1">{trend}</p>}
-    </div>
+    </>
   )
+
+  if (href) {
+    return (
+      <Link href={href} className="bg-white rounded-xl border border-gray-200 p-3 sm:p-5 hover:border-blue-300 hover:shadow-sm transition-all">
+        {content}
+      </Link>
+    )
+  }
+
+  return <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-5">{content}</div>
 }
