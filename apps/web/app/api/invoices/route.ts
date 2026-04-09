@@ -49,10 +49,12 @@ export async function POST(request: NextRequest) {
   const year = new Date().getFullYear()
   const invoice_number = `INV-${year}-${String((count ?? 0) + 1).padStart(4, '0')}`
 
+  const { line_items, ...invoiceFields } = body
+
   const { data, error } = await supabase
     .from('invoices')
     .insert({
-      ...body,
+      ...invoiceFields,
       invoice_number,
       organization_id: profile!.organization_id,
       created_by: user.id,
@@ -63,5 +65,29 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Insert line items
+  if (line_items?.length) {
+    const items = line_items.map((item: any, idx: number) => ({
+      invoice_id: data.id,
+      name: item.name,
+      description: item.description || null,
+      quantity: item.quantity ?? 1,
+      unit: item.unit || null,
+      unit_cost: item.unit_cost ?? 0,
+      total: item.total ?? (item.quantity ?? 1) * (item.unit_cost ?? 0),
+      is_taxable: item.is_taxable ?? true,
+      order_index: item.order_index ?? idx,
+    }))
+
+    const { error: itemsError } = await supabase
+      .from('invoice_line_items')
+      .insert(items)
+
+    if (itemsError) {
+      console.error('Failed to insert line items:', itemsError.message)
+    }
+  }
+
   return NextResponse.json({ data, success: true }, { status: 201 })
 }
