@@ -9,7 +9,7 @@ import {
   LayoutDashboard, FolderKanban, Users, UserPlus, Briefcase, Radio,
   Calendar, FileText, Receipt, CreditCard, MessageSquare, Send, Activity,
   Zap, BarChart3, Map, Cpu, Settings, Building2,
-  HardHat, Menu, X, Lock
+  HardHat, Menu, X, Lock, Truck, ShoppingCart, ClipboardCheck
 } from 'lucide-react'
 import { tierHasFeature } from '@/lib/auth/tier-access'
 
@@ -33,11 +33,14 @@ const NAV_ITEMS = [
   { label: 'Projects', href: '/projects', icon: FolderKanban },
   { label: 'Jobs', href: '/jobs', icon: Briefcase },
   { label: 'Calendar', href: '/calendar', icon: Calendar },
+  { label: 'Equipment', href: '/equipment', icon: Truck },
   { label: 'Customers', href: '/customers', icon: Users },
   { label: 'Leads', href: '/leads', icon: UserPlus },
   { label: 'Estimates', href: '/estimates', icon: FileText },
   { label: 'Invoices', href: '/invoices', icon: Receipt },
+  { label: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCart },
   { label: 'Payments', href: '/payments', icon: CreditCard },
+  { label: 'Inspections', href: '/inspections', icon: ClipboardCheck },
   { label: 'Estimator', href: '/estimator', icon: Cpu },
   { label: 'Team', href: '/team', icon: HardHat },
   { label: 'Messages', href: '/messages', icon: MessageSquare },

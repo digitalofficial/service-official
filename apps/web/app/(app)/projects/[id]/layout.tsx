@@ -7,6 +7,8 @@ import { ArrowLeft, MapPin, Calendar, DollarSign, Users } from 'lucide-react'
 
 const PROJECT_TABS = [
   { label: 'Overview', href: '' },
+  { label: 'Schedule', href: '/schedule' },
+  { label: 'Budget', href: '/budget' },
   { label: 'Files', href: '/files' },
   { label: 'Photos', href: '/photos' },
   { label: 'Blueprints', href: '/blueprints' },
@@ -19,6 +21,7 @@ const PROJECT_TABS = [
   { label: 'RFIs', href: '/rfis' },
   { label: 'Change Orders', href: '/change-orders' },
   { label: 'Submittals', href: '/submittals' },
+  { label: 'Inspections', href: '/inspections' },
   { label: 'Safety', href: '/safety' },
 ]
 

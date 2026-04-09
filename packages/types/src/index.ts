@@ -709,6 +709,373 @@ export interface Subcontractor extends BaseRecord {
   is_active: boolean
 }
 
+// ── Equipment ───────────────────────────────────────────────
+
+export type EquipmentStatus = 'available' | 'assigned' | 'maintenance' | 'repair' | 'retired'
+export type EquipmentCondition = 'excellent' | 'good' | 'fair' | 'poor'
+export type MaintenanceType = 'preventive' | 'corrective' | 'inspection' | 'calibration'
+export type MaintenanceStatus = 'scheduled' | 'in_progress' | 'completed' | 'skipped'
+
+export interface Equipment extends BaseRecord {
+  organization_id: string
+  name: string
+  type?: string
+  make?: string
+  model?: string
+  year?: number
+  serial_number?: string
+  vin?: string
+  license_plate?: string
+  purchase_date?: string
+  purchase_price?: number
+  current_value?: number
+  daily_rate?: number
+  hourly_rate?: number
+  status: EquipmentStatus
+  condition: EquipmentCondition
+  current_location?: string
+  last_service_date?: string
+  next_service_date?: string
+  service_interval_days?: number
+  meter_reading?: number
+  meter_unit: 'hours' | 'miles' | 'kilometers'
+  insurance_policy?: string
+  insurance_expiry?: string
+  photo_url?: string
+  notes?: string
+  tags: string[]
+  is_active: boolean
+  // Relations
+  current_assignment?: EquipmentAssignment
+}
+
+export interface EquipmentAssignment extends BaseRecord {
+  equipment_id: string
+  project_id?: string
+  job_id?: string
+  assigned_to?: string
+  start_date: string
+  end_date?: string
+  actual_return_date?: string
+  daily_rate?: number
+  total_cost?: number
+  notes?: string
+  created_by?: string
+  // Relations
+  equipment?: Equipment
+  project?: Project
+  job?: Job
+  assignee?: Profile
+}
+
+export interface EquipmentMaintenance extends BaseRecord {
+  equipment_id: string
+  type: MaintenanceType
+  title: string
+  description?: string
+  scheduled_date?: string
+  completed_date?: string
+  cost?: number
+  vendor_name?: string
+  meter_reading?: number
+  next_service_date?: string
+  performed_by?: string
+  notes?: string
+  status: MaintenanceStatus
+  // Relations
+  performer?: Profile
+}
+
+// ── Budget Management ───────────────────────────────────────
+
+export type BudgetCategoryType =
+  | 'materials' | 'labor' | 'equipment' | 'subcontractor' | 'permits'
+  | 'fuel' | 'overhead' | 'contingency' | 'other'
+
+export interface BudgetCategory extends BaseRecord {
+  project_id: string
+  name: string
+  type: BudgetCategoryType
+  budgeted_amount: number
+  description?: string
+  order_index: number
+  // Computed
+  actual_amount?: number
+  variance?: number
+  percent_used?: number
+  line_items?: BudgetLineItem[]
+}
+
+export interface BudgetLineItem extends BaseRecord {
+  budget_category_id: string
+  project_id: string
+  name: string
+  description?: string
+  budgeted_amount: number
+  expense_id?: string
+  material_id?: string
+  time_entry_id?: string
+  order_index: number
+}
+
+export interface BudgetSummary {
+  total_budget: number
+  total_actual: number
+  total_variance: number
+  percent_used: number
+  categories: (BudgetCategory & {
+    actual_amount: number
+    variance: number
+    percent_used: number
+  })[]
+  forecast_at_completion: number
+  estimated_over_under: number
+}
+
+// ── Vendor ──────────────────────────────────────────────────
+
+export interface Vendor extends BaseRecord {
+  organization_id: string
+  name: string
+  contact_name?: string
+  email?: string
+  phone?: string
+  address_line1?: string
+  city?: string
+  state?: string
+  zip?: string
+  website?: string
+  payment_terms?: string
+  notes?: string
+  is_active: boolean
+}
+
+// ── Purchase Order ──────────────────────────────────────────
+
+export type POStatus =
+  | 'draft' | 'pending_approval' | 'approved' | 'sent'
+  | 'acknowledged' | 'partial' | 'fulfilled' | 'closed' | 'canceled'
+
+export interface PurchaseOrder extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  vendor_id?: string
+  po_number: string
+  title?: string
+  status: POStatus
+  issue_date: string
+  expected_delivery?: string
+  delivered_at?: string
+  subtotal: number
+  tax_rate: number
+  tax_amount: number
+  shipping_cost: number
+  total: number
+  payment_terms?: string
+  shipping_address?: string
+  notes?: string
+  internal_notes?: string
+  requires_approval: boolean
+  approved_by?: string
+  approved_at?: string
+  created_by?: string
+  // Relations
+  vendor?: Vendor
+  project?: Project
+  line_items?: POLineItem[]
+  receipts?: POReceipt[]
+}
+
+export interface POLineItem extends BaseRecord {
+  purchase_order_id: string
+  project_material_id?: string
+  catalog_material_id?: string
+  name: string
+  description?: string
+  sku?: string
+  quantity: number
+  quantity_received: number
+  unit?: string
+  unit_cost: number
+  total: number
+  order_index: number
+  notes?: string
+}
+
+export interface POReceipt extends BaseRecord {
+  purchase_order_id: string
+  received_by?: string
+  received_at: string
+  notes?: string
+  photo_ids: string[]
+  items?: POReceiptItem[]
+}
+
+export interface POReceiptItem {
+  id: string
+  receipt_id: string
+  po_line_item_id: string
+  quantity_received: number
+  condition: 'good' | 'damaged' | 'wrong_item' | 'short'
+  notes?: string
+  created_at: string
+}
+
+// ── Gantt Chart ─────────────────────────────────────────────
+
+export type GanttDependencyType = 'FS' | 'FF' | 'SS' | 'SF'
+
+export interface GanttTask extends BaseRecord {
+  project_id: string
+  phase_id?: string
+  milestone_id?: string
+  parent_task_id?: string
+  name: string
+  start_date: string
+  end_date: string
+  duration_days: number
+  progress: number
+  is_milestone: boolean
+  assigned_to?: string
+  color?: string
+  order_index: number
+  notes?: string
+  // Relations
+  assignee?: Profile
+  children?: GanttTask[]
+  dependencies?: GanttDependency[]
+}
+
+export interface GanttDependency extends BaseRecord {
+  project_id: string
+  predecessor_id: string
+  successor_id: string
+  dependency_type: GanttDependencyType
+  lag_days: number
+}
+
+// ── Inspections & Checklists ────────────────────────────────
+
+export type InspectionStatus = 'scheduled' | 'in_progress' | 'completed' | 'failed' | 'canceled'
+export type ChecklistItemType = 'checkbox' | 'pass_fail' | 'text' | 'number' | 'photo' | 'signature' | 'select'
+export type InspectionItemStatus = 'pending' | 'pass' | 'fail' | 'na'
+
+export interface InspectionTemplate extends BaseRecord {
+  organization_id?: string
+  name: string
+  description?: string
+  trade?: string
+  category?: string
+  is_system: boolean
+  is_active: boolean
+  version: number
+  created_by?: string
+  sections?: TemplateSection[]
+}
+
+export interface TemplateSection extends BaseRecord {
+  template_id: string
+  name: string
+  description?: string
+  order_index: number
+  items?: TemplateItem[]
+}
+
+export interface TemplateItem {
+  id: string
+  template_id: string
+  section_id?: string
+  label: string
+  description?: string
+  type: ChecklistItemType
+  is_required: boolean
+  options?: string[]
+  order_index: number
+  created_at: string
+}
+
+export interface Inspection extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  job_id?: string
+  template_id?: string
+  equipment_id?: string
+  inspection_number?: string
+  title: string
+  description?: string
+  status: InspectionStatus
+  scheduled_date?: string
+  started_at?: string
+  completed_at?: string
+  assigned_to?: string
+  completed_by?: string
+  pass_count: number
+  fail_count: number
+  na_count: number
+  total_items: number
+  overall_result?: 'pass' | 'fail' | 'partial'
+  notes?: string
+  location?: string
+  created_by?: string
+  // Relations
+  assignee?: Profile
+  items?: InspectionItem[]
+  template?: InspectionTemplate
+  project?: Project
+}
+
+export interface InspectionItem extends BaseRecord {
+  inspection_id: string
+  template_item_id?: string
+  section_name?: string
+  label: string
+  type: ChecklistItemType
+  is_required: boolean
+  order_index: number
+  value?: string
+  status: InspectionItemStatus
+  notes?: string
+  photo_ids: string[]
+  signature_url?: string
+  responded_at?: string
+}
+
+// ── Client Portal ───────────────────────────────────────────
+
+export interface PortalUser extends BaseRecord {
+  customer_id: string
+  organization_id: string
+  email: string
+  last_login_at?: string
+  is_active: boolean
+  customer?: Customer
+}
+
+export interface PortalMessage extends BaseRecord {
+  organization_id: string
+  project_id?: string
+  portal_user_id?: string
+  staff_user_id?: string
+  direction: 'client_to_staff' | 'staff_to_client'
+  body: string
+  attachments: string[]
+  is_read: boolean
+  read_at?: string
+}
+
+export interface PortalProjectView {
+  project: Pick<Project, 'id' | 'name' | 'status' | 'description' | 'estimated_start_date' | 'estimated_end_date'>
+  phases: ProjectPhase[]
+  milestones: ProjectMilestone[]
+  photos: Photo[]
+  files: FileRecord[]
+  estimates: Estimate[]
+  invoices: Invoice[]
+  change_orders: ChangeOrder[]
+  messages: PortalMessage[]
+  progress_percent: number
+}
+
 // ── Dashboard / Analytics ────────────────────────────────────
 
 export interface DashboardMetrics {
