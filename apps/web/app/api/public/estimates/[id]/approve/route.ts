@@ -3,19 +3,15 @@ import { createServiceRoleClient } from '@service-official/database'
 
 export async function POST(request: NextRequest, context: any) {
   try {
-    // Handle both sync and async params (Next.js 14 vs 16)
     const resolvedParams = context.params?.id ? context.params : await context.params
     const estimateId = resolvedParams?.id
 
     if (!estimateId) {
-      // Fallback: extract from URL
       const url = new URL(request.url)
       const segments = url.pathname.split('/')
       const idIndex = segments.indexOf('estimates') + 1
       const fallbackId = segments[idIndex]
-      if (!fallbackId) {
-        return NextResponse.json({ error: 'Missing estimate ID' }, { status: 400 })
-      }
+      if (!fallbackId) return NextResponse.json({ error: 'Missing estimate ID' }, { status: 400 })
       return handleApprove(request, fallbackId)
     }
 
@@ -29,10 +25,10 @@ export async function POST(request: NextRequest, context: any) {
 async function handleApprove(request: NextRequest, estimateId: string) {
   const supabase = createServiceRoleClient()
 
-  // Fetch estimate
+  // Fetch estimate with line items (need them for auto-invoice)
   const { data: estimate, error: fetchError } = await supabase
     .from('estimates')
-    .select('id, status, organization_id, estimate_number, total, customer_id')
+    .select('*, line_items:estimate_line_items(*)')
     .eq('id', estimateId)
     .single()
 
@@ -41,24 +37,18 @@ async function handleApprove(request: NextRequest, estimateId: string) {
     return NextResponse.json({ error: 'Estimate not found' }, { status: 404 })
   }
 
-  // Only allow approval of sent or viewed estimates
   if (!['sent', 'viewed'].includes(estimate.status)) {
     return NextResponse.json({ error: `Cannot approve — status is "${estimate.status}"` }, { status: 400 })
   }
 
-  // Parse body safely
+  // Parse signature
   let signatureUrl: string | undefined
   try {
     const body = await request.json()
-    if (body.signature_url && typeof body.signature_url === 'string') {
-      // Only store signature if it's not too large (< 500KB to fit in text column)
-      if (body.signature_url.length < 500000) {
-        signatureUrl = body.signature_url
-      }
+    if (body.signature_url && typeof body.signature_url === 'string' && body.signature_url.length < 500000) {
+      signatureUrl = body.signature_url
     }
-  } catch {
-    // No body or invalid JSON — that's fine, signature is optional
-  }
+  } catch {}
 
   // Update estimate to approved
   const updateData: Record<string, any> = {
@@ -70,30 +60,94 @@ async function handleApprove(request: NextRequest, estimateId: string) {
     updateData.signed_at = new Date().toISOString()
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('estimates')
     .update(updateData)
     .eq('id', estimateId)
-    .select()
-    .single()
 
   if (error) {
-    console.error('Estimate update error:', error)
-    // Try again without signature in case the column can't handle the data
-    if (signatureUrl) {
-      const { data: retryData, error: retryError } = await supabase
-        .from('estimates')
-        .update({ status: 'approved', approved_at: new Date().toISOString() })
-        .eq('id', estimateId)
-        .select()
-        .single()
+    // Retry without signature
+    const { error: retryError } = await supabase
+      .from('estimates')
+      .update({ status: 'approved', approved_at: new Date().toISOString() })
+      .eq('id', estimateId)
 
-      if (retryError) {
-        return NextResponse.json({ error: retryError.message }, { status: 500 })
+    if (retryError) return NextResponse.json({ error: retryError.message }, { status: 500 })
+  }
+
+  // ── Auto-convert to invoice ──────────────────────────────
+  let invoice = null
+  try {
+    // Generate invoice number
+    const year = new Date().getFullYear()
+    const { count } = await supabase
+      .from('invoices')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', estimate.organization_id)
+
+    const invoiceNumber = `INV-${year}-${String((count ?? 0) + 1).padStart(4, '0')}`
+
+    const dueDate = new Date()
+    dueDate.setDate(dueDate.getDate() + 30) // Net 30
+
+    // Create invoice from estimate
+    const { data: newInvoice, error: invError } = await supabase
+      .from('invoices')
+      .insert({
+        organization_id: estimate.organization_id,
+        project_id: estimate.project_id,
+        customer_id: estimate.customer_id,
+        estimate_id: estimate.id,
+        invoice_number: invoiceNumber,
+        title: estimate.title,
+        type: 'standard',
+        status: 'draft', // Ready for contractor to review and send
+        issue_date: new Date().toISOString().split('T')[0],
+        due_date: dueDate.toISOString().split('T')[0],
+        subtotal: estimate.subtotal,
+        discount_amount: estimate.discount_amount ?? 0,
+        tax_amount: estimate.tax_amount ?? 0,
+        total: estimate.total,
+        amount_paid: 0,
+        amount_due: estimate.total,
+        terms: estimate.terms,
+        notes: estimate.notes,
+      })
+      .select()
+      .single()
+
+    if (invError) {
+      console.error('Auto-invoice creation error:', invError)
+    } else {
+      invoice = newInvoice
+
+      // Copy line items to invoice
+      const lineItems = estimate.line_items || []
+      if (lineItems.length > 0) {
+        await supabase.from('invoice_line_items').insert(
+          lineItems.map((item: any) => ({
+            invoice_id: newInvoice.id,
+            name: item.name,
+            description: item.description,
+            quantity: item.quantity,
+            unit: item.unit,
+            unit_cost: item.unit_cost,
+            total: item.total ?? item.quantity * item.unit_cost,
+            is_taxable: item.is_taxable ?? true,
+            order_index: item.order_index ?? 0,
+          }))
+        )
       }
-      return NextResponse.json({ data: retryData, success: true })
+
+      // Mark estimate as converted
+      await supabase
+        .from('estimates')
+        .update({ status: 'converted' })
+        .eq('id', estimateId)
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (e) {
+    console.error('Auto-invoice error (non-critical):', e)
+    // Estimate is still approved even if invoice creation fails
   }
 
   // Trigger workflow (non-blocking)
@@ -101,9 +155,13 @@ async function handleApprove(request: NextRequest, estimateId: string) {
     const { trigger } = await import('@service-official/workflows')
     trigger('estimate.approved')(
       estimate.organization_id, 'estimate', estimateId,
-      { estimate_number: estimate.estimate_number, total: estimate.total }
+      { estimate_number: estimate.estimate_number, total: estimate.total, invoice_id: invoice?.id }
     )
   } catch {}
 
-  return NextResponse.json({ data, success: true })
+  return NextResponse.json({
+    data: { estimateId, status: invoice ? 'converted' : 'approved' },
+    invoice: invoice ? { id: invoice.id, invoice_number: invoice.invoice_number } : null,
+    success: true,
+  })
 }

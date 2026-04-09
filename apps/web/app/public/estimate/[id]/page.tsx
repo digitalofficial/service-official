@@ -73,31 +73,38 @@ export default async function PublicEstimatePage({ params }: { params: { id: str
         </div>
 
         {/* Status Banner */}
-        {estimate.status === 'approved' && (
-          <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
-              <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+        {(estimate.status === 'approved' || estimate.status === 'converted') && (
+          <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-emerald-800">
+                  {estimate.status === 'converted' ? 'Estimate Approved & Invoice Created' : 'Estimate Approved'}
+                </p>
+                {estimate.approved_at && (
+                  <p className="text-sm text-emerald-600">
+                    Approved on {new Date(estimate.approved_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </p>
+                )}
+                {estimate.status === 'converted' && (
+                  <p className="text-sm text-emerald-600">An invoice has been created and will be sent to you shortly.</p>
+                )}
+              </div>
+              {estimate.signature_url && (
+                <img src={estimate.signature_url} alt="Signature" className="h-10 sm:h-12 border border-emerald-200 rounded bg-white p-1 shrink-0" />
+              )}
             </div>
-            <div>
-              <p className="font-semibold text-emerald-800">Estimate Approved</p>
-              <p className="text-sm text-emerald-600">
-                Approved on {new Date(estimate.approved_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-              </p>
-            </div>
-            {estimate.signature_url && (
-              <img src={estimate.signature_url} alt="Signature" className="h-12 ml-auto border border-emerald-200 rounded bg-white p-1" />
-            )}
           </div>
         )}
 
         {estimate.status === 'declined' && (
           <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
               <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </div>
-            <div>
-              <p className="font-semibold text-red-800">Estimate Declined</p>
-            </div>
+            <p className="font-semibold text-red-800">Estimate Declined</p>
           </div>
         )}
 
@@ -105,13 +112,6 @@ export default async function PublicEstimatePage({ params }: { params: { id: str
           <div className="mb-4 bg-gray-50 border border-gray-200 rounded-xl p-4">
             <p className="font-semibold text-gray-600">This estimate has expired</p>
             <p className="text-sm text-gray-500">Please contact {organization?.name} for an updated estimate.</p>
-          </div>
-        )}
-
-        {estimate.status === 'converted' && (
-          <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <p className="font-semibold text-blue-800">This estimate has been converted to an invoice</p>
-            <p className="text-sm text-blue-600">You should receive the invoice separately.</p>
           </div>
         )}
 
