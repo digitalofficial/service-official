@@ -113,26 +113,28 @@ export default function NewInvoicePage() {
         <h1 className="text-xl font-bold text-gray-900">New Invoice</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <InlineCustomerSelect defaultValue={prefillCustomerId ?? ''} required />
             <InlineProjectSelect defaultValue={prefillProjectId ?? ''} />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="type">Invoice Type</Label>
               <Select id="type" name="type" options={TYPE_OPTIONS} defaultValue="standard" />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="issue_date">Issue Date</Label>
-              <Input id="issue_date" name="issue_date" type="date" defaultValue={new Date().toISOString().split('T')[0]} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="due_date">Due Date</Label>
-              <Input id="due_date" name="due_date" type="date" />
+            <div className="grid grid-cols-2 sm:grid-cols-1 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="issue_date">Issue Date</Label>
+                <Input id="issue_date" name="issue_date" type="date" defaultValue={new Date().toISOString().split('T')[0]} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="due_date">Due Date</Label>
+                <Input id="due_date" name="due_date" type="date" />
+              </div>
             </div>
           </div>
 
@@ -143,7 +145,7 @@ export default function NewInvoicePage() {
         </div>
 
         {/* Line Items */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-gray-900">Line Items</h2>
             <Button type="button" variant="outline" size="sm" onClick={() => setItems(prev => [...prev, emptyItem()])}>
@@ -153,49 +155,54 @@ export default function NewInvoicePage() {
 
           <div className="space-y-3">
             {items.map((item, idx) => (
-              <div key={idx} className="flex items-start gap-3 border border-gray-200 rounded-lg p-3">
-                <div className="flex-1 grid grid-cols-5 gap-3">
-                  <div className="col-span-2 space-y-1">
-                    <Label>Description</Label>
-                    <Input
-                      value={item.name}
-                      onChange={e => updateItem(idx, 'name', e.target.value)}
-                      placeholder="Labor - framing"
-                    />
-                  </div>
+              <div key={idx} className="border border-gray-200 rounded-lg p-3 space-y-3">
+                {/* Mobile: stacked layout */}
+                <div className="space-y-1">
+                  <Label>Description</Label>
+                  <Input
+                    value={item.name}
+                    onChange={e => updateItem(idx, 'name', e.target.value)}
+                    placeholder="Labor, materials, etc."
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <Label>Qty</Label>
                     <Input
                       type="number" step="0.01" value={item.quantity}
                       onChange={e => updateItem(idx, 'quantity', Number(e.target.value))}
+                      inputMode="decimal"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label>Unit Price</Label>
+                    <Label>Price</Label>
                     <Input
                       type="number" step="0.01" value={item.unit_cost}
                       onChange={e => updateItem(idx, 'unit_cost', Number(e.target.value))}
+                      inputMode="decimal"
                     />
                   </div>
                   <div className="space-y-1">
                     <Label>Total</Label>
-                    <p className="h-9 flex items-center text-sm font-medium text-gray-900">
+                    <p className="h-9 flex items-center text-sm font-semibold text-gray-900">
                       {formatCurrency(item.quantity * item.unit_cost)}
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button" onClick={() => removeItem(idx)}
-                  className="mt-6 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {items.length > 1 && (
+                  <button
+                    type="button" onClick={() => removeItem(idx)}
+                    className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />Remove
+                  </button>
+                )}
               </div>
             ))}
           </div>
 
           {/* Totals */}
-          <div className="border-t border-gray-200 pt-4 space-y-2 max-w-xs ml-auto">
+          <div className="border-t border-gray-200 pt-4 space-y-2 sm:max-w-xs sm:ml-auto">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Subtotal</span>
               <span className="font-medium">{formatCurrency(subtotal)}</span>
@@ -207,6 +214,7 @@ export default function NewInvoicePage() {
                   type="number" step="0.01" value={taxRate}
                   onChange={e => setTaxRate(Number(e.target.value))}
                   className="w-16 text-xs border border-gray-200 rounded px-2 py-1"
+                  inputMode="decimal"
                 /> %
               </div>
               <span>{formatCurrency(taxAmount)}</span>
@@ -219,7 +227,7 @@ export default function NewInvoicePage() {
         </div>
 
         {/* Terms & Notes */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 grid grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="terms">Payment Terms</Label>
             <Textarea id="terms" name="terms" placeholder="Net 30, 2% early payment discount..." />
@@ -231,9 +239,9 @@ export default function NewInvoicePage() {
         </div>
 
         {/* Submit */}
-        <div className="flex justify-end gap-3">
-          <Link href="/invoices"><Button type="button" variant="outline">Cancel</Button></Link>
-          <Button type="submit" disabled={loading}>
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pb-6">
+          <Link href="/invoices" className="w-full sm:w-auto"><Button type="button" variant="outline" className="w-full sm:w-auto">Cancel</Button></Link>
+          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create Invoice'}
           </Button>
         </div>
