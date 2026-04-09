@@ -8,11 +8,13 @@ export { invoiceEmail } from './templates/invoice'
 export { estimateEmail } from './templates/estimate'
 export { invitationEmail } from './templates/invitation'
 export { notificationEmail, jobAssignedEmail, invoicePaidEmail, estimateApprovedEmail, invoiceOverdueEmail } from './templates/notification'
+export { jobBookedEmail } from './templates/job-booked'
 
 import { invoiceEmail } from './templates/invoice'
 import { estimateEmail } from './templates/estimate'
 import { invitationEmail } from './templates/invitation'
 import { notificationEmail } from './templates/notification'
+import { jobBookedEmail } from './templates/job-booked'
 import { baseLayout, emailHeading, emailText } from './templates/base-layout'
 
 /**
@@ -32,6 +34,9 @@ export function renderEmailTemplate(template: string, variables: Record<string, 
 
     case 'notification':
       return notificationEmail(variables as any)
+
+    case 'job_booked':
+      return jobBookedEmail(variables as any)
 
     default:
       // Fallback: render raw content in branded layout

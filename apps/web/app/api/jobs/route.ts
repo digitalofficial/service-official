@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@service-official/database'
+import { sendEmail } from '@service-official/notifications'
 import { trigger } from '@service-official/workflows'
+import { sendOrgSms } from '@/lib/sms'
+import { logMessage } from '@/lib/log-message'
 import { z } from 'zod'
 
 const jobSchema = z.object({
@@ -20,6 +23,7 @@ const jobSchema = z.object({
   assigned_to: z.string().uuid().optional(),
   instructions: z.string().optional(),
   tags: z.array(z.string()).default([]),
+  notify_sms: z.boolean().default(false),
 })
 
 export async function GET(request: NextRequest) {
@@ -77,6 +81,8 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const validated = jobSchema.parse(body)
 
+  const { notify_sms, ...jobFields } = validated
+
   // Auto job number
   const { count } = await supabase
     .from('jobs')
@@ -88,7 +94,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('jobs')
     .insert({
-      ...validated,
+      ...jobFields,
       job_number,
       organization_id: profile!.organization_id,
       created_by: user.id,
@@ -107,6 +113,88 @@ export async function POST(request: NextRequest) {
       data.id,
       { job_title: data.title, assigned_to: validated.assigned_to }
     )
+  }
+
+  // Send customer notifications
+  if (validated.customer_id) {
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('id, first_name, last_name, company_name, email, phone')
+      .eq('id', validated.customer_id)
+      .single()
+
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('name')
+      .eq('id', profile!.organization_id)
+      .single()
+
+    if (customer && org) {
+      const customerName = `${customer.first_name ?? ''} ${customer.last_name ?? ''}`.trim() || 'there'
+      const location = [data.address_line1, data.city, data.state, data.zip].filter(Boolean).join(', ')
+
+      // Format schedule for display
+      let scheduledDate: string | undefined
+      let scheduledTime: string | undefined
+      if (data.scheduled_start) {
+        const d = new Date(data.scheduled_start)
+        scheduledDate = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+        scheduledTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      }
+
+      // Always send email if customer has one
+      if (customer.email) {
+        const emailResult = await sendEmail({
+          to: customer.email,
+          subject: `Your service is booked — ${data.title}`,
+          template: 'job_booked',
+          variables: {
+            customer_name: customerName,
+            company_name: org.name,
+            job_title: data.title,
+            job_number,
+            scheduled_date: scheduledDate,
+            scheduled_time: scheduledTime,
+            address: location || undefined,
+          },
+        })
+
+        await logMessage({
+          supabase,
+          organization_id: profile!.organization_id,
+          customer_id: customer.id,
+          channel: 'email',
+          direction: 'outbound',
+          body: `Job booked confirmation sent — ${job_number}: ${data.title}`,
+          email_address: customer.email,
+          sent_by: user.id,
+          status: emailResult.success ? 'sent' : 'failed',
+        })
+      }
+
+      // Send SMS only if opted in
+      if (notify_sms && customer.phone) {
+        const smsBody = `Hi ${customer.first_name ?? 'there'}! Your service with ${org.name} has been booked. "${data.title}"${scheduledDate ? ` 🕐 ${scheduledDate}${scheduledTime ? ` at ${scheduledTime}` : ''}` : ''}${location ? ` 📍 ${location}` : ''}`
+
+        const smsResult = await sendOrgSms({
+          organizationId: profile!.organization_id,
+          to: customer.phone,
+          body: smsBody,
+        })
+
+        await logMessage({
+          supabase,
+          organization_id: profile!.organization_id,
+          customer_id: customer.id,
+          channel: 'sms',
+          direction: 'outbound',
+          body: smsBody,
+          phone_number: customer.phone,
+          sent_by: user.id,
+          status: smsResult.success ? 'sent' : 'failed',
+        })
+      }
+    }
   }
 
   return NextResponse.json({ data, success: true }, { status: 201 })

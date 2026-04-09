@@ -39,6 +39,9 @@ export default function NewJobPage() {
       body[k] = v
     })
 
+    // Convert checkbox to boolean
+    body.notify_sms = fd.has('notify_sms')
+
     // Combine date + time into ISO strings
     if (body.scheduled_date && body.scheduled_time) {
       body.scheduled_start = `${body.scheduled_date}T${body.scheduled_time}:00`
@@ -139,6 +142,15 @@ export default function NewJobPage() {
         <div className="space-y-1.5 pt-2 border-t border-gray-100">
           <Label htmlFor="instructions">Instructions for Crew</Label>
           <Textarea id="instructions" name="instructions" placeholder="Gate code, parking info, special instructions..." />
+        </div>
+
+        {/* Customer Notification */}
+        <div className="pt-2 border-t border-gray-100">
+          <p className="text-xs text-gray-500 mb-2">Customer will automatically receive a booking confirmation email.</p>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="notify_sms" value="true" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+            <span className="text-sm text-gray-700">Also send text message</span>
+          </label>
         </div>
 
         {/* Submit */}

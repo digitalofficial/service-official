@@ -47,6 +47,7 @@ export default function DispatchPage() {
   const [priority, setPriority] = useState('normal')
   const [instructions, setInstructions] = useState('')
   const [leadSource, setLeadSource] = useState('')
+  const [notifySms, setNotifySms] = useState(false)
 
   useEffect(() => {
     fetch('/api/customers').then(r => r.json()).then(d => setCustomers(d.data ?? []))
@@ -112,6 +113,7 @@ export default function DispatchPage() {
       state: state || undefined,
       zip: zip || undefined,
       instructions: instructions || undefined,
+      notify_sms: notifySms,
     }
 
     if (date && startTime) {
@@ -168,7 +170,7 @@ export default function DispatchPage() {
         </div>
         <div className="flex gap-3 justify-center">
           <Button onClick={() => router.push(`/jobs/${success.job.id}`)}>View Job</Button>
-          <Button variant="outline" onClick={() => { setSuccess(null); setTitle(''); setAddress(''); setCity(''); setState(''); setZip(''); setDate(''); setStartTime(''); setEndTime(''); setInstructions(''); setSelectedCustomerId(''); setAssignedTo(''); setLeadSource('') }}>
+          <Button variant="outline" onClick={() => { setSuccess(null); setTitle(''); setAddress(''); setCity(''); setState(''); setZip(''); setDate(''); setStartTime(''); setEndTime(''); setInstructions(''); setSelectedCustomerId(''); setAssignedTo(''); setLeadSource(''); setNotifySms(false) }}>
             Dispatch Another
           </Button>
         </div>
@@ -309,6 +311,20 @@ export default function DispatchPage() {
           setDate(slotDate)
         }}
       />
+
+      {/* Customer Notification */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <p className="text-xs text-gray-500 mb-2">Customer will automatically receive a booking confirmation email.</p>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={notifySms}
+            onChange={e => setNotifySms(e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-sm text-gray-700">Also send text message</span>
+        </label>
+      </div>
 
       {/* Submit */}
       <Button onClick={handleSubmit} disabled={loading} className="w-full py-3" size="lg">
