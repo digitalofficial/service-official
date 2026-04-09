@@ -9,8 +9,18 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
 }
 
+// Default timezone for server-side rendering (Vercel runs in UTC)
+// Uses NEXT_PUBLIC_TIMEZONE env var if set, otherwise America/Phoenix (MST)
+const DEFAULT_TZ = process.env.NEXT_PUBLIC_TIMEZONE ?? 'America/Phoenix'
+
 export function formatDate(date: string | Date, options?: Intl.DateTimeFormatOptions): string {
-  return new Intl.DateTimeFormat('en-US', options ?? { month: 'short', day: 'numeric', year: 'numeric' })
+  const opts: Intl.DateTimeFormatOptions = {
+    timeZone: DEFAULT_TZ,
+    ...(options ?? { month: 'short', day: 'numeric', year: 'numeric' }),
+  }
+  // Don't override timeZone if caller explicitly set it
+  if (options && !options.timeZone) opts.timeZone = DEFAULT_TZ
+  return new Intl.DateTimeFormat('en-US', opts)
     .format(typeof date === 'string' ? new Date(date) : date)
 }
 

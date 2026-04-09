@@ -145,9 +145,10 @@ export async function POST(request: NextRequest) {
       let scheduledDate: string | undefined
       let scheduledTime: string | undefined
       if (data.scheduled_start) {
+        const tz = process.env.NEXT_PUBLIC_TIMEZONE ?? 'America/Phoenix'
         const d = new Date(data.scheduled_start)
-        scheduledDate = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-        scheduledTime = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+        scheduledDate = d.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+        scheduledTime = d.toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' })
       }
 
       // Always send email if customer has one
