@@ -351,40 +351,23 @@ function BlueprintsTab({ blueprints }: { blueprints: any[] }) {
     if (!selectedFile) return
     setUploading(true)
     setUploadProgress(10)
-    setUploadStatus('Preparing upload...')
+    setUploadStatus('Uploading blueprint...')
 
     try {
-      // Step 1: Get signed upload URL from our API
-      setUploadProgress(15)
-      const urlRes = await fetch('/api/blueprints/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'get-upload-url',
-          file_name: selectedFile.name,
-          file_size: selectedFile.size,
-          content_type: selectedFile.type,
-          project_id: selectedProject || undefined,
-        }),
-      })
+      // Upload file through our API using FormData (proven to work, handles storage internally)
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+      if (selectedProject) formData.append('project_id', selectedProject)
+      formData.append('file_type', 'blueprint')
+      formData.append('is_public', 'false')
 
-      if (!urlRes.ok) {
-        const err = await urlRes.json()
-        throw new Error(err.error || 'Failed to prepare upload')
-      }
-
-      const { data: uploadData } = await urlRes.json()
-      setUploadProgress(25)
-      setUploadStatus('Uploading blueprint...')
-
-      // Step 2: Upload directly to Supabase Storage
-      // Use XMLHttpRequest for progress tracking on large files
-      await new Promise<void>((resolve, reject) => {
+      // Use XHR for progress tracking
+      const fileRecord = await new Promise<any>((resolve, reject) => {
         const xhr = new XMLHttpRequest()
 
         xhr.upload.addEventListener('progress', (e) => {
           if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 60) + 25 // 25-85%
+            const pct = Math.round((e.loaded / e.total) * 70) + 10 // 10-80%
             setUploadProgress(pct)
             const mbLoaded = (e.loaded / 1024 / 1024).toFixed(1)
             const mbTotal = (e.total / 1024 / 1024).toFixed(1)
@@ -393,75 +376,58 @@ function BlueprintsTab({ blueprints }: { blueprints: any[] }) {
         })
 
         xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve()
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`))
+          try {
+            const data = JSON.parse(xhr.responseText)
+            if (xhr.status >= 200 && xhr.status < 300 && data.data) {
+              resolve(data.data)
+            } else {
+              reject(new Error(data.error || `Upload failed (${xhr.status})`))
+            }
+          } catch {
+            reject(new Error(`Upload failed (${xhr.status})`))
           }
         })
 
         xhr.addEventListener('error', () => reject(new Error('Upload failed — check your connection')))
-        xhr.addEventListener('timeout', () => reject(new Error('Upload timed out — file may be too large for your connection')))
-
-        // Set a generous timeout for large files (10 minutes)
+        xhr.addEventListener('timeout', () => reject(new Error('Upload timed out')))
         xhr.timeout = 600000
 
-        if (uploadData.method === 'signed' && uploadData.signed_url) {
-          // Use signed URL for direct upload
-          xhr.open('PUT', uploadData.signed_url)
-          xhr.setRequestHeader('Content-Type', selectedFile.type)
-          xhr.send(selectedFile)
-        } else {
-          // Fallback: upload via Supabase REST API
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-          const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-          xhr.open('POST', `${supabaseUrl}/storage/v1/object/files/${uploadData.storage_path}`)
-          xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`)
-          xhr.setRequestHeader('Content-Type', selectedFile.type)
-          xhr.send(selectedFile)
-        }
+        xhr.open('POST', '/api/files')
+        xhr.send(formData)
       })
 
-      setUploadProgress(90)
-      setUploadStatus('Finalizing...')
+      setUploadProgress(85)
+      setUploadStatus('Creating blueprint record...')
 
-      // Step 3: Complete upload — create file + blueprint records
+      // Now create the blueprint record linked to the uploaded file
       const completeRes = await fetch('/api/blueprints/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'complete',
-          storage_path: uploadData.storage_path,
+          action: 'complete-from-file',
+          file_id: fileRecord.id,
           file_name: selectedFile.name,
-          file_size: selectedFile.size,
-          content_type: selectedFile.type,
+          storage_path: fileRecord.storage_path,
+          public_url: fileRecord.public_url,
           project_id: selectedProject || undefined,
           name: blueprintName || selectedFile.name.replace(/\.[^/.]+$/, ''),
           discipline: discipline || undefined,
         }),
       })
 
+      const completeData = await completeRes.json()
       if (!completeRes.ok) {
-        const err = await completeRes.json()
-        throw new Error(err.error || 'Failed to save blueprint')
+        throw new Error(completeData.error || 'Failed to create blueprint record')
       }
 
-      const { data: result } = await completeRes.json()
-
       setUploadProgress(100)
-      setUploadStatus('Upload complete!')
+      setUploadProgress(100)
+      setUploadStatus('Upload complete! Refreshing...')
 
-      // Add to local list
-      setLocalBlueprints(prev => [result.blueprint, ...prev])
-
-      // Reset form after short delay
+      // Hard reload so the server re-fetches blueprints with full relations
       setTimeout(() => {
-        setSelectedFile(null)
-        setBlueprintName('')
-        setDiscipline('')
-        setUploadProgress(0)
-        setUploadStatus('')
-      }, 1500)
+        window.location.reload()
+      }, 1000)
 
     } catch (error: any) {
       console.error('Upload error:', error)

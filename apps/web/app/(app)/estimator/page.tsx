@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { EstimatorTabs } from './estimator-tabs'
 import type { Metadata } from 'next'
 
+export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Estimator' }
 
 export default async function EstimatorPage() {

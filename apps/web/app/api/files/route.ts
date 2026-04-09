@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
 import { v4 as uuidv4 } from 'uuid'
 
+// Increase max duration for large uploads on Vercel
+export const maxDuration = 300
+
 const ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
   'image/heic', 'image/heif', 'image/svg+xml', 'image/bmp', 'image/tiff',

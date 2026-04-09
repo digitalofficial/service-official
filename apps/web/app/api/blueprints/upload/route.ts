@@ -132,6 +132,42 @@ export async function POST(request: NextRequest) {
       }, { status: 201 })
     }
 
+    // Action 3: Create blueprint record from an already-uploaded file
+    if (action === 'complete-from-file') {
+      const { file_id, file_name, storage_path, public_url, project_id, name, description, discipline, scale } = body
+
+      if (!file_id) {
+        return NextResponse.json({ error: 'file_id required' }, { status: 400 })
+      }
+
+      const { data: blueprint, error: bpError } = await supabase
+        .from('blueprints')
+        .insert({
+          organization_id: profile!.organization_id,
+          project_id: project_id || null,
+          name: name || file_name?.split('.')[0] || 'Blueprint',
+          description: description || null,
+          version: '1.0',
+          discipline: discipline || null,
+          scale: scale || null,
+          file_id,
+          storage_path: storage_path || null,
+          public_url: public_url || null,
+          is_processed: false,
+          processing_status: 'uploaded',
+          uploaded_by: user.id,
+        })
+        .select()
+        .single()
+
+      if (bpError) {
+        console.error('Blueprint record error:', bpError)
+        return NextResponse.json({ error: 'Failed to create blueprint: ' + bpError.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ data: { blueprint }, success: true }, { status: 201 })
+    }
+
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (error) {
     console.error('Blueprint upload error:', error)
