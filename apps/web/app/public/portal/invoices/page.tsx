@@ -51,7 +51,7 @@ export default function PortalInvoicesPage() {
               {invoices.map(inv => (
                 <tr key={inv.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <Link href={`/public/invoice/${inv.id}`} className="text-blue-600 hover:underline font-medium">{inv.invoice_number}</Link>
+                    <Link href={`/public/portal/invoices/${inv.id}`} className="text-blue-600 hover:underline font-medium">{inv.invoice_number}</Link>
                     {inv.title && <p className="text-xs text-gray-400">{inv.title}</p>}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{inv.project?.name || '—'}</td>

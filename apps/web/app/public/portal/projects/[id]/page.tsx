@@ -45,8 +45,14 @@ export default function PortalProjectDetailPage({ params }: { params: Promise<{ 
   if (loading) return <div className="animate-pulse space-y-6"><div className="h-8 bg-gray-200 rounded w-1/3" /><div className="h-64 bg-gray-100 rounded-lg" /></div>
   if (!data) return null
 
-  const { project, phases, milestones, photos, files, messages, progress_percent } = data
+  const { project, phases, milestones, photos, files, messages, progress_percent, permissions: perms } = data
   const PHASE_ICONS: Record<string, typeof CheckCircle2> = { completed: CheckCircle2, in_progress: Clock }
+
+  const visibleTabs = ['overview' as const,
+    ...(perms?.view_photos !== false ? ['photos' as const] : []),
+    ...(perms?.view_files !== false ? ['files' as const] : []),
+    ...(perms?.send_messages !== false ? ['messages' as const] : []),
+  ]
 
   return (
     <div className="space-y-6">
@@ -74,7 +80,7 @@ export default function PortalProjectDetailPage({ params }: { params: Promise<{ 
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-        {(['overview', 'photos', 'files', 'messages'] as const).map(tab => (
+        {visibleTabs.map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-4 py-1.5 text-sm rounded-md capitalize transition-colors flex items-center gap-1.5 ${activeTab === tab ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}>
             {tab === 'photos' && <ImageIcon className="w-3.5 h-3.5" />}

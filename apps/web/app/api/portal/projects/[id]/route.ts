@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@service-official/database'
-
-async function getPortalUser(request: NextRequest) {
-  const sessionCookie = request.cookies.get('portal_session')?.value
-  if (!sessionCookie) return null
-  const portalUserId = sessionCookie.split(':')[0]
-  const supabase = createServerSupabaseClient()
-  const { data } = await supabase.from('portal_users').select('id, customer_id, organization_id').eq('id', portalUserId).eq('is_active', true).single()
-  return data
-}
+import { getPortalUserWithPermissions } from '@/lib/portal/permissions'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const portalUser = await getPortalUser(request)
-  if (!portalUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getPortalUserWithPermissions(request)
+  if (!result) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { portalUser, permissions } = result
+  if (!permissions.view_projects) return NextResponse.json({ error: 'Access denied' }, { status: 403 })
 
   const supabase = createServerSupabaseClient()
 
@@ -27,13 +22,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
 
-  // Fetch related data in parallel
+  // Fetch related data in parallel — respect permissions
   const [phasesRes, milestonesRes, photosRes, filesRes, messagesRes] = await Promise.all([
     supabase.from('project_phases').select('*').eq('project_id', params.id).order('order_index'),
     supabase.from('project_milestones').select('*').eq('project_id', params.id).order('due_date'),
-    supabase.from('photos').select('*').eq('project_id', params.id).eq('is_public', true).order('created_at', { ascending: false }).limit(50),
-    supabase.from('files').select('*').eq('project_id', params.id).eq('is_public', true).order('created_at', { ascending: false }),
-    supabase.from('portal_messages').select('*').eq('project_id', params.id).eq('organization_id', portalUser.organization_id).order('created_at', { ascending: false }).limit(50),
+    permissions.view_photos
+      ? supabase.from('photos').select('*').eq('project_id', params.id).eq('is_public', true).order('created_at', { ascending: false }).limit(50)
+      : Promise.resolve({ data: [] }),
+    permissions.view_files
+      ? supabase.from('files').select('*').eq('project_id', params.id).eq('is_public', true).order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] }),
+    permissions.send_messages
+      ? supabase.from('portal_messages').select('*').eq('project_id', params.id).eq('organization_id', portalUser.organization_id).order('created_at', { ascending: false }).limit(50)
+      : Promise.resolve({ data: [] }),
   ])
 
   const phases = phasesRes.data || []
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       files: filesRes.data || [],
       messages: messagesRes.data || [],
       progress_percent: progress,
+      permissions,
     }
   })
 }

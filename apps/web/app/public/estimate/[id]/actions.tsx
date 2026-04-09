@@ -127,23 +127,54 @@ function OnboardingModal({ portalToken, portalExisting, customerEmail, organizat
   onClose: () => void
 }) {
   const [loggingIn, setLoggingIn] = useState(false)
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
 
-  async function handleGoToPortal() {
-    if (portalToken) {
-      setLoggingIn(true)
-      // Verify the token to set session cookie, then redirect to portal
-      const res = await fetch('/api/portal/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify', token: portalToken }),
-      })
-      if (res.ok) {
-        window.location.href = '/public/portal/dashboard'
-        return
-      }
+  async function handleCreateAccount() {
+    if (!portalToken) {
+      // Existing user — go to login
+      window.location.href = '/public/portal/login'
+      return
     }
-    // Fallback — go to portal login
-    window.location.href = '/public/portal/login'
+
+    // New user — set password and log in
+    if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters')
+      return
+    }
+    if (password !== confirmPassword) {
+      setPasswordError('Passwords do not match')
+      return
+    }
+
+    setLoggingIn(true)
+    setPasswordError('')
+
+    const res = await fetch('/api/portal/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'set-password', token: portalToken, password }),
+    })
+
+    if (res.ok) {
+      window.location.href = '/public/portal/dashboard'
+      return
+    }
+
+    // Fallback — try verify without password
+    const verifyRes = await fetch('/api/portal/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'verify', token: portalToken }),
+    })
+    if (verifyRes.ok) {
+      window.location.href = '/public/portal/dashboard'
+      return
+    }
+
+    setPasswordError('Something went wrong. Please try again.')
+    setLoggingIn(false)
   }
 
   return (
@@ -155,7 +186,7 @@ function OnboardingModal({ portalToken, portalExisting, customerEmail, organizat
             <CheckCircle2 className="w-8 h-8 text-emerald-600" />
           </div>
           <h2 className="text-xl font-bold text-gray-900">Estimate Approved!</h2>
-          <p className="text-sm text-gray-500 mt-1">An invoice will be sent to you shortly.</p>
+          <p className="text-sm text-gray-500 mt-1">Create an account to view your invoice and track your project.</p>
         </div>
 
         {/* Portal account setup */}
@@ -171,23 +202,53 @@ function OnboardingModal({ portalToken, portalExisting, customerEmail, organizat
               <p className="text-sm text-blue-700 mt-1">
                 {portalExisting
                   ? `Sign in to track your project, view invoices, and make payments.`
-                  : `We've created your account${customerEmail ? ` (${customerEmail})` : ''}. Track your project progress, view documents, and pay invoices online.`
+                  : `Create a password for your account${customerEmail ? ` (${customerEmail})` : ''} to access your portal.`
                 }
               </p>
             </div>
           </div>
         </div>
 
+        {/* Password fields for new users */}
+        {!portalExisting && portalToken && (
+          <div className="space-y-3 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Create a password"
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Confirm your password"
+                onKeyDown={e => { if (e.key === 'Enter') handleCreateAccount() }}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            {passwordError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{passwordError}</p>
+            )}
+          </div>
+        )}
+
         <div className="space-y-3">
           <button
-            onClick={handleGoToPortal}
+            onClick={handleCreateAccount}
             disabled={loggingIn}
             className="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
             {loggingIn ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Setting up...</>
             ) : (
-              <><LogIn className="w-4 h-4" /> Go to My Portal</>
+              <><LogIn className="w-4 h-4" /> {portalExisting ? 'Sign In to Portal' : 'Create Account'}</>
             )}
           </button>
 

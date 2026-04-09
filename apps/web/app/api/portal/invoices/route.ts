@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@service-official/database'
-
-async function getPortalUser(request: NextRequest) {
-  const sessionCookie = request.cookies.get('portal_session')?.value
-  if (!sessionCookie) return null
-  const portalUserId = sessionCookie.split(':')[0]
-  const supabase = createServerSupabaseClient()
-  const { data } = await supabase.from('portal_users').select('id, customer_id, organization_id').eq('id', portalUserId).eq('is_active', true).single()
-  return data
-}
+import { getPortalUserWithPermissions } from '@/lib/portal/permissions'
 
 export async function GET(request: NextRequest) {
-  const portalUser = await getPortalUser(request)
-  if (!portalUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getPortalUserWithPermissions(request)
+  if (!result) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { portalUser, permissions } = result
+  if (!permissions.view_invoices) return NextResponse.json({ data: [] })
 
   const supabase = createServerSupabaseClient()
 

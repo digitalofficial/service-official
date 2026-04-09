@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Mail, Loader2, CheckCircle2 } from 'lucide-react'
+import { Mail, Loader2, CheckCircle2, Lock, ArrowLeft } from 'lucide-react'
 
 export default function PortalLoginPage() {
   return (
@@ -17,7 +17,9 @@ function PortalLoginContent() {
   const searchParams = useSearchParams()
   const tokenParam = searchParams.get('token')
 
+  const [mode, setMode] = useState<'password' | 'magic-link'>('password')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [verifying, setVerifying] = useState(!!tokenParam)
@@ -43,7 +45,27 @@ function PortalLoginContent() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handlePasswordLogin(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    const res = await fetch('/api/portal/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login', email, password }),
+    })
+
+    if (res.ok) {
+      router.push('/public/portal/dashboard')
+    } else {
+      const data = await res.json()
+      setError(data.error || 'Login failed')
+    }
+    setLoading(false)
+  }
+
+  async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError('')
@@ -91,8 +113,75 @@ function PortalLoginContent() {
                 Use a different email
               </button>
             </div>
+          ) : mode === 'password' ? (
+            <form onSubmit={handlePasswordLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="Your password"
+                    required
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || !email || !password}
+                className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                {loading ? 'Signing in...' : 'Sign In'}
+              </button>
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+                <div className="relative flex justify-center text-xs"><span className="bg-white px-2 text-gray-400">or</span></div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { setMode('magic-link'); setError('') }}
+                className="w-full py-2.5 border border-gray-300 rounded-lg font-medium text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                Sign in with email link
+              </button>
+            </form>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleMagicLink} className="space-y-4">
+              <button
+                type="button"
+                onClick={() => { setMode('password'); setError('') }}
+                className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-2"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" /> Back to password login
+              </button>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
                 <div className="relative">

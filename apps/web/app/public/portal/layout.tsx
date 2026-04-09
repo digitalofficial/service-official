@@ -6,6 +6,23 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { LogOut, FolderKanban, Receipt, Home, FileText } from 'lucide-react'
 
+interface PortalPermissions {
+  view_invoices: boolean
+  view_estimates: boolean
+  view_projects: boolean
+  view_payment_history: boolean
+  pay_invoices: boolean
+  send_messages: boolean
+  view_photos: boolean
+  view_files: boolean
+}
+
+const DEFAULT_PERMISSIONS: PortalPermissions = {
+  view_invoices: true, view_estimates: true, view_projects: true,
+  view_payment_history: true, pay_invoices: true, send_messages: true,
+  view_photos: true, view_files: true,
+}
+
 interface PortalSession {
   id: string
   email: string
@@ -14,11 +31,12 @@ interface PortalSession {
   customer: any
 }
 
-const PortalContext = createContext<{ session: PortalSession | null; loading: boolean }>({ session: null, loading: true })
+const PortalContext = createContext<{ session: PortalSession | null; permissions: PortalPermissions; loading: boolean }>({ session: null, permissions: DEFAULT_PERMISSIONS, loading: true })
 export const usePortalSession = () => useContext(PortalContext)
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<PortalSession | null>(null)
+  const [permissions, setPermissions] = useState<PortalPermissions>(DEFAULT_PERMISSIONS)
   const [loading, setLoading] = useState(true)
   const pathname = usePathname()
   const router = useRouter()
@@ -39,6 +57,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     if (res.ok) {
       const data = await res.json()
       setSession(data.portal_user)
+      if (data.permissions) setPermissions({ ...DEFAULT_PERMISSIONS, ...data.permissions })
     } else {
       router.push('/public/portal/login')
     }
@@ -63,7 +82,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     : ''
 
   return (
-    <PortalContext.Provider value={{ session, loading }}>
+    <PortalContext.Provider value={{ session, permissions, loading }}>
       <div className="min-h-screen bg-gray-50" style={{ '--portal-primary': primaryColor } as any}>
         {/* Header */}
         {session && (
@@ -80,12 +99,16 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                   <Link href="/public/portal/dashboard" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname === '/public/portal/dashboard' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
                     <Home className="w-4 h-4 inline mr-1.5" />Dashboard
                   </Link>
-                  <Link href="/public/portal/estimates" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname.startsWith('/public/portal/estimates') ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-                    <FileText className="w-4 h-4 inline mr-1.5" />Estimates
-                  </Link>
-                  <Link href="/public/portal/invoices" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname.startsWith('/public/portal/invoices') ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-                    <Receipt className="w-4 h-4 inline mr-1.5" />Invoices
-                  </Link>
+                  {permissions.view_estimates && (
+                    <Link href="/public/portal/estimates" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname.startsWith('/public/portal/estimates') ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+                      <FileText className="w-4 h-4 inline mr-1.5" />Estimates
+                    </Link>
+                  )}
+                  {permissions.view_invoices && (
+                    <Link href="/public/portal/invoices" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname.startsWith('/public/portal/invoices') ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+                      <Receipt className="w-4 h-4 inline mr-1.5" />Invoices
+                    </Link>
+                  )}
                 </nav>
                 <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
                   <span className="text-sm text-gray-500">{customerName}</span>

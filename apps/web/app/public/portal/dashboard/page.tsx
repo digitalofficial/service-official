@@ -15,7 +15,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function PortalDashboardPage() {
-  const { session } = usePortalSession()
+  const { session, permissions } = usePortalSession()
   const [projects, setProjects] = useState<any[]>([])
   const [invoices, setInvoices] = useState<any[]>([])
   const [estimates, setEstimates] = useState<any[]>([])
@@ -82,7 +82,7 @@ export default function PortalDashboardPage() {
       </div>
 
       {/* Pending Estimates Alert */}
-      {estimates.filter(e => ['sent', 'viewed'].includes(e.status)).length > 0 && (
+      {permissions.view_estimates && estimates.filter(e => ['sent', 'viewed'].includes(e.status)).length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export default function PortalDashboardPage() {
       )}
 
       {/* Projects */}
-      <div>
+      {permissions.view_projects && <div>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Projects</h2>
         {projects.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
@@ -155,10 +155,10 @@ export default function PortalDashboardPage() {
             ))}
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Recent Invoices */}
-      {invoices.length > 0 && (
+      {permissions.view_invoices && invoices.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Recent Invoices</h2>
@@ -177,7 +177,7 @@ export default function PortalDashboardPage() {
               <tbody>
                 {invoices.slice(0, 5).map(inv => (
                   <tr key={inv.id} className="border-b border-gray-100 last:border-0">
-                    <td className="px-4 py-3 font-medium text-gray-900">{inv.invoice_number}</td>
+                    <td className="px-4 py-3 font-medium"><Link href={`/public/portal/invoices/${inv.id}`} className="text-blue-600 hover:underline">{inv.invoice_number}</Link></td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
                         inv.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :

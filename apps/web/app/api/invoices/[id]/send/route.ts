@@ -70,7 +70,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
   }
 
-  const invoiceViewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/public/invoice/${invoice.id}`
+  const invoiceViewUrl = `${process.env.NEXT_PUBLIC_APP_URL}/public/portal/invoices/${invoice.id}`
   const results: { email?: boolean; sms?: boolean } = {}
 
   // Send email
