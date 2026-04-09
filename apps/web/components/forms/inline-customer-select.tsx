@@ -27,10 +27,15 @@ export function InlineCustomerSelect({ name = 'customer_id', defaultValue = '', 
     if (!form.first_name && !form.company_name) { toast.error('Name or company required'); return }
     setSaving(true)
     try {
+      // Strip empty strings so they don't fail validation
+      const payload: Record<string, string> = { type: 'residential' }
+      for (const [k, v] of Object.entries(form)) {
+        if (v.trim()) payload[k] = v.trim()
+      }
       const res = await fetch('/api/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'residential', ...form }),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) throw new Error('Failed')
       const { data } = await res.json()

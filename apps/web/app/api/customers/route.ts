@@ -7,7 +7,7 @@ const customerSchema = z.object({
   first_name: z.string().optional(),
   last_name: z.string().optional(),
   company_name: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.preprocess((v) => (v === '' ? undefined : v), z.string().email().optional()),
   phone: z.string().optional(),
   address_line1: z.string().optional(),
   address_line2: z.string().optional(),

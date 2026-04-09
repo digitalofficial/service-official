@@ -79,10 +79,17 @@ export default function DispatchPage() {
 
     // Create new customer if needed
     if (customerMode === 'new' && (newCustomer.first_name || newCustomer.company_name)) {
+      // Strip empty strings so they don't fail validation
+      const customerPayload: Record<string, string> = {}
+      for (const [k, v] of Object.entries(newCustomer)) {
+        if (v.trim()) customerPayload[k] = v.trim()
+      }
+      if (leadSource) customerPayload.source = leadSource
+
       const custRes = await fetch('/api/customers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newCustomer, source: newCustomer.source || leadSource || undefined }),
+        body: JSON.stringify(customerPayload),
       })
       if (custRes.ok) {
         const { data } = await custRes.json()

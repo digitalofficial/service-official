@@ -37,6 +37,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   const { data: existing } = await supabase.from('jobs').select('status, title').eq('id', params.id).eq('organization_id', profile!.organization_id).single()
 
+  // Auto-update status when schedule is added to an unscheduled job
+  if (updates.scheduled_start && existing?.status === 'unscheduled' && !updates.status) {
+    updates.status = 'scheduled'
+  }
+
   // Set timestamps on status transitions
   if (updates.status === 'in_progress' && !updates.actual_start) {
     updates.actual_start = new Date().toISOString()

@@ -33,12 +33,20 @@ export default function CalendarPage() {
   useEffect(() => {
     async function fetchJobs() {
       setLoading(true)
-      const start = new Date(year, month, 1)
-      const end = new Date(year, month + 1, 0)
       const params = new URLSearchParams()
 
       if (view === 'day') {
         params.set('date', currentDate.toISOString().split('T')[0])
+      } else if (view === 'month') {
+        params.set('from', new Date(year, month, 1).toISOString().split('T')[0])
+        params.set('to', new Date(year, month + 1, 0).toISOString().split('T')[0])
+      } else if (view === 'week') {
+        const weekStart = new Date(currentDate)
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+        const weekEnd = new Date(weekStart)
+        weekEnd.setDate(weekEnd.getDate() + 6)
+        params.set('from', weekStart.toISOString().split('T')[0])
+        params.set('to', weekEnd.toISOString().split('T')[0])
       }
 
       const res = await fetch(`/api/jobs?${params.toString()}`)

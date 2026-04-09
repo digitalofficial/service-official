@@ -59,12 +59,17 @@ export async function GET(request: NextRequest) {
     query = query.eq('assigned_to', user.id)
   }
 
+  const from = searchParams.get('from')
+  const to = searchParams.get('to')
+
   if (status) query = query.eq('status', status)
   if (assigned_to) query = query.eq('assigned_to', assigned_to)
   if (date) {
     const start = `${date}T00:00:00`
     const end = `${date}T23:59:59`
     query = query.gte('scheduled_start', start).lte('scheduled_start', end)
+  } else if (from && to) {
+    query = query.gte('scheduled_start', `${from}T00:00:00`).lte('scheduled_start', `${to}T23:59:59`)
   }
 
   const { data, error } = await query
@@ -91,6 +96,9 @@ export async function POST(request: NextRequest) {
 
   const job_number = `JOB-${String((count ?? 0) + 1).padStart(4, '0')}`
 
+  // Auto-determine status: if schedule is provided, mark as scheduled
+  const status = jobFields.scheduled_start ? 'scheduled' : 'unscheduled'
+
   const { data, error } = await supabase
     .from('jobs')
     .insert({
@@ -98,7 +106,7 @@ export async function POST(request: NextRequest) {
       job_number,
       organization_id: profile!.organization_id,
       created_by: user.id,
-      status: 'unscheduled',
+      status,
     })
     .select()
     .single()
