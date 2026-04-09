@@ -10,21 +10,24 @@
       "ios": {
         "simulator": false
       },
-      "node": "20.18.0"
+      "node": "20.18.0",
+      "installCommand": "cd apps/mobile && npm install --legacy-peer-deps"
     },
     "preview": {
       "distribution": "internal",
       "ios": {
         "simulator": false
       },
-      "node": "20.18.0"
+      "node": "20.18.0",
+      "installCommand": "cd apps/mobile && npm install --legacy-peer-deps"
     },
     "production": {
       "autoIncrement": true,
       "ios": {
         "buildConfiguration": "Release"
       },
-      "node": "20.18.0"
+      "node": "20.18.0",
+      "installCommand": "cd apps/mobile && npm install --legacy-peer-deps"
     }
   }
 }

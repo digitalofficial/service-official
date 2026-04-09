@@ -1,7 +1,7 @@
 {
   "buildCommand": "pnpm turbo run build --filter=@service-official/web",
   "outputDirectory": "apps/web/.next",
-  "installCommand": "pnpm install --filter=@service-official/web... --filter=@service-official/database... --no-frozen-lockfile",
+  "installCommand": "pnpm install",
   "framework": "nextjs",
   "crons": [
     {
