@@ -29,6 +29,11 @@ interface Job {
   assignee?: { first_name?: string; last_name?: string }
 }
 
+interface OrgAddress {
+  name: string
+  address: string
+}
+
 function parseCoords(coords: any): { lat: number; lng: number } | null {
   if (!coords) return null
   const c = typeof coords === 'string' ? JSON.parse(coords) : coords
@@ -50,7 +55,7 @@ function formatJob(job: Job, lat: number, lng: number) {
   }
 }
 
-export function DashboardJobMap({ jobs }: { jobs: Job[] }) {
+export function DashboardJobMap({ jobs, orgAddress }: { jobs: Job[]; orgAddress?: OrgAddress | null }) {
   // Immediately map jobs that already have coordinates (no geocoding needed)
   const jobsWithCoords = useMemo(() => {
     const results = []
@@ -62,6 +67,31 @@ export function DashboardJobMap({ jobs }: { jobs: Job[] }) {
   }, [jobs])
 
   const [geocodedJobs, setGeocodedJobs] = useState<any[]>([])
+  const [baseLocation, setBaseLocation] = useState<{ lat: number; lng: number; name: string } | undefined>()
+
+  // Geocode org address for home base star
+  useEffect(() => {
+    if (!orgAddress?.address) return
+
+    async function geocodeOrg() {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?${new URLSearchParams({ q: orgAddress!.address, format: 'json', limit: '1' })}`,
+          { headers: { 'User-Agent': 'ServiceOfficial/1.0' } }
+        )
+        const data = await res.json()
+        if (data.length > 0) {
+          setBaseLocation({
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon),
+            name: orgAddress!.name,
+          })
+        }
+      } catch {}
+    }
+
+    geocodeOrg()
+  }, [orgAddress])
 
   // Only geocode jobs that DON'T have coordinates
   useEffect(() => {
@@ -92,7 +122,8 @@ export function DashboardJobMap({ jobs }: { jobs: Job[] }) {
 
   const allMapJobs = [...jobsWithCoords, ...geocodedJobs]
 
-  if (allMapJobs.length === 0 && jobs.length > 0) {
+  // Show map if we have jobs OR a base location
+  if (allMapJobs.length === 0 && !baseLocation && jobs.length > 0) {
     return (
       <div className="h-[350px] bg-gray-50 rounded-xl flex items-center justify-center text-sm text-gray-400">
         Geocoding job locations...
@@ -100,7 +131,7 @@ export function DashboardJobMap({ jobs }: { jobs: Job[] }) {
     )
   }
 
-  if (allMapJobs.length === 0) return null
+  if (allMapJobs.length === 0 && !baseLocation) return null
 
-  return <JobMap jobs={allMapJobs} height="350px" type="jobs" />
+  return <JobMap jobs={allMapJobs} height="350px" type="jobs" baseLocation={baseLocation} />
 }

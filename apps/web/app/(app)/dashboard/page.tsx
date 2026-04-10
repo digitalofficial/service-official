@@ -39,6 +39,18 @@ export default async function DashboardPage() {
   const isSelfOnly = selfOnlyRoles.includes(profile?.role ?? '')
   const isOwnerAdmin = ['owner', 'admin'].includes(profile?.role ?? '')
 
+  // Get org address for map home base marker
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('name, address_line1, city, state, zip')
+    .eq('id', orgId)
+    .single()
+
+  const orgAddress = org?.address_line1 ? {
+    name: org.name,
+    address: [org.address_line1, org.city, org.state, org.zip].filter(Boolean).join(', '),
+  } : null
+
   // Date ranges
   const now = new Date()
   const today = now.toISOString().split('T')[0]
@@ -181,8 +193,8 @@ export default async function DashboardPage() {
         <MetricCard label="Outstanding" value={formatCurrency(outstanding)} icon={AlertCircle} iconColor="text-amber-600" iconBg="bg-amber-50" href="/invoices?status=overdue" />
       </div>
 
-      {/* Jobs Map — All Jobs */}
-      {activeJobs && activeJobs.length > 0 && (
+      {/* Jobs Map — All Jobs + Home Base */}
+      {(activeJobs?.length > 0 || orgAddress) && (
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -192,7 +204,7 @@ export default async function DashboardPage() {
             </div>
             <Link href="/jobs" className="text-sm text-blue-600 hover:underline">View all</Link>
           </div>
-          <DashboardJobMap jobs={activeJobs as any} />
+          <DashboardJobMap jobs={activeJobs as any} orgAddress={orgAddress} />
         </div>
       )}
 
