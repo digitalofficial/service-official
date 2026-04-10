@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@service-official/database/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,18 +18,24 @@ export default function ForgotPasswordPage() {
     setError('')
     setLoading(true)
 
-    const supabase = createClient()
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    })
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
 
-    if (resetError) {
-      setError(resetError.message)
-      setLoading(false)
-      return
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data?.error || 'Something went wrong. Please try again.')
+        setLoading(false)
+        return
+      }
+
+      setSent(true)
+    } catch {
+      setError('Something went wrong. Please try again.')
     }
-
-    setSent(true)
     setLoading(false)
   }
 
@@ -44,7 +49,7 @@ export default function ForgotPasswordPage() {
         </div>
         <h2 className="text-lg font-semibold text-gray-900">Check your email</h2>
         <p className="text-sm text-gray-500 mt-1">
-          We sent a password reset link to <strong>{email}</strong>
+          If an account exists for <strong>{email}</strong>, we sent a password reset link.
         </p>
         <Link href="/auth/login">
           <Button variant="outline" className="mt-6 w-full">
