@@ -145,14 +145,14 @@ export function EstimatorTabs({ takeoffs, blueprints, userName, orgIndustry }: E
   return (
     <div>
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-gray-200 mb-6">
+      <div className="flex items-center gap-1 border-b border-gray-200 mb-6 overflow-x-auto scrollbar-thin">
         {TABS.map((t) => {
           const Icon = t.icon
           return (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0 ${
                 tab === t.id
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'

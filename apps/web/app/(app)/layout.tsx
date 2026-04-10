@@ -123,10 +123,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex h-[100dvh] bg-gray-50 dark:bg-gray-950 overflow-hidden max-w-[100vw]" data-org-id={activeOrgId}>
       <Sidebar profile={profile} organization={activeOrg} isSuperAdmin={isSuperAdmin} tier={activeOrg?.subscription_tier ?? 'solo'} subscriptionStatus={activeOrg?.subscription_status} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <header className="flex items-center justify-between h-14 px-4 lg:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">
+        <header className="flex items-center justify-between h-14 px-2 sm:px-4 lg:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">
           {/* Left side — spacer for hamburger on mobile + org switcher */}
-          <div className="flex items-center gap-3">
-            <div className="w-9 lg:hidden" /> {/* Spacer for hamburger button */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-9 lg:hidden shrink-0" /> {/* Spacer for hamburger button */}
             {isSuperAdmin && (
               <OrgSwitcher
                 currentOrgId={activeOrgId}

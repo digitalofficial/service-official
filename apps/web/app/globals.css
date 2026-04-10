@@ -59,6 +59,16 @@
     height: 100dvh;
   }
 
+  /* Prevent any element from causing horizontal scroll */
+  main {
+    overflow-x: hidden;
+  }
+
+  /* Tables scroll inside their container, not the page */
+  table {
+    max-width: 100%;
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));

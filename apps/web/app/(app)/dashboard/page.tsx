@@ -150,14 +150,14 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Greeting */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{greeting}, {profile?.first_name}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{greeting}, {profile?.first_name}</h1>
           <p className="text-gray-500 text-sm mt-0.5">
             {now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </p>
         </div>
-        <Link href="/dispatch" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+        <Link href="/dispatch" className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium rounded-lg transition-colors shrink-0 whitespace-nowrap">
           <Briefcase className="w-4 h-4" /> Dispatch Job
         </Link>
       </div>
