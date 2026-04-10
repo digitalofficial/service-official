@@ -6,6 +6,7 @@ import { ProjectStatusBadge } from '@/components/projects/status-badge'
 import { ProjectCard } from '@/components/projects/project-card'
 import { Button } from '@/components/ui/button'
 import { Plus, Search, Filter, LayoutGrid, List } from 'lucide-react'
+import { HorizontalScroll } from '@/components/ui/horizontal-scroll'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Projects' }
@@ -50,21 +51,23 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
       </div>
 
       {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-0 overflow-x-auto scroll-fade">
-        {statusGroups.map(group => (
-          <Link
-            key={group.label}
-            href={group.value ? `/projects?status=${group.value}` : '/projects'}
-            className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0 whitespace-nowrap ${
-              searchParams.status === group.value || (!searchParams.status && !group.value)
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {group.label}
-          </Link>
-        ))}
-      </div>
+      <HorizontalScroll>
+        <div className="flex items-center gap-2 border-b border-gray-200 pb-0">
+          {statusGroups.map(group => (
+            <Link
+              key={group.label}
+              href={group.value ? `/projects?status=${group.value}` : '/projects'}
+              className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0 whitespace-nowrap ${
+                searchParams.status === group.value || (!searchParams.status && !group.value)
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {group.label}
+            </Link>
+          ))}
+        </div>
+      </HorizontalScroll>
 
       {/* Search + Actions */}
       <div className="flex items-center gap-3">

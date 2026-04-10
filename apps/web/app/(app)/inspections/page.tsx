@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { ScrollArea } from '@/components/ui/scroll-indicator'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -137,14 +138,16 @@ export default function InspectionsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input placeholder="Search inspections..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
-            <div className="flex gap-1 overflow-x-auto">
-              {STATUS_TABS.map(tab => (
-                <button key={tab.value} onClick={() => setStatusFilter(tab.value)}
-                  className={`px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors ${statusFilter === tab.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <ScrollArea>
+              <div className="flex gap-1">
+                {STATUS_TABS.map(tab => (
+                  <button key={tab.value} onClick={() => setStatusFilter(tab.value)}
+                    className={`px-3 py-1.5 text-sm rounded-lg whitespace-nowrap shrink-0 transition-colors ${statusFilter === tab.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
 
           {/* Inspections List */}

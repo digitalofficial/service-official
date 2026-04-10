@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
 import { Send, Loader2, Upload, Cpu, MessageSquare, FileText, Clock, CheckCircle, AlertCircle, Plus } from 'lucide-react'
 import { AlfredAvatar } from '@/components/alfred/alfred-avatar'
+import { ScrollArea } from '@/components/ui/scroll-indicator'
 import { formatDate } from '@/lib/utils'
 
 interface Message {
@@ -145,25 +146,27 @@ export function EstimatorTabs({ takeoffs, blueprints, userName, orgIndustry }: E
   return (
     <div>
       {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-gray-200 mb-6 overflow-x-auto scrollbar-thin">
-        {TABS.map((t) => {
-          const Icon = t.icon
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0 ${
-                tab === t.id
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {t.label}
-            </button>
-          )
-        })}
-      </div>
+      <ScrollArea className="mb-6">
+        <div className="flex items-center gap-1 border-b border-gray-200">
+          {TABS.map((t) => {
+            const Icon = t.icon
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0 ${
+                  tab === t.id
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {t.label}
+              </button>
+            )
+          })}
+        </div>
+      </ScrollArea>
 
       {/* Chat Tab */}
       {tab === 'chat' && (

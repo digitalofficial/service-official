@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { formatDate, statusColor } from '@/lib/utils'
 import { Plus, Briefcase, Clock, MapPin } from 'lucide-react'
 import { JobsMapView } from './jobs-map-view'
+import { HorizontalScroll } from '@/components/ui/horizontal-scroll'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Jobs' }
@@ -78,22 +79,24 @@ export default async function JobsPage({ searchParams }: Props) {
       />
 
       {/* Status Filter + View Toggle */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto scroll-fade">
-          {STATUS_TABS.map((tab) => (
-            <Link
-              key={tab.label}
-              href={tab.value ? `/jobs?status=${tab.value}${isMapView ? '&view=map' : ''}` : `/jobs${isMapView ? '?view=map' : ''}`}
-              className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0 whitespace-nowrap ${
-                searchParams.status === tab.value || (!searchParams.status && !tab.value)
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </div>
+      <div className="flex items-center justify-between gap-2">
+        <HorizontalScroll className="flex-1 min-w-0">
+          <div className="flex items-center gap-1 border-b border-gray-200">
+            {STATUS_TABS.map((tab) => (
+              <Link
+                key={tab.label}
+                href={tab.value ? `/jobs?status=${tab.value}${isMapView ? '&view=map' : ''}` : `/jobs${isMapView ? '?view=map' : ''}`}
+                className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0 whitespace-nowrap ${
+                  searchParams.status === tab.value || (!searchParams.status && !tab.value)
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        </HorizontalScroll>
         <div className="flex md:hidden items-center gap-1 bg-gray-100 rounded-lg p-0.5">
           <Link
             href={`/jobs${searchParams.status ? `?status=${searchParams.status}` : ''}`}

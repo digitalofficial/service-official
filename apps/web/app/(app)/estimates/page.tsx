@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatCurrency, formatDate, statusColor } from '@/lib/utils'
 import { Plus, FileText, Eye, Send, ChevronRight } from 'lucide-react'
+import { HorizontalScroll } from '@/components/ui/horizontal-scroll'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -54,21 +55,23 @@ export default async function EstimatesPage({ searchParams }: Props) {
       />
 
       {/* Status Tabs */}
-      <div className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto scroll-fade">
-        {STATUS_TABS.map((tab) => (
-          <Link
-            key={tab.label}
-            href={tab.value ? `/estimates?status=${tab.value}` : '/estimates'}
-            className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0 whitespace-nowrap ${
-              searchParams.status === tab.value || (!searchParams.status && !tab.value)
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </div>
+      <HorizontalScroll>
+        <div className="flex items-center gap-1 border-b border-gray-200">
+          {STATUS_TABS.map((tab) => (
+            <Link
+              key={tab.label}
+              href={tab.value ? `/estimates?status=${tab.value}` : '/estimates'}
+              className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0 whitespace-nowrap ${
+                searchParams.status === tab.value || (!searchParams.status && !tab.value)
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </Link>
+          ))}
+        </div>
+      </HorizontalScroll>
 
       {!estimates || estimates.length === 0 ? (
         <EmptyState
