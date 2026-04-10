@@ -5,7 +5,6 @@ import {
   Clock, Users, CalendarDays, ArrowRight, FileText, Bell
 } from 'lucide-react'
 import { DashboardJobMap } from './dashboard-job-map'
-import { OnboardingTour } from '@/components/onboarding/onboarding-tour'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
@@ -403,10 +402,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Onboarding tour for new users */}
-      {isOwnerAdmin && !profile.onboarding_completed_at && (
-        <OnboardingTour profileId={user.id} />
-      )}
     </div>
   )
 }

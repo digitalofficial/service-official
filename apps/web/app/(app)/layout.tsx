@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { TopBar } from '@/components/layout/topbar'
 import { OrgSwitcher } from '@/components/admin/org-switcher'
 import { AlfredChat } from '@/components/alfred/alfred-chat'
+import { OnboardingTour } from '@/components/onboarding/onboarding-tour'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createServerSupabaseClient()
@@ -143,6 +144,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </main>
       </div>
       <AlfredChat userName={profile.first_name} />
+      {['owner', 'admin'].includes(profile.role) && (
+        <OnboardingTour profileId={profile.id ?? user.id} />
+      )}
     </div>
   )
 }
