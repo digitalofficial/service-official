@@ -79,7 +79,7 @@ export default async function JobsPage({ searchParams }: Props) {
 
       {/* Status Filter + View Toggle */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto">
+        <div className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto scroll-fade">
           {STATUS_TABS.map((tab) => (
             <Link
               key={tab.label}

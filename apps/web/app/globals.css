@@ -69,23 +69,36 @@
     max-width: 100%;
   }
 
-  /* Visible scroll indicator on horizontal scroll areas (mobile) */
+  /* Horizontal scroll areas — fade hint + always-visible scrollbar */
   .overflow-x-auto {
     scrollbar-width: thin;
+    scrollbar-color: rgb(156 163 175) transparent;
     -webkit-overflow-scrolling: touch;
   }
   .overflow-x-auto::-webkit-scrollbar {
-    height: 4px;
+    height: 6px;
+    display: block !important;
   }
   .overflow-x-auto::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgb(229 231 235);
+    border-radius: 6px;
   }
   .overflow-x-auto::-webkit-scrollbar-thumb {
-    background-color: rgb(209 213 219);
-    border-radius: 4px;
+    background-color: rgb(156 163 175);
+    border-radius: 6px;
+    min-width: 30px;
+  }
+  .dark .overflow-x-auto::-webkit-scrollbar-track {
+    background: rgb(31 41 55);
   }
   .dark .overflow-x-auto::-webkit-scrollbar-thumb {
     background-color: rgb(75 85 99);
+  }
+
+  /* Right fade hint on scrollable areas to show more content exists */
+  .scroll-fade {
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
   }
 
   body {

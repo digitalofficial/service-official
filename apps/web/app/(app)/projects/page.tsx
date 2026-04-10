@@ -50,7 +50,7 @@ export default async function ProjectsPage({ searchParams }: ProjectsPageProps) 
       </div>
 
       {/* Status Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-0 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-0 overflow-x-auto scroll-fade">
         {statusGroups.map(group => (
           <Link
             key={group.label}

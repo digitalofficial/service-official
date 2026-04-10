@@ -54,7 +54,7 @@ export default async function EstimatesPage({ searchParams }: Props) {
       />
 
       {/* Status Tabs */}
-      <div className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto">
+      <div className="flex items-center gap-1 border-b border-gray-200 overflow-x-auto scroll-fade">
         {STATUS_TABS.map((tab) => (
           <Link
             key={tab.label}

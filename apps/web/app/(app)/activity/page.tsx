@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { ScrollArea } from '@/components/ui/scroll-indicator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -100,33 +101,35 @@ export default function ActivityLogPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 overflow-x-auto">
-        <span className="text-sm font-medium text-gray-500 shrink-0 whitespace-nowrap">Channel:</span>
-        {['', 'email', 'sms'].map((ch) => (
-          <Button
-            key={ch}
-            size="sm"
-            variant={channelFilter === ch ? 'default' : 'outline'}
-            onClick={() => { setChannelFilter(ch); setPage(0) }}
-            className="h-7 text-xs shrink-0 whitespace-nowrap"
-          >
-            {ch === '' ? 'All' : ch === 'email' ? 'Email' : 'Text'}
-          </Button>
-        ))}
+      <ScrollArea>
+        <div className="flex items-center gap-2 pb-1">
+          <span className="text-sm font-medium text-gray-500 shrink-0">Channel:</span>
+          {['', 'email', 'sms'].map((ch) => (
+            <Button
+              key={ch}
+              size="sm"
+              variant={channelFilter === ch ? 'default' : 'outline'}
+              onClick={() => { setChannelFilter(ch); setPage(0) }}
+              className="h-7 text-xs shrink-0 whitespace-nowrap"
+            >
+              {ch === '' ? 'All' : ch === 'email' ? 'Email' : 'Text'}
+            </Button>
+          ))}
 
-        <span className="text-sm font-medium text-gray-500 ml-4 shrink-0 whitespace-nowrap">Status:</span>
-        {['', 'sent', 'failed'].map((s) => (
-          <Button
-            key={s}
-            size="sm"
-            variant={statusFilter === s ? 'default' : 'outline'}
-            onClick={() => { setStatusFilter(s); setPage(0) }}
-            className="h-7 text-xs shrink-0 whitespace-nowrap"
-          >
-            {s === '' ? 'All' : s === 'sent' ? 'Sent' : 'Failed'}
-          </Button>
-        ))}
-      </div>
+          <span className="text-sm font-medium text-gray-500 ml-4 shrink-0">Status:</span>
+          {['', 'sent', 'failed'].map((s) => (
+            <Button
+              key={s}
+              size="sm"
+              variant={statusFilter === s ? 'default' : 'outline'}
+              onClick={() => { setStatusFilter(s); setPage(0) }}
+              className="h-7 text-xs shrink-0 whitespace-nowrap"
+            >
+              {s === '' ? 'All' : s === 'sent' ? 'Sent' : 'Failed'}
+            </Button>
+          ))}
+        </div>
+      </ScrollArea>
 
       {/* Table */}
       {loading ? (
