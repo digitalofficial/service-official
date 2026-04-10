@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
-import { LayoutDashboard, Users, UserPlus, FileText, Settings, Menu, X, ArrowLeft, Shield } from 'lucide-react'
+import { LayoutDashboard, Users, UserPlus, FileText, Settings, Menu, X, ArrowLeft, Shield, LifeBuoy } from 'lucide-react'
 
 const NAV_ITEMS = [
   { label: 'Overview', href: '/admin', icon: LayoutDashboard },
   { label: 'Clients', href: '/admin/clients', icon: Users },
   { label: 'Add Client', href: '/admin/clients/new', icon: UserPlus },
+  { label: 'Support Tickets', href: '/admin/tickets', icon: LifeBuoy },
   { label: 'Estimates', href: '/admin/revenue', icon: FileText },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
 ]

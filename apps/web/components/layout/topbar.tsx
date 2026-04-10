@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@service-official/database/client'
 import { NotificationBell } from './notification-bell'
+import { SupportForm } from './support-form'
 import { LogOut, Settings, ChevronDown, HelpCircle, BookOpen, Mail } from 'lucide-react'
 
 interface TopBarProps {
@@ -14,6 +15,7 @@ export function TopBar({ profile }: TopBarProps) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [supportOpen, setSupportOpen] = useState(false)
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -25,6 +27,11 @@ export function TopBar({ profile }: TopBarProps) {
     setHelpOpen(false)
     localStorage.removeItem('so-tour-done')
     window.dispatchEvent(new CustomEvent('start-tour'))
+  }
+
+  const openSupport = () => {
+    setHelpOpen(false)
+    setSupportOpen(true)
   }
 
   return (
@@ -57,16 +64,16 @@ export function TopBar({ profile }: TopBarProps) {
                   <p className="text-xs text-gray-400">Walk through the basics</p>
                 </div>
               </button>
-              <a
-                href="mailto:support@serviceofficial.app"
+              <button
+                onClick={openSupport}
                 className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Mail className="w-4 h-4 text-green-500" />
                 <div className="text-left">
                   <p className="font-medium">Contact Support</p>
-                  <p className="text-xs text-gray-400">support@serviceofficial.app</p>
+                  <p className="text-xs text-gray-400">Submit a support ticket</p>
                 </div>
-              </a>
+              </button>
             </div>
           </>
         )}
@@ -107,6 +114,9 @@ export function TopBar({ profile }: TopBarProps) {
           </>
         )}
       </div>
+
+      {/* Support ticket modal */}
+      {supportOpen && <SupportForm onClose={() => setSupportOpen(false)} />}
     </div>
   )
 }
