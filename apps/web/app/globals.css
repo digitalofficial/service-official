@@ -69,6 +69,25 @@
     max-width: 100%;
   }
 
+  /* Visible scroll indicator on horizontal scroll areas (mobile) */
+  .overflow-x-auto {
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .overflow-x-auto::-webkit-scrollbar {
+    height: 4px;
+  }
+  .overflow-x-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+    background-color: rgb(209 213 219);
+    border-radius: 4px;
+  }
+  .dark .overflow-x-auto::-webkit-scrollbar-thumb {
+    background-color: rgb(75 85 99);
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
