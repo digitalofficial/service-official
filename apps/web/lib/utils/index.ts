@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export { cn as default }
 
 // Default timezone for server-side rendering (Vercel runs in UTC)
-const DEFAULT_TZ = process.env.NEXT_PUBLIC_TIMEZONE ?? 'MST'
+const DEFAULT_TZ = process.env.NEXT_PUBLIC_TIMEZONE ?? 'America/Denver'
 
 export function formatDate(date: string | Date | null | undefined, options?: Intl.DateTimeFormatOptions): string {
   if (!date || date === '') return ''
