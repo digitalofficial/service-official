@@ -32,7 +32,6 @@ export default function NewClientPage() {
   const [form, setForm] = useState({
     company_name: '',
     industry: 'general_contractor',
-    domain: '',
     owner_email: '',
     owner_first_name: '',
     owner_last_name: '',
@@ -43,7 +42,7 @@ export default function NewClientPage() {
   const update = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }))
 
   const handleSubmit = async () => {
-    if (!form.company_name || !form.domain || !form.owner_email) {
+    if (!form.company_name || !form.owner_email) {
       toast.error('Fill in all required fields')
       return
     }
@@ -76,9 +75,6 @@ export default function NewClientPage() {
   }
 
   if (result) {
-    const dns = result.dns
-    const vercel = result.vercel_domain
-
     return (
       <div className="max-w-3xl space-y-6">
         {/* Success Banner */}
@@ -86,84 +82,35 @@ export default function NewClientPage() {
           <h2 className="text-lg font-bold text-green-400 mb-4">Client Created Successfully</h2>
           <div className="space-y-3 text-sm">
             <Row label="Company" value={result.client.company_name} />
-            <Row label="App URL" value={result.client.app_url} link />
+            <Row label="Login URL" value={result.client.app_url} link />
             <Row label="Login Email" value={result.client.login_email} />
             <Row label="Temp Password" value={result.client.temp_password} copy />
           </div>
         </div>
 
-        {/* DNS Setup */}
-        {dns && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h3 className="font-semibold text-white mb-1">1. DNS Record</h3>
-            <p className="text-xs text-gray-500 mb-4">Add this in Cloudflare (or DNS provider) for <span className="text-blue-400">{dns.root_domain}</span></p>
-            <div className="bg-gray-800 rounded-lg overflow-x-auto">
-              <table className="w-full text-sm min-w-[400px]">
-                <thead>
-                  <tr className="text-xs text-gray-500 border-b border-gray-700">
-                    <th className="text-left px-4 py-2 font-medium">Type</th>
-                    <th className="text-left px-4 py-2 font-medium">Name</th>
-                    <th className="text-left px-4 py-2 font-medium">Target</th>
-                    <th className="text-left px-4 py-2 font-medium">Proxy</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="px-4 py-3 text-blue-400 font-mono">{dns.type}</td>
-                    <td className="px-4 py-3 text-white font-mono">{dns.name}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => { navigator.clipboard.writeText(dns.target); toast.success('Copied!') }}
-                        className="text-green-400 font-mono hover:underline cursor-pointer"
-                      >
-                        {dns.target}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3 text-amber-400">{dns.proxy}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Vercel Domain */}
+        {/* Email Status */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h3 className="font-semibold text-white mb-2">2. Vercel Domain</h3>
-          {vercel?.success ? (
+          <h3 className="font-semibold text-white mb-2">Welcome Email</h3>
+          {result.email_sent ? (
             <div className="flex items-center gap-2 text-green-400 text-sm">
               <span className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center text-xs">✓</span>
-              <span>{form.domain} added to Vercel automatically</span>
+              <span>Login credentials sent to {result.client.login_email}</span>
             </div>
           ) : (
             <div>
-              <p className="text-sm text-amber-400 mb-2">Manual step required:</p>
-              <p className="text-xs text-gray-400">
-                Go to <a href="https://vercel.com/digitalofficials-projects/service-official/settings/domains" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Vercel → Settings → Domains</a> and add: <span className="font-mono text-white">{form.domain}</span>
-              </p>
-              {vercel?.error && <p className="text-xs text-red-400 mt-1">Error: {vercel.error}</p>}
+              <p className="text-sm text-amber-400 mb-2">Email failed — send credentials manually:</p>
+              <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-300 space-y-1 font-mono">
+                <p>Login URL: <span className="text-blue-400">{result.client.app_url}</span></p>
+                <p>Email: <span className="text-white">{result.client.login_email}</span></p>
+                <p>Password: <span className="text-green-400">{result.client.temp_password}</span></p>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Supabase */}
+        {/* Copy credentials fallback */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h3 className="font-semibold text-white mb-2">3. Supabase Auth</h3>
-          <p className="text-xs text-gray-400">
-            Go to <a href="https://supabase.com/dashboard/project/quonrljpcqjkekedncla/auth/url-configuration" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Supabase → Auth → URL Config</a> and add to Redirect URLs:
-          </p>
-          <button
-            onClick={() => { navigator.clipboard.writeText(`https://${form.domain}/**`); toast.success('Copied!') }}
-            className="mt-2 font-mono text-sm text-green-400 bg-gray-800 px-3 py-1.5 rounded hover:bg-gray-700 transition-colors"
-          >
-            https://{form.domain}/** (click to copy)
-          </button>
-        </div>
-
-        {/* Credentials to send */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h3 className="font-semibold text-white mb-2">4. Send Credentials</h3>
-          <p className="text-xs text-gray-400 mb-3">Send this to the client owner:</p>
+          <h3 className="font-semibold text-white mb-3">Credentials</h3>
           <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-300 space-y-1 font-mono">
             <p>Login URL: <span className="text-blue-400">{result.client.app_url}</span></p>
             <p>Email: <span className="text-white">{result.client.login_email}</span></p>
@@ -183,7 +130,7 @@ export default function NewClientPage() {
 
         <div className="flex gap-3">
           <button
-            onClick={() => { setResult(null); setForm({ company_name: '', industry: 'general_contractor', domain: '', owner_email: '', owner_first_name: '', owner_last_name: '', owner_phone: '', subscription_tier: 'solo' }) }}
+            onClick={() => { setResult(null); setForm({ company_name: '', industry: 'general_contractor', owner_email: '', owner_first_name: '', owner_last_name: '', owner_phone: '', subscription_tier: 'solo' }) }}
             className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm rounded-lg"
           >
             Add Another Client
@@ -200,7 +147,7 @@ export default function NewClientPage() {
     <div className="max-w-2xl w-full space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Add New Client</h1>
-        <p className="text-gray-400 text-sm mt-1">Creates their organization, account, and registers their domain</p>
+        <p className="text-gray-400 text-sm mt-1">Creates their organization and account with a 14-day free trial</p>
       </div>
 
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
@@ -219,15 +166,6 @@ export default function NewClientPage() {
           <select value={form.industry} onChange={e => update('industry', e.target.value)} className="input">
             {INDUSTRIES.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
           </select>
-        </Field>
-
-        <Field label="App Domain *" hint="The subdomain you'll set up for them in Cloudflare">
-          <input
-            value={form.domain}
-            onChange={e => update('domain', e.target.value)}
-            placeholder="service.smithroofing.com"
-            className="input"
-          />
         </Field>
       </div>
 
