@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@service-official/database/client'
 import { NotificationBell } from './notification-bell'
 import { SupportForm } from './support-form'
+import { ThemeToggle } from './theme-toggle'
 import { LogOut, Settings, ChevronDown, HelpCircle, BookOpen, Mail } from 'lucide-react'
 
 interface TopBarProps {
@@ -35,7 +36,9 @@ export function TopBar({ profile }: TopBarProps) {
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
+      <ThemeToggle />
+
       {/* Help dropdown */}
       <div className="relative">
         <button
