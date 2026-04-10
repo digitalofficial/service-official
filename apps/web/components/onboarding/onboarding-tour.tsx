@@ -6,11 +6,11 @@ import { X, ArrowRight, ArrowLeft, Palette, Users, Briefcase, Receipt, Sparkles,
 
 const TOUR_STEPS = [
   {
-    target: null,
+    target: '[data-tour="help"]',
     title: 'Welcome to Service Official!',
-    description: 'Let\'s take a quick tour so you can hit the ground running. We\'ll show you how to set up your brand, add customers, dispatch jobs, and get paid.',
+    description: 'Let\'s take a quick tour so you can hit the ground running. We\'ll show you how to set up your brand, add customers, dispatch jobs, and get paid.\n\nYou can restart this tour anytime by clicking this help button.',
     icon: Sparkles,
-    position: 'center' as const,
+    position: 'bottom' as const,
     actionLabel: null,
     actionHref: null,
   },
@@ -134,45 +134,53 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
 
   const step = TOUR_STEPS[currentStep]
   const Icon = step.icon
-  const isCenter = step.position === 'center'
   const isLast = currentStep === TOUR_STEPS.length - 1
   const isFirst = currentStep === 0
 
-  // Calculate popover position
+  // Calculate popover position and arrow direction
   let popoverStyle: React.CSSProperties = {}
-  if (isCenter) {
+  let arrowPosition: 'top' | 'left' | 'none' = 'none'
+  let arrowOffset = 0
+
+  if (targetRect) {
+    const popoverWidth = 380
+    const rightSpace = window.innerWidth - targetRect.right
+
+    if (step.position === 'bottom') {
+      // Position below the target (used for help button)
+      popoverStyle = {
+        position: 'fixed',
+        top: targetRect.bottom + 14,
+        right: window.innerWidth - targetRect.right,
+      }
+      arrowPosition = 'top'
+      arrowOffset = Math.min(popoverWidth - 30, targetRect.width / 2 + (window.innerWidth - targetRect.right) - 20)
+    } else if (rightSpace > popoverWidth + 24) {
+      // Position to the right
+      popoverStyle = {
+        position: 'fixed',
+        top: Math.max(16, targetRect.top - 16),
+        left: targetRect.right + 14,
+      }
+      arrowPosition = 'left'
+      arrowOffset = targetRect.height / 2 + 8
+    } else {
+      // Position below
+      popoverStyle = {
+        position: 'fixed',
+        top: targetRect.bottom + 14,
+        left: Math.max(16, Math.min(targetRect.left, window.innerWidth - popoverWidth - 16)),
+      }
+      arrowPosition = 'top'
+      arrowOffset = Math.max(20, targetRect.left + targetRect.width / 2 - (popoverStyle.left as number))
+    }
+  } else {
+    // No target found, center it
     popoverStyle = {
       position: 'fixed',
       top: '50%',
       left: '50%',
       transform: 'translate(-50%, -50%)',
-    }
-  } else if (targetRect) {
-    const popoverWidth = 380
-    const rightSpace = window.innerWidth - targetRect.right
-    const bottomSpace = window.innerHeight - targetRect.bottom
-
-    if (rightSpace > popoverWidth + 24) {
-      // Position to the right
-      popoverStyle = {
-        position: 'fixed',
-        top: Math.max(16, targetRect.top - 16),
-        left: targetRect.right + 16,
-      }
-    } else if (bottomSpace > 250) {
-      // Position below
-      popoverStyle = {
-        position: 'fixed',
-        top: targetRect.bottom + 12,
-        left: Math.max(16, Math.min(targetRect.left, window.innerWidth - popoverWidth - 16)),
-      }
-    } else {
-      // Position above
-      popoverStyle = {
-        position: 'fixed',
-        bottom: window.innerHeight - targetRect.top + 12,
-        left: Math.max(16, Math.min(targetRect.left, window.innerWidth - popoverWidth - 16)),
-      }
     }
   }
 
@@ -199,19 +207,27 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
         />
       )}
 
-      {/* Center step backdrop blocker */}
-      {isCenter && (
-        <div className="fixed inset-0 z-[101]" onClick={completeTour} />
-      )}
-
       {/* Popover card */}
       <div
         ref={popoverRef}
         style={{ ...popoverStyle, zIndex: 102 }}
-        className="w-[380px] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto"
+        className="w-[380px] bg-white rounded-2xl shadow-2xl pointer-events-auto relative"
       >
+        {/* Arrow pointing to target */}
+        {arrowPosition === 'top' && (
+          <div
+            className="absolute -top-2 w-4 h-4 bg-blue-600 rotate-45"
+            style={{ right: arrowOffset }}
+          />
+        )}
+        {arrowPosition === 'left' && (
+          <div
+            className="absolute -left-2 w-4 h-4 bg-blue-600 rotate-45"
+            style={{ top: arrowOffset }}
+          />
+        )}
         {/* Header */}
-        <div className="bg-blue-600 px-5 py-4 flex items-center justify-between">
+        <div className="bg-blue-600 px-5 py-4 flex items-center justify-between rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
               <Icon className="w-5 h-5 text-white" />
@@ -228,7 +244,9 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
 
         {/* Body */}
         <div className="px-5 py-4">
-          <p className="text-sm text-gray-600 leading-relaxed">{step.description}</p>
+          {step.description.split('\n').map((line, i) => (
+            <p key={i} className={`text-sm text-gray-600 leading-relaxed ${i > 0 ? 'mt-2' : ''}`}>{line}</p>
+          ))}
 
           {/* Action button — lets user do the thing right now */}
           {step.actionHref && (

@@ -30,6 +30,7 @@ export function TopBar({ profile }: TopBarProps) {
       {/* Tour guide button */}
       <button
         onClick={startTour}
+        data-tour="help"
         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
         title="Start guided tour"
       >
