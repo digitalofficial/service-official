@@ -145,7 +145,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </div>
       <AlfredChat userName={profile.first_name} />
       {['owner', 'admin'].includes(profile.role) && (
-        <OnboardingTour profileId={profile.id ?? user.id} />
+        <OnboardingTour profileId={profile.id ?? user.id} onboardingCompleted={!!profile.onboarding_completed_at} />
       )}
     </div>
   )
