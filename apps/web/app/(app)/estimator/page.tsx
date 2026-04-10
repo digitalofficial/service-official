@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { PageHeader } from '@/components/ui/page-header'
 import { EstimatorTabs } from './estimator-tabs'
 import type { Metadata } from 'next'
@@ -7,15 +7,15 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Estimator' }
 
 export default async function EstimatorPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, first_name, organization:organizations(name, industry)')
-    .eq('id', user!.id)
+  const { supabase, profile } = await getProfile()
+
+  const { data: orgData } = await supabase
+    .from('organizations')
+    .select('name, industry')
+    .eq('id', profile.organization_id)
     .single()
 
-  const orgId = profile!.organization_id
+  const orgId = profile.organization_id
 
   // Fetch recent takeoffs
   const { data: takeoffs } = await supabase
@@ -42,7 +42,7 @@ export default async function EstimatorPage() {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  const org = (profile as any)?.organization
+  const org = orgData
 
   return (
     <div className="space-y-6">

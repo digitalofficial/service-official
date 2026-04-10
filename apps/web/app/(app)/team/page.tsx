@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { PageHeader } from '@/components/ui/page-header'
 import { formatCurrency, formatDate, formatPhone } from '@/lib/utils'
 import { Mail, Phone, MapPin, Clock, Briefcase, DollarSign } from 'lucide-react'
@@ -20,9 +20,7 @@ const ROLE_COLORS: Record<string, string> = {
 }
 
 export default async function TeamPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user!.id).single()
+  const { supabase, profile } = await getProfile()
 
   const isOwnerOrAdmin = ['owner', 'admin'].includes(profile?.role ?? '')
 
@@ -30,7 +28,7 @@ export default async function TeamPage() {
   const { data: members } = await supabase
     .from('profiles')
     .select('*')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .eq('is_active', true)
     .order('first_name', { ascending: true })
 
@@ -38,7 +36,7 @@ export default async function TeamPage() {
   const { data: jobs } = await supabase
     .from('jobs')
     .select('id, title, status, scheduled_start, scheduled_end, assigned_to, address_line1, city')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .in('status', ['scheduled', 'en_route', 'on_site', 'in_progress'])
     .order('scheduled_start', { ascending: true })
 
@@ -46,7 +44,7 @@ export default async function TeamPage() {
   const { data: timeEntries } = await supabase
     .from('time_entries')
     .select('profile_id, hours, total_pay, date')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .gte('date', new Date(Date.now() - 30 * 86400000).toISOString().split('T')[0])
 
   // Group jobs by assignee

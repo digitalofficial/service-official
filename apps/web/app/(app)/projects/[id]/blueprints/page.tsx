@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatDate } from '@/lib/utils'
@@ -6,7 +6,7 @@ import { Plus, Map, Eye, Cpu, FileText } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function ProjectBlueprintsPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
 
   const { data: blueprints } = await supabase
     .from('blueprints')

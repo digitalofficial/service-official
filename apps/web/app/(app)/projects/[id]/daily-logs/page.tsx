@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { AddItemForm } from '@/components/projects/add-item-form'
 import { formatDate } from '@/lib/utils'
 import { Users, AlertTriangle } from 'lucide-react'
@@ -29,7 +29,7 @@ const FIELDS = [
 ]
 
 export default async function DailyLogsPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
   const { data: logs } = await supabase
     .from('daily_logs')
     .select('*, submitter:profiles!submitted_by(first_name, last_name)')

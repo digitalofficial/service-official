@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -29,10 +29,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 
 export default async function JobsPage({ searchParams }: Props) {
   try {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return <div className="p-8 text-center text-gray-500">Please log in</div>
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
+  const { supabase, user, profile } = await getProfile()
 
   const selfOnlyRoles = ['technician', 'foreman', 'subcontractor']
 
@@ -44,12 +41,12 @@ export default async function JobsPage({ searchParams }: Props) {
       assignee:profiles!assigned_to(id, first_name, last_name, avatar_url),
       project:projects(id, name)
     `)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .order('scheduled_start', { ascending: true })
 
   // Technicians/foremen/subs only see their assigned jobs
   if (selfOnlyRoles.includes(profile?.role ?? '')) {
-    query = query.eq('assigned_to', user!.id)
+    query = query.eq('assigned_to', user.id)
   }
 
   if (searchParams.status) query = query.eq('status', searchParams.status)
@@ -58,7 +55,7 @@ export default async function JobsPage({ searchParams }: Props) {
   const { data: org } = await supabase
     .from('organizations')
     .select('name, address_line1, city, state, zip')
-    .eq('id', profile!.organization_id)
+    .eq('id', profile.organization_id)
     .single()
 
   const isMapView = searchParams.view === 'map'

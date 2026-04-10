@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { Button } from '@/components/ui/button'
 import { EditCompanyButton } from './settings-edit'
 import { DangerZone } from './danger-zone'
@@ -7,15 +7,13 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'General Settings' }
 
 export default async function GeneralSettingsPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, organization:organizations(*)')
-    .eq('id', user!.id)
-    .single()
+  const { supabase, profile } = await getProfile()
 
-  const org = (profile as any)?.organization
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('*')
+    .eq('id', profile.organization_id)
+    .single()
   const isOwner = profile?.role === 'owner'
 
   return (

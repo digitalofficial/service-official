@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
 import { formatDate } from '@/lib/utils'
@@ -17,7 +17,7 @@ const FIELDS = [
 ]
 
 export default async function PunchListPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
   const { data: items } = await supabase
     .from('punch_list_items')
     .select('*, assignee:profiles!assigned_to(first_name, last_name)')

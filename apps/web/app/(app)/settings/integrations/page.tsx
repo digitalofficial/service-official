@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
@@ -7,11 +7,13 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'Integrations' }
 
 export default async function IntegrationsPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id, organization:organizations(stripe_customer_id, stripe_subscription_id)').eq('id', user!.id).single()
+  const { supabase, profile } = await getProfile()
 
-  const org = (profile as any)?.organization
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('stripe_customer_id, stripe_subscription_id')
+    .eq('id', profile.organization_id)
+    .single()
   const stripeConnected = !!(org?.stripe_customer_id || org?.stripe_subscription_id)
 
   const INTEGRATIONS = [

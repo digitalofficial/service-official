@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { getProjectById } from '@service-official/database/queries/projects'
 import { ProjectStatusBadge } from '@/components/projects/status-badge'
 import { ArrowLeft, MapPin, Calendar, DollarSign, Users } from 'lucide-react'
@@ -31,6 +31,7 @@ interface ProjectLayoutProps {
 }
 
 export default async function ProjectDetailLayout({ children, params }: ProjectLayoutProps) {
+  await getProfile()
   const project = await getProjectById(params.id)
   if (!project) notFound()
 

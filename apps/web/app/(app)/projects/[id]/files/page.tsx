@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { FileUpload } from '@/components/upload/file-upload'
 import { FileGrid } from '@/components/files/file-grid'
 import type { Metadata } from 'next'
@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'Project Files' }
 
 export default async function ProjectFilesPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
 
   const { data: files } = await supabase
     .from('files')

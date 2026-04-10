@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
 import { formatCurrency, formatDate, statusColor } from '@/lib/utils'
@@ -13,7 +13,7 @@ const FIELDS = [
 ]
 
 export default async function ChangeOrdersPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
   const { data: orders } = await supabase.from('change_orders')
     .select('*, approver:profiles!approved_by(first_name, last_name)')
     .eq('project_id', params.id).order('created_at', { ascending: false })

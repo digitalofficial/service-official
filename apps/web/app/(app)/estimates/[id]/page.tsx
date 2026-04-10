@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { EstimateTemplate } from '@/components/estimates/estimate-template'
 import { EstimateActions } from './estimate-actions'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -14,14 +14,12 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Estimate Detail' }
 
 export default async function EstimateDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) notFound()
+  const { supabase, profile } = await getProfile()
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, organization:organizations(*)')
-    .eq('id', user.id)
+  const { data: orgData } = await supabase
+    .from('organizations')
+    .select('*')
+    .eq('id', profile.organization_id)
     .single()
 
   const { data: estimate } = await supabase
@@ -138,7 +136,7 @@ export default async function EstimateDetailPage({ params }: { params: { id: str
   // Sort chronologically
   activities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-  const organization = (profile as any)?.organization
+  const organization = orgData
   const customer = (estimate as any)?.customer
   const lineItems = ((estimate as any)?.line_items ?? []).sort((a: any, b: any) => a.order_index - b.order_index)
 

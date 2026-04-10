@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
 import { formatDate, statusColor } from '@/lib/utils'
@@ -12,7 +12,7 @@ const FIELDS = [
 ]
 
 export default async function ProjectRFIsPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
   const { data: rfis } = await supabase
     .from('rfis')
     .select('*, submitter:profiles!submitted_by(first_name, last_name), answerer:profiles!answered_by(first_name, last_name)')

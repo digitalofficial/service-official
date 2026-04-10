@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
 import { formatCurrency, statusColor } from '@/lib/utils'
@@ -18,7 +18,7 @@ const FIELDS = [
 ]
 
 export default async function ProjectMaterialsPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
   const { data: materials } = await supabase.from('project_materials').select('*').eq('project_id', params.id).order('created_at', { ascending: false })
   const totalCost = (materials ?? []).reduce((sum: number, m: any) => sum + (m.total_cost ?? 0), 0)
 

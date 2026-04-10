@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
 import { formatDate, statusColor } from '@/lib/utils'
@@ -29,7 +29,7 @@ const PHASE_STATUS_ICON: Record<string, JSX.Element> = {
 }
 
 export default async function ProjectTimelinePage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
   const [{ data: phases }, { data: milestones }] = await Promise.all([
     supabase.from('project_phases').select('*').eq('project_id', params.id).order('order_index', { ascending: true }),
     supabase.from('project_milestones').select('*').eq('project_id', params.id).order('due_date', { ascending: true }),

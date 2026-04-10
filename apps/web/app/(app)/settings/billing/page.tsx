@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { CheckCircle } from 'lucide-react'
 import { PlanButton, CancelPlanButton } from './billing-actions'
 import type { Metadata } from 'next'
@@ -13,15 +13,13 @@ const PLANS = [
 ]
 
 export default async function BillingPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role, organization:organizations(subscription_tier, subscription_status, trial_ends_at)')
-    .eq('id', user!.id)
-    .single()
+  const { supabase, profile } = await getProfile()
 
-  const org = (profile as any)?.organization
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('subscription_tier, subscription_status, trial_ends_at')
+    .eq('id', profile.organization_id)
+    .single()
   const currentTier = org?.subscription_tier ?? 'solo'
   const currentStatus = org?.subscription_status ?? 'active'
   const isOwner = profile?.role === 'owner'

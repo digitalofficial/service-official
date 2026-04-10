@@ -1,10 +1,10 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { Camera, Eye, Download } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
 import { UploadPhotosButton, DeletePhotoButton } from './project-photos'
 
 export default async function ProjectPhotosPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
 
   const { data: photos } = await supabase
     .from('photos')

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import Link from 'next/link'
 import {
   FolderKanban, Briefcase, AlertCircle, TrendingUp, MapPin,
@@ -32,18 +32,8 @@ const STATUS_DOT: Record<string, string> = {
 }
 
 export default async function DashboardPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*, organization:organizations(*)')
-    .eq('id', user.id)
-    .single()
-
-  const orgId = profile?.organization_id
-  if (!orgId) return null
+  const { supabase, user, profile } = await getProfile()
+  const orgId = profile.organization_id
 
   const selfOnlyRoles = ['technician', 'foreman', 'subcontractor']
   const isSelfOnly = selfOnlyRoles.includes(profile?.role ?? '')

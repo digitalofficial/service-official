@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Plus, Receipt, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { AddExpenseButton } from './project-expenses'
@@ -14,7 +14,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 }
 
 export default async function ProjectExpensesPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
 
   const { data: expenses } = await supabase
     .from('expenses')

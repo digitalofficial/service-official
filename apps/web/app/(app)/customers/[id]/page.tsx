@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDate, formatPhone, statusColor } from '@/lib/utils'
@@ -15,9 +15,7 @@ export const metadata: Metadata = { title: 'Customer Detail' }
 
 export default async function CustomerDetailPage({ params }: { params: { id: string } }) {
   try {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) notFound()
+  const { supabase } = await getProfile()
 
   const { data: customer, error } = await supabase
     .from('customers')

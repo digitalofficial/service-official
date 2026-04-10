@@ -1,12 +1,12 @@
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatDate } from '@/lib/utils'
 import { Plus, ShieldAlert, AlertTriangle, CheckCircle, FileText } from 'lucide-react'
 
 export default async function SafetyPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
 
   // Fetch safety incidents from daily logs
   const { data: logs } = await supabase

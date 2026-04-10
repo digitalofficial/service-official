@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { InvoiceTemplate } from '@/components/invoices/invoice-template'
 import { InvoiceActions } from './invoice-actions'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -14,14 +14,12 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Invoice Detail' }
 
 export default async function InvoiceDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) notFound()
+  const { supabase, profile } = await getProfile()
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, organization:organizations(*)')
-    .eq('id', user.id)
+  const { data: orgData } = await supabase
+    .from('organizations')
+    .select('*')
+    .eq('id', profile.organization_id)
     .single()
 
   const { data: invoice } = await supabase
@@ -171,7 +169,7 @@ export default async function InvoiceDetailPage({ params }: { params: { id: stri
   // Sort chronologically
   activities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-  const organization = (profile as any)?.organization
+  const organization = orgData
   const customer = (invoice as any)?.customer
   const lineItems = (invoice as any)?.line_items ?? []
 

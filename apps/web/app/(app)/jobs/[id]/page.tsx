@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDate, formatPhone, statusColor } from '@/lib/utils'
@@ -26,11 +26,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 export default async function JobDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) notFound()
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
+  const { supabase, user, profile } = await getProfile()
 
   const { data: job } = await supabase
     .from('jobs')

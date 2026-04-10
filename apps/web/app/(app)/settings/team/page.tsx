@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -11,22 +11,20 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'Team Settings' }
 
 export default async function TeamSettingsPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user!.id).single()
+  const { supabase, profile } = await getProfile()
 
   const isOwnerOrAdmin = profile?.role === 'owner' || profile?.role === 'admin'
 
   const { data: members } = await supabase
     .from('profiles')
     .select('*')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .order('created_at', { ascending: true })
 
   const { data: invitations } = await supabase
     .from('invitations')
     .select('*')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
 

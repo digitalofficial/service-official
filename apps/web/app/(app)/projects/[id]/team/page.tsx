@@ -1,11 +1,11 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatCurrency } from '@/lib/utils'
 import { Users, Mail, Phone } from 'lucide-react'
 import { AddMemberButton } from './add-member'
 
 export default async function ProjectTeamPage({ params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
+  const { supabase } = await getProfile()
 
   const { data: members } = await supabase
     .from('project_team')

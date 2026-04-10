@@ -1,19 +1,17 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { BrandingForm } from './branding-form'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Branding Settings' }
 
 export default async function BrandingPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, organization:organizations(id, name, logo_url, primary_color, secondary_color)')
-    .eq('id', user!.id)
-    .single()
+  const { supabase, profile } = await getProfile()
 
-  const org = (profile as any)?.organization
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('id, name, logo_url, primary_color, secondary_color')
+    .eq('id', profile.organization_id)
+    .single()
 
   return (
     <div className="space-y-6">
