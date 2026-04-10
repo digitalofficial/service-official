@@ -84,3 +84,23 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   return NextResponse.json({ data, sms_sent: updates.status === 'en_route' || updates.status === 'completed' })
 }
+
+export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+  const supabase = createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
+  if (!profile || profile.role !== 'owner') {
+    return NextResponse.json({ error: 'Only owners can delete jobs' }, { status: 403 })
+  }
+
+  const { error } = await supabase
+    .from('jobs')
+    .delete()
+    .eq('id', params.id)
+    .eq('organization_id', profile.organization_id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ success: true })
+}
