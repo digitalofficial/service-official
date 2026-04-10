@@ -95,6 +95,15 @@
     background-color: rgb(75 85 99);
   }
 
+  /* Hide native scrollbar when using custom ScrollArea indicator */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Right fade hint on scrollable areas to show more content exists */
   .scroll-fade {
     -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);

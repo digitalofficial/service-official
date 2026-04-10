@@ -40,7 +40,7 @@ export function ScrollArea({ children, className = '' }: { children: React.React
 
   return (
     <div>
-      <div ref={scrollRef} className={`overflow-x-auto ${className}`}>
+      <div ref={scrollRef} className={`overflow-x-auto scrollbar-hide ${className}`}>
         {children}
       </div>
       {showBar && (
