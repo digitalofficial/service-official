@@ -401,7 +401,9 @@ export default async function HomePage() {
           <p className="text-xs text-gray-400">
             &copy; {new Date().getFullYear()} Service Official. All rights reserved.
           </p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+            <Link href="/privacy" className="text-xs text-gray-500 hover:text-gray-700">Privacy Policy</Link>
+            <Link href="/terms" className="text-xs text-gray-500 hover:text-gray-700">Terms of Service</Link>
             <Link href="/auth/login" className="text-xs text-gray-500 hover:text-gray-700">Sign in</Link>
             <Link href="/auth/register" className="text-xs text-gray-500 hover:text-gray-700">Sign up</Link>
           </div>
