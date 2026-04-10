@@ -97,13 +97,13 @@ export default async function JobsPage({ searchParams }: Props) {
         <div className="flex md:hidden items-center gap-1 bg-gray-100 rounded-lg p-0.5">
           <Link
             href={`/jobs${searchParams.status ? `?status=${searchParams.status}` : ''}`}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${!isMapView ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${!isMapView ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:text-gray-700'}`}
           >
             List
           </Link>
           <Link
             href={`/jobs?view=map${searchParams.status ? `&status=${searchParams.status}` : ''}`}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${isMapView ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${isMapView ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:text-gray-700'}`}
           >
             Map
           </Link>

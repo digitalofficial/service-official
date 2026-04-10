@@ -100,28 +100,28 @@ export default function ActivityLogPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-gray-500">Channel:</span>
+      <div className="flex items-center gap-2 overflow-x-auto">
+        <span className="text-sm font-medium text-gray-500 shrink-0 whitespace-nowrap">Channel:</span>
         {['', 'email', 'sms'].map((ch) => (
           <Button
             key={ch}
             size="sm"
             variant={channelFilter === ch ? 'default' : 'outline'}
             onClick={() => { setChannelFilter(ch); setPage(0) }}
-            className="h-7 text-xs"
+            className="h-7 text-xs shrink-0 whitespace-nowrap"
           >
             {ch === '' ? 'All' : ch === 'email' ? 'Email' : 'Text'}
           </Button>
         ))}
 
-        <span className="text-sm font-medium text-gray-500 ml-4">Status:</span>
+        <span className="text-sm font-medium text-gray-500 ml-4 shrink-0 whitespace-nowrap">Status:</span>
         {['', 'sent', 'failed'].map((s) => (
           <Button
             key={s}
             size="sm"
             variant={statusFilter === s ? 'default' : 'outline'}
             onClick={() => { setStatusFilter(s); setPage(0) }}
-            className="h-7 text-xs"
+            className="h-7 text-xs shrink-0 whitespace-nowrap"
           >
             {s === '' ? 'All' : s === 'sent' ? 'Sent' : 'Failed'}
           </Button>

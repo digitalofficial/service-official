@@ -85,7 +85,12 @@ export function JobMap({ jobs, height = '400px', type = 'jobs', baseLocation }: 
     if (!mapRef.current || mapInstance.current) return
 
     // Default center: Denver, CO
-    const map = L.map(mapRef.current, { scrollWheelZoom: false }).setView([39.74, -104.99], 10)
+    const isMobile = window.innerWidth < 768
+    const map = L.map(mapRef.current, {
+      scrollWheelZoom: false,
+      dragging: !isMobile,
+      touchZoom: !isMobile,
+    }).setView([39.74, -104.99], 10)
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',

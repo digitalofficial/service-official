@@ -108,9 +108,9 @@ export default function CalendarPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
             {(['month', 'week', 'day'] as CalendarView[]).map((v) => (
               <button
@@ -124,10 +124,10 @@ export default function CalendarPage() {
               </button>
             ))}
           </div>
+          <Button onClick={() => router.push('/jobs/new')} size="sm">
+            <Plus className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">New Job</span>
+          </Button>
         </div>
-        <Button onClick={() => router.push('/jobs/new')}>
-          <Plus className="w-4 h-4 mr-2" />New Job
-        </Button>
       </div>
 
       {/* Navigation */}
