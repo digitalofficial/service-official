@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils/cn'
-import { LayoutDashboard, Users, UserPlus, FileText, Settings, Menu, X, ArrowLeft, Shield, LifeBuoy } from 'lucide-react'
+import Image from 'next/image'
+import { LayoutDashboard, Users, UserPlus, FileText, Settings, Menu, X, ArrowLeft, LifeBuoy } from 'lucide-react'
 
 const NAV_ITEMS = [
   { label: 'Overview', href: '/admin', icon: LayoutDashboard },
@@ -31,7 +32,7 @@ export function AdminSidebar({ email }: { email: string }) {
       <div className="flex items-center justify-between px-5 py-5 border-b border-gray-800">
         <div>
           <div className="flex items-center gap-2 mb-0.5">
-            <Shield className="w-4 h-4 text-blue-400" />
+            <Image src="/icon.png" alt="Service Official" width={20} height={20} className="rounded" />
             <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">Service Official</p>
           </div>
           <p className="text-sm font-semibold text-white">Admin Panel</p>
