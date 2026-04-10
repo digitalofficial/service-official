@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { formatCurrency } from '@/lib/utils'
 import { DollarSign, TrendingUp, TrendingDown, Receipt, CreditCard, Briefcase, UserPlus, Target } from 'lucide-react'
 import { ReportsCharts } from './reports-charts'
+import { ReportsClient } from './components/reports-client'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Reports & Analytics' }
@@ -101,10 +102,8 @@ export default async function ReportsPage() {
     { label: 'Net Profit', value: formatCurrency(totalRevenue - totalExpenses), icon: totalRevenue - totalExpenses >= 0 ? TrendingUp : TrendingDown, color: totalRevenue - totalExpenses >= 0 ? 'text-green-600' : 'text-red-600', bg: totalRevenue - totalExpenses >= 0 ? 'bg-green-50' : 'bg-red-50' },
   ]
 
-  return (
-    <div className="space-y-6">
-      <PageHeader title="Reports & Analytics" description="Financial performance and key metrics" />
-
+  const dashboardContent = (
+    <>
       {/* Metric Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {metrics.map((m) => {
@@ -131,6 +130,13 @@ export default async function ReportsPage() {
         topCustomers={topCustomers}
         totalExpenses={totalExpenses}
       />
+    </>
+  )
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Reports & Analytics" description="Financial performance, reports, and key metrics" />
+      <ReportsClient dashboardContent={dashboardContent} />
     </div>
   )
 }
