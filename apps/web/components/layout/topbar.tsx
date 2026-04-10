@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@service-official/database/client'
 import { NotificationBell } from './notification-bell'
-import { Search, LogOut, Settings, User, ChevronDown } from 'lucide-react'
+import { Search, LogOut, Settings, User, ChevronDown, HelpCircle } from 'lucide-react'
 
 interface TopBarProps {
   profile: any
@@ -20,8 +20,22 @@ export function TopBar({ profile }: TopBarProps) {
     router.push('/auth/login')
   }
 
+  const startTour = () => {
+    localStorage.removeItem('so-tour-done')
+    window.dispatchEvent(new CustomEvent('start-tour'))
+  }
+
   return (
     <div className="flex items-center gap-3">
+      {/* Tour guide button */}
+      <button
+        onClick={startTour}
+        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+        title="Start guided tour"
+      >
+        <HelpCircle className="w-5 h-5" />
+      </button>
+
       <NotificationBell />
 
       {/* Profile dropdown */}

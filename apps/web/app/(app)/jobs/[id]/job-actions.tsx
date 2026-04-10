@@ -60,7 +60,9 @@ export function JobActions({ jobId, status, isOwner, customerId, customerName }:
     const res = await fetch(`/api/jobs/${jobId}`, { method: 'DELETE' })
     if (res.ok) {
       toast.success('Job deleted')
-      router.push('/jobs')
+      window.location.href = '/jobs'
+    } else {
+      toast.error('Failed to delete job')
     }
   }
 

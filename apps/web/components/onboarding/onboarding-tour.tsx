@@ -1,29 +1,36 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { X, ArrowRight, Palette, Users, Briefcase, Receipt, Sparkles } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { X, ArrowRight, ArrowLeft, Palette, Users, Briefcase, Receipt, Sparkles, ExternalLink } from 'lucide-react'
 
 const TOUR_STEPS = [
   {
-    target: null, // centered modal, no target
+    target: null,
     title: 'Welcome to Service Official!',
     description: 'Let\'s take a quick tour so you can hit the ground running. We\'ll show you how to set up your brand, add customers, dispatch jobs, and get paid.',
     icon: Sparkles,
     position: 'center' as const,
+    actionLabel: null,
+    actionHref: null,
   },
   {
     target: '[data-tour="settings"]',
     title: 'Customize Your Brand',
-    description: 'Head to Settings, then Branding to upload your company logo and set your brand colors. Your invoices, estimates, and customer emails will all be custom-branded with your look.',
+    description: 'Upload your company logo and set your brand colors. Your invoices, estimates, and customer emails will all be custom-branded with your look.',
     icon: Palette,
     position: 'right' as const,
+    actionLabel: 'Go to Branding',
+    actionHref: '/settings/branding',
   },
   {
     target: '[data-tour="customers"]',
     title: 'Add Your First Customer',
-    description: 'Start by adding your customers here. Once you have customers, you can create estimates, schedule jobs, and send invoices for them.',
+    description: 'Add your customers so you can create estimates, schedule jobs, and send invoices for them.',
     icon: Users,
     position: 'right' as const,
+    actionLabel: 'Add a Customer',
+    actionHref: '/customers/new',
   },
   {
     target: '[data-tour="dispatch"]',
@@ -31,13 +38,17 @@ const TOUR_STEPS = [
     description: 'Create and schedule jobs, assign them to your crew, and track progress in real time. Your team gets SMS notifications when jobs are assigned.',
     icon: Briefcase,
     position: 'right' as const,
+    actionLabel: 'Dispatch a Job',
+    actionHref: '/dispatch',
   },
   {
     target: '[data-tour="invoices"]',
     title: 'Get Paid Faster',
-    description: 'Create professional, branded invoices and send them directly to your customers. They can view and pay online instantly. You\'ll be notified when they pay.',
+    description: 'Create professional, branded invoices and send them directly to your customers. They can view and pay online instantly.',
     icon: Receipt,
     position: 'right' as const,
+    actionLabel: 'Create an Invoice',
+    actionHref: '/invoices/new',
   },
 ]
 
@@ -46,17 +57,27 @@ interface OnboardingTourProps {
 }
 
 export function OnboardingTour({ profileId }: OnboardingTourProps) {
+  const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  // Check localStorage to avoid flashing the tour on repeat visits
+  // Auto-start on first visit
   useEffect(() => {
     if (localStorage.getItem('so-tour-done')) return
-    // Small delay so the dashboard renders first
     const timer = setTimeout(() => setIsVisible(true), 800)
     return () => clearTimeout(timer)
+  }, [])
+
+  // Listen for manual re-trigger from topbar button
+  useEffect(() => {
+    const handler = () => {
+      setCurrentStep(0)
+      setIsVisible(true)
+    }
+    window.addEventListener('start-tour', handler)
+    return () => window.removeEventListener('start-tour', handler)
   }, [])
 
   const updateTargetRect = useCallback(() => {
@@ -76,13 +97,13 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
   useEffect(() => {
     if (!isVisible) return
     updateTargetRect()
+    const interval = setInterval(updateTargetRect, 500)
     window.addEventListener('resize', updateTargetRect)
-    window.addEventListener('scroll', updateTargetRect, true)
     return () => {
+      clearInterval(interval)
       window.removeEventListener('resize', updateTargetRect)
-      window.removeEventListener('scroll', updateTargetRect, true)
     }
-  }, [isVisible, updateTargetRect])
+  }, [isVisible, currentStep, updateTargetRect])
 
   const completeTour = useCallback(async () => {
     setIsVisible(false)
@@ -100,12 +121,22 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
     }
   }, [currentStep, completeTour])
 
+  const prevStep = useCallback(() => {
+    if (currentStep > 0) setCurrentStep(prev => prev - 1)
+  }, [currentStep])
+
+  const handleAction = (href: string) => {
+    completeTour()
+    router.push(href)
+  }
+
   if (!isVisible) return null
 
   const step = TOUR_STEPS[currentStep]
   const Icon = step.icon
   const isCenter = step.position === 'center'
   const isLast = currentStep === TOUR_STEPS.length - 1
+  const isFirst = currentStep === 0
 
   // Calculate popover position
   let popoverStyle: React.CSSProperties = {}
@@ -117,48 +148,69 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
       transform: 'translate(-50%, -50%)',
     }
   } else if (targetRect) {
-    popoverStyle = {
-      position: 'fixed',
-      top: targetRect.top - 8,
-      left: targetRect.right + 16,
-    }
-    // If popover would go off-screen right, position below instead
-    if (targetRect.right + 380 > window.innerWidth) {
+    const popoverWidth = 380
+    const rightSpace = window.innerWidth - targetRect.right
+    const bottomSpace = window.innerHeight - targetRect.bottom
+
+    if (rightSpace > popoverWidth + 24) {
+      // Position to the right
+      popoverStyle = {
+        position: 'fixed',
+        top: Math.max(16, targetRect.top - 16),
+        left: targetRect.right + 16,
+      }
+    } else if (bottomSpace > 250) {
+      // Position below
       popoverStyle = {
         position: 'fixed',
         top: targetRect.bottom + 12,
-        left: Math.max(16, targetRect.left - 100),
+        left: Math.max(16, Math.min(targetRect.left, window.innerWidth - popoverWidth - 16)),
+      }
+    } else {
+      // Position above
+      popoverStyle = {
+        position: 'fixed',
+        bottom: window.innerHeight - targetRect.top + 12,
+        left: Math.max(16, Math.min(targetRect.left, window.innerWidth - popoverWidth - 16)),
       }
     }
   }
 
   return (
-    <div className="fixed inset-0 z-[100]">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60" onClick={completeTour} />
+    <>
+      {/* Semi-transparent backdrop — click-through disabled only on center step */}
+      <div
+        className="fixed inset-0 z-[100] pointer-events-none"
+        style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+      />
 
-      {/* Spotlight on target element */}
+      {/* Spotlight on target element — this element IS clickable */}
       {targetRect && (
         <div
-          className="absolute rounded-lg ring-2 ring-blue-400 ring-offset-2 ring-offset-transparent"
+          className="fixed rounded-lg z-[101]"
           style={{
-            top: targetRect.top - 4,
-            left: targetRect.left - 4,
-            width: targetRect.width + 8,
-            height: targetRect.height + 8,
-            boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
-            zIndex: 101,
+            top: targetRect.top - 6,
+            left: targetRect.left - 6,
+            width: targetRect.width + 12,
+            height: targetRect.height + 12,
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
+            pointerEvents: 'none',
           }}
         />
+      )}
+
+      {/* Center step backdrop blocker */}
+      {isCenter && (
+        <div className="fixed inset-0 z-[101]" onClick={completeTour} />
       )}
 
       {/* Popover card */}
       <div
         ref={popoverRef}
         style={{ ...popoverStyle, zIndex: 102 }}
-        className="w-[360px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+        className="w-[380px] bg-white rounded-2xl shadow-2xl overflow-hidden pointer-events-auto"
       >
-        {/* Header with icon */}
+        {/* Header */}
         <div className="bg-blue-600 px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
@@ -177,6 +229,17 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
         {/* Body */}
         <div className="px-5 py-4">
           <p className="text-sm text-gray-600 leading-relaxed">{step.description}</p>
+
+          {/* Action button — lets user do the thing right now */}
+          {step.actionHref && (
+            <button
+              onClick={() => handleAction(step.actionHref!)}
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-sm font-medium text-gray-900 rounded-lg transition-colors w-full justify-center"
+            >
+              <ExternalLink className="w-4 h-4 text-gray-500" />
+              {step.actionLabel}
+            </button>
+          )}
         </div>
 
         {/* Footer */}
@@ -184,29 +247,41 @@ export function OnboardingTour({ profileId }: OnboardingTourProps) {
           {/* Step dots */}
           <div className="flex gap-1.5">
             {TOUR_STEPS.map((_, i) => (
-              <div
+              <button
                 key={i}
-                className={`w-2 h-2 rounded-full transition-colors ${
+                onClick={() => setCurrentStep(i)}
+                className={`w-2.5 h-2.5 rounded-full transition-colors ${
                   i === currentStep ? 'bg-blue-600' : i < currentStep ? 'bg-blue-300' : 'bg-gray-200'
                 }`}
               />
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
-            <button onClick={completeTour} className="text-sm text-gray-400 hover:text-gray-600">
-              Skip tour
-            </button>
+          <div className="flex items-center gap-2">
+            {!isFirst && (
+              <button
+                onClick={prevStep}
+                className="inline-flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back
+              </button>
+            )}
+            {isFirst && (
+              <button onClick={completeTour} className="text-sm text-gray-400 hover:text-gray-600 px-3 py-2">
+                Skip
+              </button>
+            )}
             <button
               onClick={nextStep}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
-              {isLast ? 'Get started' : 'Next'}
+              {isLast ? 'Finish' : 'Next'}
               {!isLast && <ArrowRight className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
