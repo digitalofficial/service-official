@@ -144,10 +144,10 @@ export default function TeamMessagesPage() {
 
   return (
     <div className="h-[calc(100vh-80px)] flex flex-col">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-slate-700">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-b border-gray-200">
         <div>
-          <h1 className="text-xl font-bold text-white">Team Messages</h1>
-          <p className="text-slate-400 text-sm">Internal messaging — no SMS costs</p>
+          <h1 className="text-xl font-bold text-gray-900">Team Messages</h1>
+          <p className="text-gray-500 text-sm">Internal messaging — no SMS costs</p>
         </div>
         <div className="flex gap-2 shrink-0">
           <Button
@@ -171,32 +171,31 @@ export default function TeamMessagesPage() {
 
       <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         {/* Left: Member List */}
-        <div className={`w-full md:w-80 border-r border-slate-700 flex flex-col ${selectedMember !== null ? 'hidden md:flex' : 'flex'}`}>
+        <div className={`w-full md:w-80 border-r border-gray-200 flex flex-col ${selectedMember !== null ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-3">
             <Input
               placeholder="Search team..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="bg-slate-900 border-slate-600"
             />
           </div>
           <div className="flex-1 overflow-y-auto">
             {/* Broadcast option */}
             <button
               onClick={() => { setSelectedMember(null); setView('inbox'); fetchMessages() }}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-800 transition-colors ${
-                selectedMember === null && view === 'inbox' ? 'bg-blue-500/10' : 'hover:bg-slate-800/50'
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-100 transition-colors ${
+                selectedMember === null && view === 'inbox' ? 'bg-blue-50' : 'hover:bg-gray-50'
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-400" />
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <Users className="w-5 h-5 text-blue-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white">All Messages</p>
-                <p className="text-xs text-slate-400">Broadcasts & direct</p>
+                <p className="text-sm font-medium text-gray-900">All Messages</p>
+                <p className="text-xs text-gray-500">Broadcasts & direct</p>
               </div>
               {unreadCount > 0 && (
-                <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">{unreadCount}</span>
+                <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">{unreadCount}</span>
               )}
             </button>
 
@@ -212,18 +211,18 @@ export default function TeamMessagesPage() {
                       openConversation(member.id)
                     }
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-slate-800/50 transition-colors ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-100 transition-colors ${
                     view === 'compose' && broadcastRecipients.has(member.id)
-                      ? 'bg-blue-500/10'
+                      ? 'bg-blue-50'
                       : selectedMember === member.id
-                        ? 'bg-slate-800'
-                        : 'hover:bg-slate-800/50'
+                        ? 'bg-gray-100'
+                        : 'hover:bg-gray-50'
                   }`}
                 >
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
                     view === 'compose' && broadcastRecipients.has(member.id)
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-slate-700 text-slate-300'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
                   }`}>
                     {view === 'compose' && broadcastRecipients.has(member.id) ? (
                       <Check className="w-5 h-5" />
@@ -232,13 +231,13 @@ export default function TeamMessagesPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${unread > 0 ? 'text-white' : 'text-slate-300'}`}>
+                    <p className={`text-sm font-medium truncate ${unread > 0 ? 'text-gray-900 font-semibold' : 'text-gray-700'}`}>
                       {member.first_name} {member.last_name}
                     </p>
-                    <p className="text-xs text-slate-500 capitalize">{roleLabel(member.role)}</p>
+                    <p className="text-xs text-gray-500 capitalize">{roleLabel(member.role)}</p>
                   </div>
                   {unread > 0 && view !== 'compose' && (
-                    <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">{unread}</span>
+                    <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">{unread}</span>
                   )}
                 </button>
               )
@@ -252,7 +251,7 @@ export default function TeamMessagesPage() {
             /* Broadcast compose */
             <div className="flex-1 flex flex-col p-6">
               <div className="mb-4">
-                <h2 className="text-lg font-semibold text-white mb-2">
+                <h2 className="text-lg font-semibold text-gray-900 mb-2">
                   {broadcastRecipients.size === 0
                     ? 'Select recipients or send to all'
                     : `Sending to ${broadcastRecipients.size} team member${broadcastRecipients.size !== 1 ? 's' : ''}`}
@@ -263,9 +262,9 @@ export default function TeamMessagesPage() {
                       const m = members.find(m => m.id === id)
                       if (!m) return null
                       return (
-                        <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md text-xs font-medium">
+                        <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-medium">
                           {m.first_name} {m.last_name}
-                          <button onClick={() => toggleBroadcastRecipient(id)} className="text-blue-400 hover:text-blue-200">×</button>
+                          <button onClick={() => toggleBroadcastRecipient(id)} className="text-blue-500 hover:text-blue-800">×</button>
                         </span>
                       )
                     })}
@@ -280,9 +279,9 @@ export default function TeamMessagesPage() {
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
                   placeholder="Type your message..."
                   rows={3}
-                  className="flex-1 bg-slate-900 border border-slate-600 rounded-lg p-3 text-white placeholder:text-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 border border-gray-300 rounded-lg p-3 text-gray-900 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <Button onClick={handleSend} disabled={sending || !newMessage.trim()} className="self-end bg-blue-500 hover:bg-blue-600 h-12 px-6">
+                <Button onClick={handleSend} disabled={sending || !newMessage.trim()} className="self-end h-12 px-6">
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
@@ -290,19 +289,19 @@ export default function TeamMessagesPage() {
           ) : (
             /* Message thread */
             <>
-              <div className="md:hidden border-b border-slate-700 px-4 py-2">
-                <button onClick={() => setSelectedMember(null)} className="flex items-center gap-2 text-sm text-slate-400 hover:text-white">
+              <div className="md:hidden border-b border-gray-200 px-4 py-2">
+                <button onClick={() => setSelectedMember(null)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900">
                   <ArrowLeft className="w-4 h-4" /> Back
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
                 {loading ? (
-                  <p className="text-slate-500 text-center py-20">Loading...</p>
+                  <p className="text-gray-400 text-center py-20">Loading...</p>
                 ) : messages.length === 0 ? (
                   <div className="text-center py-20">
-                    <MessageCircle className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                    <p className="text-slate-400 font-medium">No messages yet</p>
-                    <p className="text-slate-500 text-sm mt-1">Send a message to get started</p>
+                    <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 font-medium">No messages yet</p>
+                    <p className="text-gray-400 text-sm mt-1">Send a message to get started</p>
                   </div>
                 ) : (
                   [...messages].reverse().map(msg => {
@@ -314,17 +313,17 @@ export default function TeamMessagesPage() {
                       <div key={msg.id} className={`flex ${isMe && selectedMember ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[70%] ${
                           isMe && selectedMember
-                            ? 'bg-blue-500 text-white rounded-2xl rounded-br-md'
-                            : 'bg-slate-800 text-white rounded-2xl rounded-bl-md'
+                            ? 'bg-blue-600 text-white rounded-2xl rounded-br-md'
+                            : 'bg-white border border-gray-200 text-gray-900 rounded-2xl rounded-bl-md'
                         } px-4 py-2.5`}>
                           {(!selectedMember || isBroadcast) && (
-                            <p className={`text-xs font-semibold mb-1 ${isMe && selectedMember ? 'text-blue-100' : 'text-blue-400'}`}>
+                            <p className={`text-xs font-semibold mb-1 ${isMe && selectedMember ? 'text-blue-100' : 'text-blue-600'}`}>
                               {senderName}
-                              {isBroadcast && <span className="ml-1 text-slate-400">· Broadcast</span>}
+                              {isBroadcast && <span className="ml-1 text-gray-400">· Broadcast</span>}
                             </p>
                           )}
                           <p className="text-sm whitespace-pre-wrap">{msg.body}</p>
-                          <p className={`text-xs mt-1 ${isMe && selectedMember ? 'text-blue-200' : 'text-slate-500'}`}>
+                          <p className={`text-xs mt-1 ${isMe && selectedMember ? 'text-blue-200' : 'text-gray-400'}`}>
                             {formatTime(msg.created_at)}
                             {isMe && selectedMember && msg.is_read && <span className="ml-1">✓✓</span>}
                           </p>
@@ -337,16 +336,16 @@ export default function TeamMessagesPage() {
               </div>
 
               {/* Input */}
-              <div className="border-t border-slate-700 p-4">
+              <div className="border-t border-gray-200 p-4">
                 <div className="flex gap-2">
                   <input
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
                     placeholder={selectedMember ? 'Type a message...' : 'Broadcast to all team...'}
-                    className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <Button onClick={handleSend} disabled={sending || !newMessage.trim()} className="bg-blue-500 hover:bg-blue-600 h-12 px-6">
+                  <Button onClick={handleSend} disabled={sending || !newMessage.trim()} className="h-12 px-6">
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
