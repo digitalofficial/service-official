@@ -126,6 +126,7 @@ export function Sidebar({ profile, organization, isSuperAdmin = false, tier = 's
             <Link
               key={item.href}
               href={item.href}
+              data-tour={item.href.replace('/', '')}
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 text-sm transition-colors',
                 isActive

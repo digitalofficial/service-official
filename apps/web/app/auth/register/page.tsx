@@ -24,6 +24,17 @@ const INDUSTRY_OPTIONS = [
   { label: 'Other', value: 'other' },
 ]
 
+const TIMEZONE_OPTIONS = [
+  { label: 'Eastern Time (ET)', value: 'America/New_York' },
+  { label: 'Central Time (CT)', value: 'America/Chicago' },
+  { label: 'Mountain Time (MT)', value: 'America/Denver' },
+  { label: 'Arizona (no DST)', value: 'America/Phoenix' },
+  { label: 'Pacific Time (PT)', value: 'America/Los_Angeles' },
+  { label: 'Alaska Time (AKT)', value: 'America/Anchorage' },
+  { label: 'Hawaii Time (HT)', value: 'Pacific/Honolulu' },
+  { label: 'Atlantic Time (AT)', value: 'America/Puerto_Rico' },
+]
+
 export default function RegisterPage() {
   const router = useRouter()
   const [step, setStep] = useState<1 | 2>(1)
@@ -39,6 +50,9 @@ export default function RegisterPage() {
   // Step 2: Organization
   const [companyName, setCompanyName] = useState('')
   const [industry, setIndustry] = useState('roofing')
+  const [timezone, setTimezone] = useState(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return 'America/Denver' }
+  })
   const [phone, setPhone] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,6 +82,7 @@ export default function RegisterPage() {
           last_name: lastName,
           company_name: companyName,
           industry,
+          timezone,
           phone: phone || undefined,
         }),
       })
@@ -195,6 +210,15 @@ export default function RegisterPage() {
                 value={industry}
                 onChange={(e) => setIndustry(e.target.value)}
                 options={INDUSTRY_OPTIONS}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="timezone" required>Timezone</Label>
+              <Select
+                id="timezone"
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                options={TIMEZONE_OPTIONS}
               />
             </div>
             <div className="space-y-1.5">

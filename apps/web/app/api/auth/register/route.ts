@@ -9,6 +9,7 @@ const schema = z.object({
   last_name: z.string().min(1),
   company_name: z.string().min(1),
   industry: z.string().default('other'),
+  timezone: z.string().default('America/Denver'),
   phone: z.string().optional(),
 })
 
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
         last_name: data.last_name,
         company_name: data.company_name,
         industry: data.industry,
+        timezone: data.timezone,
         phone: data.phone,
       },
     })
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
         slug,
         industry: data.industry,
         phone: data.phone || null,
-        timezone: 'America/Denver',
+        timezone: data.timezone,
         currency: 'USD',
         primary_color: '#2563eb',
         secondary_color: '#1e3a5f',

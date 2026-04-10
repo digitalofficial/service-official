@@ -14,7 +14,7 @@ export async function getProfile() {
 
   let { data: profile } = await supabase
     .from('profiles')
-    .select('organization_id, role, first_name, last_name, email')
+    .select('organization_id, role, first_name, last_name, email, onboarding_completed_at')
     .eq('id', user.id)
     .single()
 
@@ -26,7 +26,7 @@ export async function getProfile() {
     // Check if profile exists but we couldn't read it (RLS issue) — use service role
     const { data: existingProfile } = await serviceClient
       .from('profiles')
-      .select('organization_id, role, first_name, last_name, email')
+      .select('organization_id, role, first_name, last_name, email, onboarding_completed_at')
       .eq('id', user.id)
       .single()
 
@@ -71,7 +71,7 @@ export async function getProfile() {
             notify_email: true,
             notify_push: true,
           })
-          .select('organization_id, role, first_name, last_name, email')
+          .select('organization_id, role, first_name, last_name, email, onboarding_completed_at')
           .single()
 
         if (newProfile) profile = newProfile
