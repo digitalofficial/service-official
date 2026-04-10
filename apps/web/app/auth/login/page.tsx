@@ -38,6 +38,8 @@ function LoginForm() {
     setPassword('')
     setMagicLinkSent(false)
     setCustomerMode('password')
+    setShowCustomerForgot(false)
+    setCustomerForgotSent(false)
   }
 
   // Contractor login — Supabase auth
@@ -75,6 +77,30 @@ function LoginForm() {
     } else {
       const data = await res.json().catch(() => ({}))
       setError(data?.error || 'Invalid email or password')
+    }
+    setLoading(false)
+  }
+
+  // Customer forgot password state
+  const [customerForgotSent, setCustomerForgotSent] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [showCustomerForgot, setShowCustomerForgot] = useState(false)
+
+  const handleCustomerForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const res = await fetch('/api/portal/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'forgot-password', email: forgotEmail }),
+    })
+
+    if (res.ok) {
+      setCustomerForgotSent(true)
+    } else {
+      setError('Something went wrong. Please try again.')
     }
     setLoading(false)
   }
@@ -204,7 +230,56 @@ function LoginForm() {
         {/* ── Customer Login ── */}
         {tab === 'customer' && (
           <>
-            {magicLinkSent ? (
+            {customerForgotSent ? (
+              <div className="text-center py-4">
+                <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                <h2 className="text-lg font-semibold text-gray-900">Check your email</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  If an account exists for <strong>{forgotEmail}</strong>, we sent a password reset link.
+                </p>
+                <button onClick={() => { setCustomerForgotSent(false); setShowCustomerForgot(false) }} className="mt-4 text-sm text-blue-600 hover:underline">
+                  Back to sign in
+                </button>
+              </div>
+            ) : showCustomerForgot ? (
+              <>
+                <div className="mb-6">
+                  <button
+                    onClick={() => { setShowCustomerForgot(false); setError('') }}
+                    className="text-sm text-gray-500 hover:text-gray-700 mb-3 inline-block"
+                  >
+                    ← Back to sign in
+                  </button>
+                  <h2 className="text-lg font-semibold text-gray-900">Reset Your Password</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">We'll send a reset link to your email</p>
+                </div>
+
+                <form onSubmit={handleCustomerForgotPassword} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="forgot-email" required>Email</Label>
+                    <Input
+                      id="forgot-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+                      {error}
+                    </div>
+                  )}
+
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Send reset link'}
+                  </Button>
+                </form>
+              </>
+            ) : magicLinkSent ? (
               <div className="text-center py-4">
                 <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
                 <h2 className="text-lg font-semibold text-gray-900">Check your email</h2>
@@ -238,7 +313,12 @@ function LoginForm() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="c-password" required>Password</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="c-password" required>Password</Label>
+                      <button type="button" onClick={() => { setShowCustomerForgot(true); setForgotEmail(email); setError('') }} className="text-xs text-blue-600 hover:underline">
+                        Forgot password?
+                      </button>
+                    </div>
                     <Input
                       id="c-password"
                       type="password"
