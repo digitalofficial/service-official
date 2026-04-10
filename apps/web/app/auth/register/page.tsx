@@ -96,8 +96,8 @@ export default function RegisterPage() {
 
       // Full page navigation so the server sees the fresh auth cookies
       window.location.href = '/dashboard'
-    } catch {
-      setError('Something went wrong. Please try again.')
+    } catch (err: any) {
+      setError(err.message ?? 'Something went wrong. Please try again.')
       setLoading(false)
     }
   }

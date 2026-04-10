@@ -13,91 +13,96 @@ const schema = z.object({
 })
 
 export async function POST(request: NextRequest) {
-  const body = await request.json()
-  const data = schema.parse(body)
+  try {
+    const body = await request.json()
+    const parsed = schema.safeParse(body)
 
-  const supabase = createServiceRoleClient()
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.errors[0]?.message ?? 'Invalid input' }, { status: 400 })
+    }
 
-  // Check if email already exists
-  const { data: existingUsers } = await supabase.auth.admin.listUsers()
-  const emailTaken = existingUsers?.users?.some(u => u.email === data.email)
-  if (emailTaken) {
-    return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
-  }
+    const data = parsed.data
+    const supabase = createServiceRoleClient()
 
-  // 1. Create auth user
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email: data.email,
-    password: data.password,
-    email_confirm: true,
-    user_metadata: {
-      first_name: data.first_name,
-      last_name: data.last_name,
-      company_name: data.company_name,
-      industry: data.industry,
-      phone: data.phone,
-    },
-  })
-
-  if (authError) {
-    return NextResponse.json({ error: authError.message }, { status: 400 })
-  }
-
-  // 2. Create organization with 14-day trial
-  const slug = data.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')
-
-  const { data: org, error: orgError } = await supabase
-    .from('organizations')
-    .insert({
-      name: data.company_name,
-      slug,
-      industry: data.industry,
-      phone: data.phone || null,
-      timezone: 'America/Denver',
-      currency: 'USD',
-      primary_color: '#2563eb',
-      secondary_color: '#1e3a5f',
-      subscription_tier: 'solo',
-      subscription_status: 'trialing',
-      trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      settings: {},
-    })
-    .select()
-    .single()
-
-  if (orgError) {
-    // Clean up auth user if org creation fails
-    await supabase.auth.admin.deleteUser(authData.user.id)
-    return NextResponse.json({ error: `Organization creation failed: ${orgError.message}` }, { status: 500 })
-  }
-
-  // 3. Create profile
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .insert({
-      id: authData.user.id,
-      organization_id: org.id,
+    // 1. Create auth user — Supabase will reject if email already exists
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: data.email,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      phone: data.phone || null,
-      role: 'owner',
-      is_active: true,
-      notify_sms: true,
-      notify_email: true,
-      notify_push: true,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        company_name: data.company_name,
+        industry: data.industry,
+        phone: data.phone,
+      },
     })
 
-  if (profileError) {
-    // Clean up on failure
-    await supabase.auth.admin.deleteUser(authData.user.id)
-    await supabase.from('organizations').delete().eq('id', org.id)
-    return NextResponse.json({ error: `Profile creation failed: ${profileError.message}` }, { status: 500 })
-  }
+    if (authError) {
+      const msg = authError.message.toLowerCase()
+      if (msg.includes('already') || msg.includes('duplicate') || msg.includes('exists')) {
+        return NextResponse.json({ error: 'An account with this email already exists. Try signing in instead.' }, { status: 409 })
+      }
+      return NextResponse.json({ error: authError.message }, { status: 400 })
+    }
 
-  return NextResponse.json({
-    success: true,
-    user_id: authData.user.id,
-    organization_id: org.id,
-  }, { status: 201 })
+    // 2. Create organization with 14-day trial
+    const slug = data.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')
+
+    const { data: org, error: orgError } = await supabase
+      .from('organizations')
+      .insert({
+        name: data.company_name,
+        slug,
+        industry: data.industry,
+        phone: data.phone || null,
+        timezone: 'America/Denver',
+        currency: 'USD',
+        primary_color: '#2563eb',
+        secondary_color: '#1e3a5f',
+        subscription_tier: 'solo',
+        subscription_status: 'trialing',
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        settings: {},
+      })
+      .select()
+      .single()
+
+    if (orgError) {
+      await supabase.auth.admin.deleteUser(authData.user.id)
+      return NextResponse.json({ error: `Organization creation failed: ${orgError.message}` }, { status: 500 })
+    }
+
+    // 3. Create profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: authData.user.id,
+        organization_id: org.id,
+        email: data.email,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        phone: data.phone || null,
+        role: 'owner',
+        is_active: true,
+        notify_sms: true,
+        notify_email: true,
+        notify_push: true,
+      })
+
+    if (profileError) {
+      await supabase.auth.admin.deleteUser(authData.user.id)
+      await supabase.from('organizations').delete().eq('id', org.id)
+      return NextResponse.json({ error: `Profile creation failed: ${profileError.message}` }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      user_id: authData.user.id,
+      organization_id: org.id,
+    }, { status: 201 })
+  } catch (err: any) {
+    console.error('Registration error:', err)
+    return NextResponse.json({ error: err.message ?? 'Registration failed' }, { status: 500 })
+  }
 }
