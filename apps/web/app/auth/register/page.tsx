@@ -72,10 +72,17 @@ export default function RegisterPage() {
         }),
       })
 
-      const result = await res.json()
+      let result: any
+      try {
+        result = await res.json()
+      } catch {
+        setError('Server error. Please try again.')
+        setLoading(false)
+        return
+      }
 
       if (!res.ok) {
-        setError(result.error || 'Registration failed')
+        setError(result?.error || 'Registration failed. Please try again.')
         setLoading(false)
         return
       }
@@ -88,9 +95,8 @@ export default function RegisterPage() {
       })
 
       if (signInError) {
-        // Account was created but sign-in failed — send to login
-        setError('Account created! Please sign in.')
-        setLoading(false)
+        // Account was created but auto sign-in failed — redirect to login
+        window.location.href = '/auth/login?registered=true'
         return
       }
 

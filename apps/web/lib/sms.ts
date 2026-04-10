@@ -136,14 +136,8 @@ export async function notifyCustomer(
   const customer = job.customer as any
   if (!customer?.phone) return { success: false, error: 'Customer has no phone number' }
 
-  // Get org name + domain
+  // Get org name
   const { data: org } = await supabase.from('organizations').select('name').eq('id', organizationId).single()
-  const { data: domain } = await supabase
-    .from('organization_domains')
-    .select('domain')
-    .eq('organization_id', organizationId)
-    .eq('is_primary', true)
-    .single()
 
   const orgName = org?.name ?? 'Your contractor'
   const assigneeName = job.assignee ? `${(job.assignee as any).first_name}` : 'Our team'

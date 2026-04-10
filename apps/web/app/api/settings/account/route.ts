@@ -58,7 +58,6 @@ export async function DELETE(request: NextRequest) {
       'notifications',
       'invitations',
       'organization_sms_settings',
-      'organization_domains',
     ]
 
     for (const table of tables) {

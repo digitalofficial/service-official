@@ -20,17 +20,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   if (!profile) return NextResponse.json({ error: 'No owner found for this organization' }, { status: 404 })
 
-  // Get their domain
-  const { data: domain } = await supabase
-    .from('organization_domains')
-    .select('domain')
-    .eq('organization_id', params.id)
-    .eq('is_primary', true)
-    .single()
-
-  const appUrl = domain?.domain
-    ? `https://${domain.domain}`
-    : process.env.NEXT_PUBLIC_APP_URL
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
   // Generate magic link
   const { data, error } = await supabase.auth.admin.generateLink({

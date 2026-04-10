@@ -73,15 +73,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ data: job, warning: 'Job assigned but SMS is not enabled — configure in Settings > SMS' })
   }
 
-  // Get org domain for login link
-  const { data: domain } = await supabase
-    .from('organization_domains')
-    .select('domain')
-    .eq('organization_id', profile!.organization_id)
-    .eq('is_primary', true)
-    .single()
-
-  const loginUrl = domain?.domain ? `https://${domain.domain}` : process.env.NEXT_PUBLIC_APP_URL
+  const loginUrl = process.env.NEXT_PUBLIC_APP_URL
 
   // Build message
   const customerName = job.customer

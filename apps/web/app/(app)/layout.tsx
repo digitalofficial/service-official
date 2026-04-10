@@ -20,46 +20,62 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .single()
 
   if (!profile) {
-    // Auto-create org + profile for new users from signup metadata
+    // Auto-create org + profile for new users from signup metadata — use service role to bypass RLS
+    const serviceClient = createServiceRoleClient()
     const meta = user.user_metadata ?? {}
-    const { data: org } = await supabase
-      .from('organizations')
-      .insert({
-        name: meta.company_name || `${meta.first_name ?? 'My'}'s Company`,
-        industry: meta.industry || 'other',
-        slug: (meta.company_name || 'company').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        phone: meta.phone || null,
-        timezone: 'America/Denver',
-        currency: 'USD',
-        primary_color: '#2563eb',
-        secondary_color: '#1e3a5f',
-        subscription_tier: 'solo',
-        subscription_status: 'trialing',
-        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        settings: {},
-      })
-      .select()
+
+    // First check if profile exists but RLS blocked it
+    const { data: existingProfile } = await serviceClient
+      .from('profiles')
+      .select('*, organization:organizations(*)')
+      .eq('id', user.id)
       .single()
 
-    if (org) {
-      const { data: newProfile } = await supabase
-        .from('profiles')
+    if (existingProfile) {
+      profile = existingProfile
+    } else {
+      const base = (meta.company_name || 'company').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      const slug = `${base}-${Date.now().toString(36)}`
+
+      const { data: org } = await serviceClient
+        .from('organizations')
         .insert({
-          id: user.id,
-          organization_id: org.id,
-          email: user.email!,
-          first_name: meta.first_name || user.email!.split('@')[0],
-          last_name: meta.last_name || '',
-          role: 'owner',
-          is_active: true,
-          notify_sms: true,
-          notify_email: true,
-          notify_push: true,
+          name: meta.company_name || `${meta.first_name ?? 'My'}'s Company`,
+          industry: meta.industry || 'other',
+          slug,
+          phone: meta.phone || null,
+          timezone: 'America/Denver',
+          currency: 'USD',
+          primary_color: '#2563eb',
+          secondary_color: '#1e3a5f',
+          subscription_tier: 'solo',
+          subscription_status: 'trialing',
+          trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          settings: {},
         })
-        .select('*, organization:organizations(*)')
+        .select()
         .single()
 
-      if (newProfile) profile = newProfile
+      if (org) {
+        const { data: newProfile } = await serviceClient
+          .from('profiles')
+          .insert({
+            id: user.id,
+            organization_id: org.id,
+            email: user.email!,
+            first_name: meta.first_name || user.email!.split('@')[0],
+            last_name: meta.last_name || '',
+            role: 'owner',
+            is_active: true,
+            notify_sms: true,
+            notify_email: true,
+            notify_push: true,
+          })
+          .select('*, organization:organizations(*)')
+          .single()
+
+        if (newProfile) profile = newProfile
+      }
     }
   }
 

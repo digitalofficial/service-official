@@ -17,6 +17,8 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect') ?? '/dashboard'
+  const registered = searchParams.get('registered') === 'true'
+  const setupFailed = searchParams.get('error') === 'setup_failed'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -47,6 +49,18 @@ function LoginForm() {
         <h2 className="text-lg font-semibold text-gray-900">Sign in</h2>
         <p className="text-sm text-gray-500 mt-0.5">Enter your credentials to access your account</p>
       </div>
+
+      {registered && (
+        <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-700 mb-4">
+          Account created successfully! Sign in to get started.
+        </div>
+      )}
+
+      {setupFailed && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-700 mb-4">
+          There was a problem setting up your account. Please sign in and we'll try again, or contact support.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceRoleClient } from '@service-official/database'
 import { z } from 'zod'
+import { createClient } from '@supabase/supabase-js'
 
 const schema = z.object({
   email: z.string().email(),
@@ -12,6 +12,14 @@ const schema = z.object({
   phone: z.string().optional(),
 })
 
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -22,9 +30,9 @@ export async function POST(request: NextRequest) {
     }
 
     const data = parsed.data
-    const supabase = createServiceRoleClient()
+    const supabase = getServiceClient()
 
-    // 1. Create auth user — Supabase will reject if email already exists
+    // 1. Create auth user — Supabase rejects if email already exists
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: data.email,
       password: data.password,
@@ -43,11 +51,13 @@ export async function POST(request: NextRequest) {
       if (msg.includes('already') || msg.includes('duplicate') || msg.includes('exists')) {
         return NextResponse.json({ error: 'An account with this email already exists. Try signing in instead.' }, { status: 409 })
       }
-      return NextResponse.json({ error: authError.message }, { status: 400 })
+      console.error('Auth creation error:', authError)
+      return NextResponse.json({ error: 'Failed to create account. Please try again.' }, { status: 400 })
     }
 
-    // 2. Create organization with 14-day trial
-    const slug = data.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')
+    // 3. Create organization with 14-day trial
+    const base = data.company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+    const slug = `${base}-${Date.now().toString(36)}`
 
     const { data: org, error: orgError } = await supabase
       .from('organizations')
@@ -69,11 +79,12 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (orgError) {
+      console.error('Org creation error:', orgError)
       await supabase.auth.admin.deleteUser(authData.user.id)
-      return NextResponse.json({ error: `Organization creation failed: ${orgError.message}` }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to set up your company. Please try again.' }, { status: 500 })
     }
 
-    // 3. Create profile
+    // 4. Create profile
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
@@ -91,9 +102,10 @@ export async function POST(request: NextRequest) {
       })
 
     if (profileError) {
+      console.error('Profile creation error:', profileError)
       await supabase.auth.admin.deleteUser(authData.user.id)
       await supabase.from('organizations').delete().eq('id', org.id)
-      return NextResponse.json({ error: `Profile creation failed: ${profileError.message}` }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to set up your profile. Please try again.' }, { status: 500 })
     }
 
     return NextResponse.json({
@@ -103,6 +115,6 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (err: any) {
     console.error('Registration error:', err)
-    return NextResponse.json({ error: err.message ?? 'Registration failed' }, { status: 500 })
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }
 }

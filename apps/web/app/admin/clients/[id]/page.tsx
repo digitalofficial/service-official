@@ -15,7 +15,6 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
     .from('organizations')
     .select(`
       *,
-      domains:organization_domains(*),
       profiles(id, first_name, last_name, email, role, is_active, created_at)
     `)
     .eq('id', params.id)
@@ -63,8 +62,6 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
 
   const totalRevenue = invoices?.reduce((sum, i) => sum + (i.amount_paid ?? 0), 0) ?? 0
   const profiles = org.profiles as any[]
-  const domains = org.domains as any[]
-  const primaryDomain = domains?.[0]
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -77,12 +74,6 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
           <div>
             <h1 className="text-2xl font-bold text-white">{org.name}</h1>
             <div className="flex items-center gap-3 mt-1">
-              {primaryDomain && (
-                <a href={`https://${primaryDomain.domain}`} target="_blank" rel="noopener noreferrer"
-                  className="text-sm text-blue-400 hover:underline">
-                  {primaryDomain.domain} →
-                </a>
-              )}
               <span className="text-xs capitalize text-gray-400 bg-gray-800 px-2 py-0.5 rounded-full">
                 {org.subscription_tier}
               </span>

@@ -13,7 +13,6 @@ export default async function AdminClientsPage() {
     .from('organizations')
     .select(`
       *,
-      domains:organization_domains(domain, is_verified),
       profiles(id)
     `)
     .order('created_at', { ascending: false })
@@ -71,7 +70,6 @@ export default async function AdminClientsPage() {
           <thead>
             <tr className="text-xs text-gray-500 border-b border-gray-800">
               <th className="text-left px-5 py-3 font-medium">Company</th>
-              <th className="text-left px-4 py-3 font-medium">Domain</th>
               <th className="text-left px-4 py-3 font-medium">Plan</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
               <th className="text-left px-4 py-3 font-medium">Users</th>
@@ -83,7 +81,6 @@ export default async function AdminClientsPage() {
           </thead>
           <tbody className="divide-y divide-gray-800">
             {orgs?.map(org => {
-              const domain = (org.domains as any[])?.[0]
               const userCount = (org.profiles as any[])?.length ?? 0
               const revenue = revenueByOrg[org.id] ?? 0
 
@@ -99,20 +96,6 @@ export default async function AdminClientsPage() {
                         <p className="text-xs text-gray-500 capitalize">{org.industry?.replace('_', ' ')}</p>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    {domain ? (
-                      <a
-                        href={`https://${domain.domain}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-400 hover:underline"
-                      >
-                        {domain.domain}
-                      </a>
-                    ) : (
-                      <span className="text-xs text-gray-600">No domain</span>
-                    )}
                   </td>
                   <td className="px-4 py-4">
                     <span className="text-xs capitalize text-gray-300 bg-gray-800 px-2 py-1 rounded-full">
