@@ -4,7 +4,7 @@ import { useState, useEffect, createContext, useContext } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { LogOut, FolderKanban, Receipt, Home, FileText } from 'lucide-react'
+import { LogOut, FolderKanban, Receipt, Home, FileText, Settings } from 'lucide-react'
 
 interface PortalPermissions {
   view_invoices: boolean
@@ -118,6 +118,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                     <Receipt className="w-4 h-4" />Invoices
                   </Link>
                 )}
+                <Link href="/public/portal/settings" className={`flex items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors ${pathname === '/public/portal/settings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                  <Settings className="w-4 h-4" />Settings
+                </Link>
               </nav>
             </div>
           </header>
