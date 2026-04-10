@@ -87,36 +87,38 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         {/* Header */}
         {session && (
           <header className="bg-white border-b border-gray-200">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            {/* Top bar: logo + customer name + logout */}
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
                 {org?.logo_url && (
-                  <Image src={org.logo_url} alt={org.name} width={28} height={28} className="rounded" />
+                  <Image src={org.logo_url} alt={org.name} width={24} height={24} className="rounded" />
                 )}
-                <span className="font-semibold text-gray-900">{org?.name || 'Client Portal'}</span>
+                <span className="font-semibold text-sm text-gray-900">{org?.name || 'Client Portal'}</span>
               </div>
-              <div className="flex items-center gap-4">
-                <nav className="flex items-center gap-1">
-                  <Link href="/public/portal/dashboard" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname === '/public/portal/dashboard' ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-                    <Home className="w-4 h-4 inline mr-1.5" />Dashboard
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 hidden sm:inline">{customerName}</span>
+                <button onClick={handleLogout} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            {/* Nav tabs */}
+            <div className="max-w-6xl mx-auto px-4 sm:px-6">
+              <nav className="flex items-center gap-1 overflow-x-auto -mb-px">
+                <Link href="/public/portal/dashboard" className={`flex items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors ${pathname === '/public/portal/dashboard' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                  <Home className="w-4 h-4" />Dashboard
+                </Link>
+                {permissions.view_estimates && (
+                  <Link href="/public/portal/estimates" className={`flex items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors ${pathname.startsWith('/public/portal/estimates') ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                    <FileText className="w-4 h-4" />Estimates
                   </Link>
-                  {permissions.view_estimates && (
-                    <Link href="/public/portal/estimates" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname.startsWith('/public/portal/estimates') ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-                      <FileText className="w-4 h-4 inline mr-1.5" />Estimates
-                    </Link>
-                  )}
-                  {permissions.view_invoices && (
-                    <Link href="/public/portal/invoices" className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${pathname.startsWith('/public/portal/invoices') ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
-                      <Receipt className="w-4 h-4 inline mr-1.5" />Invoices
-                    </Link>
-                  )}
-                </nav>
-                <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
-                  <span className="text-sm text-gray-500">{customerName}</span>
-                  <button onClick={handleLogout} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+                )}
+                {permissions.view_invoices && (
+                  <Link href="/public/portal/invoices" className={`flex items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors ${pathname.startsWith('/public/portal/invoices') ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                    <Receipt className="w-4 h-4" />Invoices
+                  </Link>
+                )}
+              </nav>
             </div>
           </header>
         )}
