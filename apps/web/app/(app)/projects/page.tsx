@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { getProjects } from '@service-official/database/queries/projects'
 import { ProjectStatusBadge } from '@/components/projects/status-badge'
 import { ProjectCard } from '@/components/projects/project-card'
@@ -15,12 +15,10 @@ interface ProjectsPageProps {
 }
 
 export default async function ProjectsPage({ searchParams }: ProjectsPageProps) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user!.id).single()
+  const { profile } = await getProfile()
 
   const { data: projects, total } = await getProjects({
-    organization_id: profile!.organization_id,
+    organization_id: profile.organization_id,
     status: searchParams.status,
     search: searchParams.search,
   })

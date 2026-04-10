@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -10,9 +10,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'Blueprints' }
 
 export default async function BlueprintsPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user!.id).single()
+  const { supabase, profile } = await getProfile()
 
   const { data: blueprints } = await supabase
     .from('blueprints')
@@ -21,7 +19,7 @@ export default async function BlueprintsPage() {
       project:projects(id, name),
       uploader:profiles!uploaded_by(first_name, last_name)
     `)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .order('created_at', { ascending: false })
 
   return (

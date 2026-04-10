@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@service-official/database'
+import { sendEmail } from '@service-official/notifications'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest) {
   if (authError) return NextResponse.json({ error: authError.message }, { status: 500 })
 
   // Create profile
-  await supabase.from('profiles').insert({
+  const { error: profileError } = await supabase.from('profiles').insert({
     id: authUser.user.id,
     organization_id: org.id,
     role: 'owner',
@@ -133,6 +134,24 @@ export async function POST(request: NextRequest) {
     last_name: data.owner_last_name,
     email: data.owner_email,
     phone: data.owner_phone,
+  })
+
+  if (profileError) return NextResponse.json({ error: `Profile creation failed: ${profileError.message}` }, { status: 500 })
+
+  // Send welcome email with login credentials
+  const loginUrl = `https://${data.domain}`
+  const emailResult = await sendEmail({
+    to: data.owner_email,
+    subject: `Your ${data.company_name} account is ready — Service Official`,
+    template: 'welcome',
+    variables: {
+      company_name: data.company_name,
+      first_name: data.owner_first_name || 'there',
+      login_url: loginUrl,
+      email: data.owner_email,
+      temp_password: tempPassword,
+      trial_days: 14,
+    },
   })
 
   // Parse the subdomain and root domain for DNS instructions
@@ -183,9 +202,12 @@ export async function POST(request: NextRequest) {
 
   // Credentials step
   steps.push({
-    title: 'Send Login Credentials',
+    title: 'Login Credentials Sent',
     where: `Email to ${data.owner_email}`,
-    action: 'Share the login URL and temporary password below',
+    action: emailResult.success
+      ? 'Welcome email sent automatically with login URL and temporary password'
+      : `Failed to send email — share credentials manually: ${tempPassword}`,
+    status: emailResult.success ? 'done' : 'manual',
   })
 
   return NextResponse.json({
@@ -204,6 +226,7 @@ export async function POST(request: NextRequest) {
       root_domain: rootDomain,
       proxy: 'OFF',
     },
+    email_sent: emailResult.success,
     vercel_domain: vercelResult,
     setup_steps: steps,
     instructions: [
@@ -212,7 +235,9 @@ export async function POST(request: NextRequest) {
         ? `2. Vercel: ✅ Domain ${data.domain} added automatically`
         : `2. Vercel: Add ${data.domain} in Settings → Domains`,
       `3. Supabase: Add https://${data.domain}/** to Auth → Redirect URLs`,
-      `4. Send credentials to ${data.owner_email} — temp password: ${tempPassword}`,
+      emailResult.success
+        ? `4. ✅ Welcome email sent to ${data.owner_email} with login credentials`
+        : `4. ⚠️ Email failed — manually send credentials to ${data.owner_email}: ${tempPassword}`,
       `5. They log in at https://${data.domain}`,
     ],
   }, { status: 201 })

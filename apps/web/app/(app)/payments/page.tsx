@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { PageHeader } from '@/components/ui/page-header'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatCurrency, formatDate, statusColor } from '@/lib/utils'
@@ -12,9 +12,7 @@ interface Props {
 }
 
 export default async function PaymentsPage({ searchParams }: Props) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user!.id).single()
+  const { supabase, profile } = await getProfile()
 
   let query = supabase
     .from('payments')
@@ -23,7 +21,7 @@ export default async function PaymentsPage({ searchParams }: Props) {
       invoice:invoices(id, invoice_number, total),
       customer:customers(id, first_name, last_name, company_name)
     `)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .order('created_at', { ascending: false })
 
   if (searchParams.status) query = query.eq('status', searchParams.status)

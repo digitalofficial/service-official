@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -25,9 +25,7 @@ const STATUS_TABS = [
 ]
 
 export default async function EstimatesPage({ searchParams }: Props) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user!.id).single()
+  const { supabase, profile } = await getProfile()
 
   let query = supabase
     .from('estimates')
@@ -36,7 +34,7 @@ export default async function EstimatesPage({ searchParams }: Props) {
       customer:customers(id, first_name, last_name, company_name),
       project:projects(id, name)
     `)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .order('created_at', { ascending: false })
 
   if (searchParams.status) query = query.eq('status', searchParams.status)

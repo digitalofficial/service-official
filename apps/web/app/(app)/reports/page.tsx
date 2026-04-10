@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { PageHeader } from '@/components/ui/page-header'
 import { formatCurrency } from '@/lib/utils'
 import { DollarSign, TrendingUp, TrendingDown, Receipt, CreditCard, Briefcase, UserPlus, Target } from 'lucide-react'
@@ -8,13 +8,8 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'Reports & Analytics' }
 
 export default async function ReportsPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
-  const orgId = profile?.organization_id
-  if (!orgId) return null
+  const { supabase, profile } = await getProfile()
+  const orgId = profile.organization_id
 
   const now = new Date()
   const twelveMonthsAgo = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString()

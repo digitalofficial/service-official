@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -18,9 +18,7 @@ const STATUS_BADGE: Record<string, { variant: 'default' | 'success' | 'warning' 
 }
 
 export default async function TakeoffsPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user!.id).single()
+  const { supabase, profile } = await getProfile()
 
   const { data: takeoffs } = await supabase
     .from('takeoffs')
@@ -30,7 +28,7 @@ export default async function TakeoffsPage() {
       project:projects(id, name),
       reviewer:profiles!reviewed_by(first_name, last_name)
     `)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .order('created_at', { ascending: false })
 
   return (

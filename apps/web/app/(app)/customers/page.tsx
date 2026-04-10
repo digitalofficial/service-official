@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -14,9 +14,7 @@ interface Props {
 }
 
 export default async function CustomersPage({ searchParams }: Props) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user!.id).single()
+  const { supabase, profile } = await getProfile()
 
   const page = Number(searchParams.page ?? 1)
   const perPage = 25
@@ -24,7 +22,7 @@ export default async function CustomersPage({ searchParams }: Props) {
   let query = supabase
     .from('customers')
     .select('*', { count: 'exact' })
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .range((page - 1) * perPage, page * perPage - 1)

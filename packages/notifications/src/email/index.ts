@@ -10,6 +10,7 @@ export { invitationEmail } from './templates/invitation'
 export { notificationEmail, jobAssignedEmail, invoicePaidEmail, estimateApprovedEmail, invoiceOverdueEmail } from './templates/notification'
 export { jobBookedEmail } from './templates/job-booked'
 export { portalLoginEmail } from './templates/portal-login'
+export { welcomeEmail } from './templates/welcome'
 
 import { invoiceEmail } from './templates/invoice'
 import { estimateEmail } from './templates/estimate'
@@ -17,6 +18,7 @@ import { invitationEmail } from './templates/invitation'
 import { notificationEmail } from './templates/notification'
 import { jobBookedEmail } from './templates/job-booked'
 import { portalLoginEmail } from './templates/portal-login'
+import { welcomeEmail } from './templates/welcome'
 import { baseLayout, emailHeading, emailText } from './templates/base-layout'
 
 /**
@@ -42,6 +44,9 @@ export function renderEmailTemplate(template: string, variables: Record<string, 
 
     case 'portal_login':
       return portalLoginEmail(variables as any)
+
+    case 'welcome':
+      return welcomeEmail(variables as any)
 
     default:
       // Fallback: render raw content in branded layout

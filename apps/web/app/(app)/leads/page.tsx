@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -22,9 +22,7 @@ interface Props {
 }
 
 export default async function LeadsPage({ searchParams }: Props) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user!.id).single()
+  const { supabase, profile } = await getProfile()
 
   const { data: leads } = await supabase
     .from('leads')
@@ -33,7 +31,7 @@ export default async function LeadsPage({ searchParams }: Props) {
       customer:customers(id, first_name, last_name, company_name),
       assignee:profiles!assigned_to(id, first_name, last_name, avatar_url)
     `)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .not('status', 'in', '("won","lost","unqualified")')
     .order('created_at', { ascending: false })
 

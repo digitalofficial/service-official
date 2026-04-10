@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { getProfile } from '@/lib/auth/get-profile'
 import { Badge } from '@/components/ui/badge'
 import { Phone, CheckCircle, AlertCircle, MessageSquare } from 'lucide-react'
 import type { Metadata } from 'next'
@@ -6,26 +6,24 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'SMS Settings' }
 
 export default async function SmsSettingsPage() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user!.id).single()
+  const { supabase, profile } = await getProfile()
 
   const { data: settings } = await supabase
     .from('organization_sms_settings')
     .select('*')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .single()
 
   const { count: smsSent } = await supabase
     .from('job_reminders')
     .select('*', { count: 'exact', head: true })
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .eq('status', 'sent')
 
   const { count: smsPending } = await supabase
     .from('job_reminders')
     .select('*', { count: 'exact', head: true })
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .eq('status', 'pending')
 
   const isActive = settings?.is_enabled && settings?.twilio_account_sid
