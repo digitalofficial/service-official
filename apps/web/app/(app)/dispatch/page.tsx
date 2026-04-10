@@ -38,7 +38,7 @@ export default function DispatchPage() {
   const [customers, setCustomers] = useState<any[]>([])
   const [customerSearch, setCustomerSearch] = useState('')
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
-  const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', phone: '', email: '', company_name: '', source: '', type: 'residential' })
+  const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', phone: '', email: '', company_name: '', source: '', type: 'residential', sms_opt_in: false })
 
   // Team
   const [team, setTeam] = useState<any[]>([])
@@ -274,7 +274,14 @@ export default function DispatchPage() {
                 <div><Label>First Name</Label><Input value={newCustomer.first_name} onChange={e => setNewCustomer(p => ({ ...p, first_name: e.target.value }))} placeholder="John" /></div>
                 <div><Label>Last Name</Label><Input value={newCustomer.last_name} onChange={e => setNewCustomer(p => ({ ...p, last_name: e.target.value }))} placeholder="Smith" /></div>
               </div>
-              <div><Label>Phone</Label><Input value={newCustomer.phone} onChange={e => setNewCustomer(p => ({ ...p, phone: e.target.value }))} placeholder="(555) 123-4567" type="tel" /></div>
+              <div>
+                <Label>Phone</Label>
+                <Input value={newCustomer.phone} onChange={e => setNewCustomer(p => ({ ...p, phone: e.target.value }))} placeholder="(555) 123-4567" type="tel" />
+                <label className="flex items-start gap-2 mt-2 cursor-pointer">
+                  <input type="checkbox" checked={newCustomer.sms_opt_in} onChange={e => setNewCustomer(p => ({ ...p, sms_opt_in: e.target.checked }))} className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                  <span className="text-xs text-gray-500 leading-relaxed">Opt in to text messages (reminders, updates, invoices). Reply STOP to opt out.</span>
+                </label>
+              </div>
               <div><Label>Email</Label><Input value={newCustomer.email} onChange={e => setNewCustomer(p => ({ ...p, email: e.target.value }))} placeholder="john@email.com" type="email" /></div>
               <div><Label>Company (optional)</Label><Input value={newCustomer.company_name} onChange={e => setNewCustomer(p => ({ ...p, company_name: e.target.value }))} placeholder="Smith Properties" /></div>
               <div>

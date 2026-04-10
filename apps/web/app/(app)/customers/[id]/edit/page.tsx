@@ -26,6 +26,7 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
     company_name: '',
     email: '',
     phone: '',
+    sms_opt_in: false,
     address_line1: '',
     city: '',
     state: '',
@@ -44,6 +45,7 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
           company_name: data.company_name ?? '',
           email: data.email ?? '',
           phone: data.phone ?? '',
+          sms_opt_in: data.sms_opt_in ?? false,
           address_line1: data.address_line1 ?? '',
           city: data.city ?? '',
           state: data.state ?? '',
@@ -116,6 +118,18 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
             <input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-lg" />
           </div>
         </div>
+
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.sms_opt_in}
+            onChange={e => setForm(f => ({ ...f, sms_opt_in: e.target.checked }))}
+            className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span className="text-xs text-gray-500 leading-relaxed">
+            Customer agrees to receive text messages including appointment reminders, job updates, and invoices. Message & data rates may apply. Reply STOP to opt out.
+          </span>
+        </label>
 
         <div className="pt-2 border-t border-gray-100">
           <label className="text-xs font-medium text-gray-600">Street Address</label>

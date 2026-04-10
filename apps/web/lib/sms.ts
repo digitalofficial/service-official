@@ -125,7 +125,7 @@ export async function notifyCustomer(
     .from('jobs')
     .select(`
       *,
-      customer:customers(first_name, last_name, company_name, phone),
+      customer:customers(first_name, last_name, company_name, phone, sms_opt_in),
       assignee:profiles!assigned_to(first_name, last_name, phone)
     `)
     .eq('id', jobId)
@@ -135,6 +135,7 @@ export async function notifyCustomer(
 
   const customer = job.customer as any
   if (!customer?.phone) return { success: false, error: 'Customer has no phone number' }
+  if (!customer?.sms_opt_in) return { success: false, error: 'Customer has not opted in to text messages' }
 
   // Get org name
   const { data: org } = await supabase.from('organizations').select('name').eq('id', organizationId).single()

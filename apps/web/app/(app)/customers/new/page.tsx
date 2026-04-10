@@ -90,6 +90,12 @@ export default function NewCustomerPage() {
           <div className="space-y-1.5">
             <Label htmlFor="phone">Phone</Label>
             <Input id="phone" name="phone" type="tel" placeholder="(555) 123-4567" />
+            <label className="flex items-start gap-2 mt-2 cursor-pointer">
+              <input type="checkbox" name="sms_opt_in" value="true" className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <span className="text-xs text-gray-500 leading-relaxed">
+                Customer agrees to receive text messages including appointment reminders, job updates, and invoices. Message & data rates may apply. Reply STOP to opt out.
+              </span>
+            </label>
           </div>
         </div>
 

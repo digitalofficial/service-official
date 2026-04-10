@@ -17,6 +17,7 @@ const customerSchema = z.object({
   tags: z.array(z.string()).default([]),
   source: z.string().optional(),
   notes: z.string().optional(),
+  sms_opt_in: z.preprocess((v) => v === 'true' || v === true, z.boolean().default(false)),
 })
 
 export async function GET(request: NextRequest) {
