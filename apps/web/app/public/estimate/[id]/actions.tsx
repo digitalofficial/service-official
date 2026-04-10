@@ -130,6 +130,7 @@ function OnboardingModal({ portalToken, portalExisting, customerEmail, organizat
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
+  const [smsOptIn, setSmsOptIn] = useState(false)
 
   async function handleCreateAccount() {
     if (!portalToken) {
@@ -154,7 +155,7 @@ function OnboardingModal({ portalToken, portalExisting, customerEmail, organizat
     const res = await fetch('/api/portal/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'set-password', token: portalToken, password }),
+      body: JSON.stringify({ action: 'set-password', token: portalToken, password, sms_opt_in: smsOptIn }),
     })
 
     if (res.ok) {
@@ -238,6 +239,24 @@ function OnboardingModal({ portalToken, portalExisting, customerEmail, organizat
             )}
           </div>
         )}
+
+        {/* SMS Opt-in */}
+        <div className="mb-6">
+          <label className="flex items-start gap-3 cursor-pointer p-3 bg-gray-50 border border-gray-200 rounded-xl">
+            <input
+              type="checkbox"
+              checked={smsOptIn}
+              onChange={e => setSmsOptIn(e.target.checked)}
+              className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Receive text message updates</p>
+              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                Get appointment reminders, technician arrival alerts, and invoice notifications via text. Message & data rates may apply. Reply STOP to opt out anytime.
+              </p>
+            </div>
+          </label>
+        </div>
 
         <div className="space-y-3">
           <button

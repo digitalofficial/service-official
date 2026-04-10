@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
 
   if (action === 'set-password') {
     // Set password for a portal user — requires a valid token or active session
-    const { token, password } = body
+    const { token, password, sms_opt_in } = body
     if (!password || password.length < 8) {
       return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
     }
@@ -252,6 +252,14 @@ export async function POST(request: NextRequest) {
       .from('portal_users')
       .update({ password_hash: passwordHash })
       .eq('id', portalUserId)
+
+    // Save SMS opt-in on the customer record if provided
+    if (sms_opt_in !== undefined) {
+      const { data: pu } = await supabase.from('portal_users').select('customer_id').eq('id', portalUserId).single()
+      if (pu?.customer_id) {
+        await supabase.from('customers').update({ sms_opt_in: !!sms_opt_in }).eq('id', pu.customer_id)
+      }
+    }
 
     // If using token, also verify and create session (same as verify action)
     if (token) {
