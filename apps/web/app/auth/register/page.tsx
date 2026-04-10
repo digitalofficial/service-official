@@ -56,38 +56,50 @@ export default function RegisterPage() {
 
     setLoading(true)
 
-    const supabase = createClient()
-
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
+    try {
+      // Create account, org, and profile via server API
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
           first_name: firstName,
           last_name: lastName,
           company_name: companyName,
           industry,
-          phone,
-        },
-      },
-    })
+          phone: phone || undefined,
+        }),
+      })
 
-    if (authError) {
-      setError(authError.message)
+      const result = await res.json()
+
+      if (!res.ok) {
+        setError(result.error || 'Registration failed')
+        setLoading(false)
+        return
+      }
+
+      // Account created — now sign in
+      const supabase = createClient()
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (signInError) {
+        // Account was created but sign-in failed — send to login
+        setError('Account created! Please sign in.')
+        setLoading(false)
+        return
+      }
+
+      // Full page navigation so the server sees the fresh auth cookies
+      window.location.href = '/dashboard'
+    } catch {
+      setError('Something went wrong. Please try again.')
       setLoading(false)
-      return
     }
-
-    // If email confirmation is required, Supabase returns a user but no session
-    if (!authData.session) {
-      setError('Check your email to confirm your account, then sign in.')
-      setLoading(false)
-      return
-    }
-
-    // Full page navigation so the server sees the fresh auth cookies
-    window.location.href = '/dashboard'
   }
 
   return (
