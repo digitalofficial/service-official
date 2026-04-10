@@ -263,7 +263,7 @@ export default function CalendarPage() {
       {/* Week View */}
       {view === 'week' && (
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
             {Array.from({ length: 7 }).map((_, i) => {
               const d = new Date(currentDate)
               d.setDate(d.getDate() - d.getDay() + i)

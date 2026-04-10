@@ -142,7 +142,7 @@ export default function PaymentSettingsPage() {
 
         {/* Payment Stats */}
         {settings?.has_keys && (
-          <div className="grid grid-cols-3 gap-4 mb-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-xs text-gray-500">Total Collected</p>
               <p className="text-lg font-semibold text-gray-900 mt-0.5">

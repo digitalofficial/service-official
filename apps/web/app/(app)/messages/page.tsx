@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatDate } from '@/lib/utils'
-import { MessageSquare, Search, Send, Phone, Mail, User, Plus } from 'lucide-react'
+import { MessageSquare, Search, Send, Phone, Mail, User, Plus, ArrowLeft } from 'lucide-react'
 
 interface Conversation {
   id: string
@@ -80,9 +80,9 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] -m-6">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-8rem)] -m-6">
       {/* Conversation List */}
-      <div className="w-80 border-r border-gray-200 bg-white flex flex-col shrink-0">
+      <div className={`w-full md:w-80 border-r border-gray-200 bg-white flex flex-col shrink-0 ${selected ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-lg font-bold text-gray-900">Messages</h1>
@@ -133,7 +133,7 @@ export default function MessagesPage() {
       </div>
 
       {/* Message Thread */}
-      <div className="flex-1 flex flex-col bg-gray-50">
+      <div className={`flex-1 flex flex-col bg-gray-50 ${!selected ? 'hidden md:flex' : 'flex'}`}>
         {!selected ? (
           <div className="flex-1 flex items-center justify-center">
             <EmptyState
@@ -146,6 +146,9 @@ export default function MessagesPage() {
           <>
             {/* Thread header */}
             <div className="bg-white px-6 py-3 border-b border-gray-200 flex items-center gap-3">
+              <button onClick={() => setSelected(null)} className="md:hidden text-gray-400 hover:text-gray-600">
+                <ArrowLeft className="w-5 h-5" />
+              </button>
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
                 <User className="w-4 h-4" />
               </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Send, Users, User, Check, CheckCheck, Megaphone, MessageCircle, Circle } from 'lucide-react'
+import { Send, Users, User, Check, CheckCheck, Megaphone, MessageCircle, Circle, ArrowLeft } from 'lucide-react'
 
 interface TeamMember {
   id: string
@@ -169,9 +169,9 @@ export default function TeamMessagesPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         {/* Left: Member List */}
-        <div className="w-80 border-r border-slate-700 flex flex-col">
+        <div className={`w-full md:w-80 border-r border-slate-700 flex flex-col ${selectedMember !== null ? 'hidden md:flex' : 'flex'}`}>
           <div className="p-3">
             <Input
               placeholder="Search team..."
@@ -247,7 +247,7 @@ export default function TeamMessagesPage() {
         </div>
 
         {/* Right: Messages / Compose */}
-        <div className="flex-1 flex flex-col">
+        <div className={`flex-1 flex flex-col ${selectedMember === null && view === 'inbox' ? 'hidden md:flex' : 'flex'}`}>
           {view === 'compose' ? (
             /* Broadcast compose */
             <div className="flex-1 flex flex-col p-6">
@@ -290,6 +290,11 @@ export default function TeamMessagesPage() {
           ) : (
             /* Message thread */
             <>
+              <div className="md:hidden border-b border-slate-700 px-4 py-2">
+                <button onClick={() => setSelectedMember(null)} className="flex items-center gap-2 text-sm text-slate-400 hover:text-white">
+                  <ArrowLeft className="w-4 h-4" /> Back
+                </button>
+              </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {loading ? (
                   <p className="text-slate-500 text-center py-20">Loading...</p>

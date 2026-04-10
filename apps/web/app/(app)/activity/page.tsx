@@ -138,8 +138,8 @@ export default function ActivityLogPage() {
           description="Emails and texts sent to customers will appear here."
         />
       ) : (
-        <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
-          <table className="w-full text-sm">
+        <div className="border border-gray-200 rounded-xl overflow-hidden overflow-x-auto bg-white">
+          <table className="w-full text-sm min-w-[700px]">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">Channel</th>

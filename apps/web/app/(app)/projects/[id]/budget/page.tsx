@@ -87,7 +87,7 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-100 rounded-lg" />)}
         </div>
         <div className="h-64 bg-gray-100 rounded-lg" />
@@ -205,8 +205,8 @@ export default function BudgetPage({ params }: { params: Promise<{ id: string }>
           </div>
 
           {/* Categories Table */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden overflow-x-auto">
+            <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
                   <th className="text-left px-4 py-3 font-medium text-gray-500">Category</th>

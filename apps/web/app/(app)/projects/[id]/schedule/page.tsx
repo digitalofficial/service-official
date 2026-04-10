@@ -187,7 +187,7 @@ export default function SchedulePage({ params }: { params: Promise<{ id: string 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="flex overflow-x-auto">
             {/* Sidebar — task list */}
-            <div className="shrink-0 border-r border-gray-200 bg-gray-50" style={{ width: sidebarWidth }}>
+            <div className="hidden md:block shrink-0 border-r border-gray-200 bg-gray-50" style={{ width: sidebarWidth }}>
               <div className="h-[50px] px-3 flex items-center border-b border-gray-200">
                 <span className="text-xs font-medium text-gray-500 uppercase">Task Name</span>
               </div>

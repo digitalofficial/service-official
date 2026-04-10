@@ -103,7 +103,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href={`/customers/${customer.id}/edit`}>
             <Button variant="outline" size="sm"><Edit className="w-4 h-4 mr-1" /> Edit</Button>
           </Link>
