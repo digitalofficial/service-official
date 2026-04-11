@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatCurrency, formatPhone, formatDate } from '@/lib/utils'
 import { Plus, Users, Search, Mail, Phone, Building2, User, ChevronRight } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Customers' }
@@ -50,9 +51,12 @@ export default async function CustomersPage({ searchParams }: Props) {
         title="Customers"
         count={count ?? 0}
         actions={
-          <Link href="/customers/new">
-            <Button><Plus className="w-4 h-4 mr-2" />New Customer</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <ExportButton entity="customers" />
+            <Link href="/customers/new">
+              <Button><Plus className="w-4 h-4 mr-2" />New Customer</Button>
+            </Link>
+          </div>
         }
       />
 

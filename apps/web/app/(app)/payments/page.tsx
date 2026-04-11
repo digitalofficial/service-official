@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatCurrency, formatDate, statusColor } from '@/lib/utils'
 import { CreditCard, DollarSign, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Payments' }
@@ -50,7 +51,7 @@ export default async function PaymentsPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Payments" description={`${payments?.length ?? 0} total payments`} />
+      <PageHeader title="Payments" description={`${payments?.length ?? 0} total payments`} actions={<ExportButton entity="payments" />} />
 
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatCurrency, formatDate, statusColor } from '@/lib/utils'
 import { Plus, Receipt, Eye, ChevronRight, AlertCircle } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Invoices' }
@@ -49,9 +50,12 @@ export default async function InvoicesPage({ searchParams }: Props) {
         title="Invoices"
         description={`${invoices?.length ?? 0} total invoices`}
         actions={
-          <Link href="/invoices/new">
-            <Button><Plus className="w-4 h-4 mr-2" />New Invoice</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <ExportButton entity="invoices" />
+            <Link href="/invoices/new">
+              <Button><Plus className="w-4 h-4 mr-2" />New Invoice</Button>
+            </Link>
+          </div>
         }
       />
 

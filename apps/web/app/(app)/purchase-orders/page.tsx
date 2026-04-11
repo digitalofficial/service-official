@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Search, ShoppingCart, FileText } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 import type { PurchaseOrder } from '@service-official/types'
 
 const STATUS_TABS = [
@@ -69,12 +70,15 @@ export default function PurchaseOrdersPage() {
         title="Purchase Orders"
         count={pos.length}
         actions={
-          <Link href="/purchase-orders/new">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Create PO
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <ExportButton entity="purchase-orders" />
+            <Link href="/purchase-orders/new">
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Create PO
+              </Button>
+            </Link>
+          </div>
         }
       />
 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { formatDate, statusColor } from '@/lib/utils'
 import { Plus, Briefcase, Clock, MapPin } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 import { JobsMapView } from './jobs-map-view'
 import { HorizontalScroll } from '@/components/ui/horizontal-scroll'
 import type { Metadata } from 'next'
@@ -72,9 +73,12 @@ export default async function JobsPage({ searchParams }: Props) {
         title="Jobs"
         description={`${jobs?.length ?? 0} total jobs`}
         actions={
-          <Link href="/dispatch">
-            <Button><Plus className="w-4 h-4 mr-2" />Dispatch Job</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <ExportButton entity="jobs" />
+            <Link href="/dispatch">
+              <Button><Plus className="w-4 h-4 mr-2" />Dispatch Job</Button>
+            </Link>
+          </div>
         }
       />
 
