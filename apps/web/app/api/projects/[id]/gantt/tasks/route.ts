@@ -74,7 +74,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   const taskId = searchParams.get('task_id')
   if (!taskId) return NextResponse.json({ error: 'task_id required' }, { status: 400 })
 
-  const { error } = await supabase.from('gantt_tasks').delete().eq('id', taskId).eq('project_id', params.id)
+  const { error } = await supabase
+    .from('gantt_tasks')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', taskId)
+    .eq('project_id', params.id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }

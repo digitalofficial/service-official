@@ -81,7 +81,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
   const { error } = await supabase
     .from('budget_categories')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', categoryId)
     .eq('project_id', params.id)
 

@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
     .from('purchase_orders')
     .select('*, vendor:vendors(id, name), project:projects(id, name)')
     .eq('organization_id', profile!.organization_id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (searchParams.get('status')) query = query.eq('status', searchParams.get('status')!)

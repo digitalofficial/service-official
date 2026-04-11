@@ -7,36 +7,36 @@
 -- NEW ENUMS
 -- ============================================================
 
-CREATE TYPE equipment_status AS ENUM ('available', 'assigned', 'maintenance', 'repair', 'retired');
-CREATE TYPE equipment_condition AS ENUM ('excellent', 'good', 'fair', 'poor');
-CREATE TYPE maintenance_type AS ENUM ('preventive', 'corrective', 'inspection', 'calibration');
-CREATE TYPE maintenance_status AS ENUM ('scheduled', 'in_progress', 'completed', 'skipped');
+DO $$ BEGIN CREATE TYPE equipment_status AS ENUM ('available', 'assigned', 'maintenance', 'repair', 'retired'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE equipment_condition AS ENUM ('excellent', 'good', 'fair', 'poor'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE maintenance_type AS ENUM ('preventive', 'corrective', 'inspection', 'calibration'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE maintenance_status AS ENUM ('scheduled', 'in_progress', 'completed', 'skipped'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE budget_category_type AS ENUM (
+DO $$ BEGIN CREATE TYPE budget_category_type AS ENUM (
   'materials', 'labor', 'equipment', 'subcontractor', 'permits',
   'fuel', 'overhead', 'contingency', 'other'
-);
+); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE po_status AS ENUM (
+DO $$ BEGIN CREATE TYPE po_status AS ENUM (
   'draft', 'pending_approval', 'approved', 'sent', 'acknowledged',
   'partial', 'fulfilled', 'closed', 'canceled'
-);
-CREATE TYPE po_receipt_condition AS ENUM ('good', 'damaged', 'wrong_item', 'short');
+); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE po_receipt_condition AS ENUM ('good', 'damaged', 'wrong_item', 'short'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE gantt_dependency_type AS ENUM ('FS', 'FF', 'SS', 'SF');
+DO $$ BEGIN CREATE TYPE gantt_dependency_type AS ENUM ('FS', 'FF', 'SS', 'SF'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE inspection_status AS ENUM ('scheduled', 'in_progress', 'completed', 'failed', 'canceled');
-CREATE TYPE checklist_item_type AS ENUM ('checkbox', 'pass_fail', 'text', 'number', 'photo', 'signature', 'select');
-CREATE TYPE inspection_result AS ENUM ('pass', 'fail', 'partial');
-CREATE TYPE inspection_item_status AS ENUM ('pending', 'pass', 'fail', 'na');
+DO $$ BEGIN CREATE TYPE inspection_status AS ENUM ('scheduled', 'in_progress', 'completed', 'failed', 'canceled'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE checklist_item_type AS ENUM ('checkbox', 'pass_fail', 'text', 'number', 'photo', 'signature', 'select'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE inspection_result AS ENUM ('pass', 'fail', 'partial'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE inspection_item_status AS ENUM ('pending', 'pass', 'fail', 'na'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
-CREATE TYPE portal_message_direction AS ENUM ('client_to_staff', 'staff_to_client');
+DO $$ BEGIN CREATE TYPE portal_message_direction AS ENUM ('client_to_staff', 'staff_to_client'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- ============================================================
 -- FEATURE 1: EQUIPMENT MANAGEMENT
 -- ============================================================
 
-CREATE TABLE equipment (
+CREATE TABLE IF NOT EXISTS equipment (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE equipment (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE equipment_assignments (
+CREATE TABLE IF NOT EXISTS equipment_assignments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   equipment_id UUID NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
   project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
@@ -93,7 +93,7 @@ CREATE TABLE equipment_assignments (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE equipment_maintenance (
+CREATE TABLE IF NOT EXISTS equipment_maintenance (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   equipment_id UUID NOT NULL REFERENCES equipment(id) ON DELETE CASCADE,
   type maintenance_type DEFAULT 'preventive',
@@ -112,18 +112,18 @@ CREATE TABLE equipment_maintenance (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_equipment_org ON equipment(organization_id);
-CREATE INDEX idx_equipment_status ON equipment(status);
-CREATE INDEX idx_equipment_assignments_equip ON equipment_assignments(equipment_id);
-CREATE INDEX idx_equipment_assignments_project ON equipment_assignments(project_id);
-CREATE INDEX idx_equipment_maintenance_equip ON equipment_maintenance(equipment_id);
-CREATE INDEX idx_equipment_maintenance_scheduled ON equipment_maintenance(scheduled_date);
+CREATE INDEX IF NOT EXISTS idx_equipment_org ON equipment(organization_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_status ON equipment(status);
+CREATE INDEX IF NOT EXISTS idx_equipment_assignments_equip ON equipment_assignments(equipment_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_assignments_project ON equipment_assignments(project_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_maintenance_equip ON equipment_maintenance(equipment_id);
+CREATE INDEX IF NOT EXISTS idx_equipment_maintenance_scheduled ON equipment_maintenance(scheduled_date);
 
 -- ============================================================
 -- FEATURE 2: BUDGET MANAGEMENT
 -- ============================================================
 
-CREATE TABLE budget_categories (
+CREATE TABLE IF NOT EXISTS budget_categories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -135,7 +135,7 @@ CREATE TABLE budget_categories (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE budget_line_items (
+CREATE TABLE IF NOT EXISTS budget_line_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   budget_category_id UUID NOT NULL REFERENCES budget_categories(id) ON DELETE CASCADE,
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -154,15 +154,15 @@ CREATE TABLE budget_line_items (
 ALTER TABLE expenses ADD COLUMN IF NOT EXISTS budget_category_id UUID REFERENCES budget_categories(id) ON DELETE SET NULL;
 ALTER TABLE project_materials ADD COLUMN IF NOT EXISTS budget_category_id UUID REFERENCES budget_categories(id) ON DELETE SET NULL;
 
-CREATE INDEX idx_budget_categories_project ON budget_categories(project_id);
-CREATE INDEX idx_budget_line_items_project ON budget_line_items(project_id);
-CREATE INDEX idx_budget_line_items_category ON budget_line_items(budget_category_id);
+CREATE INDEX IF NOT EXISTS idx_budget_categories_project ON budget_categories(project_id);
+CREATE INDEX IF NOT EXISTS idx_budget_line_items_project ON budget_line_items(project_id);
+CREATE INDEX IF NOT EXISTS idx_budget_line_items_category ON budget_line_items(budget_category_id);
 
 -- ============================================================
 -- FEATURE 3: PURCHASE ORDERS
 -- ============================================================
 
-CREATE TABLE vendors (
+CREATE TABLE IF NOT EXISTS vendors (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -181,7 +181,7 @@ CREATE TABLE vendors (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE purchase_orders (
+CREATE TABLE IF NOT EXISTS purchase_orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
@@ -215,7 +215,7 @@ CREATE TABLE purchase_orders (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE po_line_items (
+CREATE TABLE IF NOT EXISTS po_line_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   purchase_order_id UUID NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
   project_material_id UUID REFERENCES project_materials(id) ON DELETE SET NULL,
@@ -235,7 +235,7 @@ CREATE TABLE po_line_items (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE po_receipts (
+CREATE TABLE IF NOT EXISTS po_receipts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   purchase_order_id UUID NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
   received_by UUID REFERENCES profiles(id),
@@ -245,7 +245,7 @@ CREATE TABLE po_receipts (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE po_receipt_items (
+CREATE TABLE IF NOT EXISTS po_receipt_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   receipt_id UUID NOT NULL REFERENCES po_receipts(id) ON DELETE CASCADE,
   po_line_item_id UUID NOT NULL REFERENCES po_line_items(id),
@@ -258,17 +258,17 @@ CREATE TABLE po_receipt_items (
 -- Add purchase_order_id to project_materials
 ALTER TABLE project_materials ADD COLUMN IF NOT EXISTS purchase_order_id UUID REFERENCES purchase_orders(id) ON DELETE SET NULL;
 
-CREATE INDEX idx_vendors_org ON vendors(organization_id);
-CREATE INDEX idx_purchase_orders_org ON purchase_orders(organization_id);
-CREATE INDEX idx_purchase_orders_project ON purchase_orders(project_id);
-CREATE INDEX idx_purchase_orders_vendor ON purchase_orders(vendor_id);
-CREATE INDEX idx_po_line_items_po ON po_line_items(purchase_order_id);
+CREATE INDEX IF NOT EXISTS idx_vendors_org ON vendors(organization_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_org ON purchase_orders(organization_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_project ON purchase_orders(project_id);
+CREATE INDEX IF NOT EXISTS idx_purchase_orders_vendor ON purchase_orders(vendor_id);
+CREATE INDEX IF NOT EXISTS idx_po_line_items_po ON po_line_items(purchase_order_id);
 
 -- ============================================================
 -- FEATURE 4: GANTT CHART SCHEDULING
 -- ============================================================
 
-CREATE TABLE gantt_tasks (
+CREATE TABLE IF NOT EXISTS gantt_tasks (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   phase_id UUID REFERENCES project_phases(id) ON DELETE SET NULL,
@@ -288,7 +288,7 @@ CREATE TABLE gantt_tasks (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE gantt_dependencies (
+CREATE TABLE IF NOT EXISTS gantt_dependencies (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   predecessor_id UUID NOT NULL REFERENCES gantt_tasks(id) ON DELETE CASCADE,
@@ -299,14 +299,14 @@ CREATE TABLE gantt_dependencies (
   UNIQUE(predecessor_id, successor_id)
 );
 
-CREATE INDEX idx_gantt_tasks_project ON gantt_tasks(project_id);
-CREATE INDEX idx_gantt_deps_project ON gantt_dependencies(project_id);
+CREATE INDEX IF NOT EXISTS idx_gantt_tasks_project ON gantt_tasks(project_id);
+CREATE INDEX IF NOT EXISTS idx_gantt_deps_project ON gantt_dependencies(project_id);
 
 -- ============================================================
 -- FEATURE 5: INSPECTIONS & CHECKLISTS
 -- ============================================================
 
-CREATE TABLE inspection_templates (
+CREATE TABLE IF NOT EXISTS inspection_templates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE, -- NULL = system template
   name TEXT NOT NULL,
@@ -321,7 +321,7 @@ CREATE TABLE inspection_templates (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE template_sections (
+CREATE TABLE IF NOT EXISTS template_sections (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   template_id UUID NOT NULL REFERENCES inspection_templates(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -330,7 +330,7 @@ CREATE TABLE template_sections (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE template_items (
+CREATE TABLE IF NOT EXISTS template_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   template_id UUID NOT NULL REFERENCES inspection_templates(id) ON DELETE CASCADE,
   section_id UUID REFERENCES template_sections(id) ON DELETE CASCADE,
@@ -343,7 +343,7 @@ CREATE TABLE template_items (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE inspections (
+CREATE TABLE IF NOT EXISTS inspections (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
@@ -377,7 +377,7 @@ CREATE TABLE inspections (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE inspection_items (
+CREATE TABLE IF NOT EXISTS inspection_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   inspection_id UUID NOT NULL REFERENCES inspections(id) ON DELETE CASCADE,
   template_item_id UUID REFERENCES template_items(id),
@@ -397,18 +397,18 @@ CREATE TABLE inspection_items (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX idx_inspection_templates_org ON inspection_templates(organization_id);
-CREATE INDEX idx_inspections_org ON inspections(organization_id);
-CREATE INDEX idx_inspections_project ON inspections(project_id);
-CREATE INDEX idx_inspections_status ON inspections(status);
-CREATE INDEX idx_inspections_scheduled ON inspections(scheduled_date);
-CREATE INDEX idx_inspection_items_inspection ON inspection_items(inspection_id);
+CREATE INDEX IF NOT EXISTS idx_inspection_templates_org ON inspection_templates(organization_id);
+CREATE INDEX IF NOT EXISTS idx_inspections_org ON inspections(organization_id);
+CREATE INDEX IF NOT EXISTS idx_inspections_project ON inspections(project_id);
+CREATE INDEX IF NOT EXISTS idx_inspections_status ON inspections(status);
+CREATE INDEX IF NOT EXISTS idx_inspections_scheduled ON inspections(scheduled_date);
+CREATE INDEX IF NOT EXISTS idx_inspection_items_inspection ON inspection_items(inspection_id);
 
 -- ============================================================
 -- FEATURE 6: CLIENT PORTAL
 -- ============================================================
 
-CREATE TABLE portal_users (
+CREATE TABLE IF NOT EXISTS portal_users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
@@ -423,7 +423,7 @@ CREATE TABLE portal_users (
   UNIQUE(email, organization_id)
 );
 
-CREATE TABLE portal_messages (
+CREATE TABLE IF NOT EXISTS portal_messages (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
@@ -437,7 +437,7 @@ CREATE TABLE portal_messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE portal_activity_log (
+CREATE TABLE IF NOT EXISTS portal_activity_log (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   portal_user_id UUID NOT NULL REFERENCES portal_users(id) ON DELETE CASCADE,
   action TEXT NOT NULL,
@@ -450,28 +450,32 @@ CREATE TABLE portal_activity_log (
 -- Add client_signature_url to change_orders
 ALTER TABLE change_orders ADD COLUMN IF NOT EXISTS client_signature_url TEXT;
 
-CREATE INDEX idx_portal_users_customer ON portal_users(customer_id);
-CREATE INDEX idx_portal_users_email ON portal_users(email);
-CREATE INDEX idx_portal_messages_project ON portal_messages(project_id);
-CREATE INDEX idx_portal_activity_log_user ON portal_activity_log(portal_user_id);
+CREATE INDEX IF NOT EXISTS idx_portal_users_customer ON portal_users(customer_id);
+CREATE INDEX IF NOT EXISTS idx_portal_users_email ON portal_users(email);
+CREATE INDEX IF NOT EXISTS idx_portal_messages_project ON portal_messages(project_id);
+CREATE INDEX IF NOT EXISTS idx_portal_activity_log_user ON portal_activity_log(portal_user_id);
 
 -- ============================================================
 -- SEED: System Inspection Templates
 -- ============================================================
 
-INSERT INTO inspection_templates (name, description, trade, category, is_system, is_active) VALUES
+INSERT INTO inspection_templates (name, description, trade, category, is_system, is_active)
+SELECT v.name, v.description, v.trade, v.category, v.is_system, v.is_active
+FROM (VALUES
   ('Pre-Drywall Inspection', 'Inspect framing, electrical, plumbing, and HVAC before drywall installation', 'general_contractor', 'quality', TRUE, TRUE),
   ('Roof Final Inspection', 'Final inspection of completed roofing installation', 'roofing', 'quality', TRUE, TRUE),
-  ('OSHA Safety Checklist', 'General OSHA compliance safety inspection for job sites', NULL, 'safety', TRUE, TRUE),
+  ('OSHA Safety Checklist', 'General OSHA compliance safety inspection for job sites', NULL::TEXT, 'safety', TRUE, TRUE),
   ('Electrical Rough-In', 'Inspect electrical wiring, boxes, and panels before cover', 'electrical', 'quality', TRUE, TRUE),
   ('Plumbing Pressure Test', 'Water supply and DWV pressure testing', 'plumbing', 'quality', TRUE, TRUE),
   ('HVAC Ductwork Inspection', 'Inspect ductwork installation and sealing', 'hvac', 'quality', TRUE, TRUE),
   ('Foundation Inspection', 'Pre-pour inspection of foundation forms, rebar, and drainage', 'general_contractor', 'quality', TRUE, TRUE),
-  ('Fire Safety Inspection', 'Fire extinguisher, exit, and alarm system check', NULL, 'safety', TRUE, TRUE),
-  ('Equipment Safety Check', 'Pre-use safety inspection for heavy equipment', NULL, 'safety', TRUE, TRUE),
-  ('Final Walkthrough', 'Client walkthrough punch list and completion verification', NULL, 'quality', TRUE, TRUE),
+  ('Fire Safety Inspection', 'Fire extinguisher, exit, and alarm system check', NULL::TEXT, 'safety', TRUE, TRUE),
+  ('Equipment Safety Check', 'Pre-use safety inspection for heavy equipment', NULL::TEXT, 'safety', TRUE, TRUE),
+  ('Final Walkthrough', 'Client walkthrough punch list and completion verification', NULL::TEXT, 'quality', TRUE, TRUE),
   ('Insulation Inspection', 'Verify insulation type, R-value, and installation quality', 'insulation', 'quality', TRUE, TRUE),
-  ('Concrete Pour Checklist', 'Pre-pour, during pour, and finishing checklist', 'concrete', 'quality', TRUE, TRUE);
+  ('Concrete Pour Checklist', 'Pre-pour, during pour, and finishing checklist', 'concrete', 'quality', TRUE, TRUE)
+) AS v(name, description, trade, category, is_system, is_active)
+WHERE NOT EXISTS (SELECT 1 FROM inspection_templates WHERE is_system = TRUE LIMIT 1);
 
 -- Seed template sections and items for OSHA Safety Checklist
 DO $$
@@ -483,6 +487,8 @@ DECLARE
   v_section_housekeeping UUID;
 BEGIN
   SELECT id INTO v_template_id FROM inspection_templates WHERE name = 'OSHA Safety Checklist' AND is_system = TRUE LIMIT 1;
+  -- Skip if sections already seeded
+  IF EXISTS (SELECT 1 FROM template_sections WHERE template_id = v_template_id LIMIT 1) THEN RETURN; END IF;
 
   INSERT INTO template_sections (template_id, name, order_index) VALUES
     (v_template_id, 'Personal Protective Equipment', 0) RETURNING id INTO v_section_ppe;
@@ -537,6 +543,8 @@ DECLARE
   v_section_cleanup UUID;
 BEGIN
   SELECT id INTO v_template_id FROM inspection_templates WHERE name = 'Roof Final Inspection' AND is_system = TRUE LIMIT 1;
+  -- Skip if sections already seeded
+  IF EXISTS (SELECT 1 FROM template_sections WHERE template_id = v_template_id LIMIT 1) THEN RETURN; END IF;
 
   INSERT INTO template_sections (template_id, name, order_index) VALUES
     (v_template_id, 'Materials Verification', 0) RETURNING id INTO v_section_materials;

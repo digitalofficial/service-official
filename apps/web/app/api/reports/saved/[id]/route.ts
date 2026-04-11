@@ -12,7 +12,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   try {
     const { error } = await supabase
       .from('saved_reports')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', params.id)
       .eq('organization_id', profile.organization_id)
 

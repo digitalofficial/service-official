@@ -10,7 +10,7 @@ export default function TermsPage() {
         <Link href="/" className="text-sm text-blue-600 hover:underline mb-6 inline-block">← Back to Home</Link>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Terms of Service</h1>
-        <p className="text-sm text-gray-500 mb-10">Last updated: April 10, 2026</p>
+        <p className="text-sm text-gray-500 mb-10">Last updated: April 11, 2026</p>
 
         <div className="prose prose-gray max-w-none text-gray-700 space-y-6 text-sm leading-relaxed">
 
@@ -35,6 +35,7 @@ export default function TermsPage() {
           <h2 className="text-lg font-semibold text-gray-900 mt-8">6. Your Data</h2>
           <p>You retain ownership of all data you enter into the Service, including customer information, project details, estimates, invoices, and communications. We process your data solely to provide the Service as described in our <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>.</p>
           <p>You are responsible for the accuracy and legality of data you enter. You represent that you have the right to store and process any customer information you enter, including compliance with applicable privacy and communication laws.</p>
+          <p><strong>Data Archival:</strong> When you or any user in your organization deletes records (such as jobs, photos, invoices, time entries, or other data), those records are archived rather than permanently removed. Archived data is hidden from your active views but retained in our systems for record-keeping, compliance, dispute resolution, and data integrity purposes. This includes account and organization deletions — all associated data is archived, not permanently destroyed.</p>
 
           <h2 className="text-lg font-semibold text-gray-900 mt-8">7. SMS and Communication</h2>
           <p>The Service allows contractors to send SMS text messages to their customers for appointment reminders, job updates, and invoice notifications. By using the SMS features, you agree to:</p>
@@ -71,7 +72,8 @@ export default function TermsPage() {
           <p>OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM.</p>
 
           <h2 className="text-lg font-semibold text-gray-900 mt-8">13. Termination</h2>
-          <p>We may suspend or terminate your account if you violate these Terms. You may cancel your account at any time. Upon termination, your right to use the Service ceases immediately. We may retain your data for a reasonable period for backup and compliance purposes.</p>
+          <p>We may suspend or terminate your account if you violate these Terms. You may cancel your account at any time. Upon termination, your right to use the Service ceases immediately.</p>
+          <p>When an account or organization is terminated, all associated data is archived and retained in accordance with our data retention policy described in our <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>. No data is permanently deleted upon termination.</p>
 
           <h2 className="text-lg font-semibold text-gray-900 mt-8">14. Changes to Terms</h2>
           <p>We may update these Terms from time to time. We will notify you of material changes by posting the updated Terms on this page and updating the "Last updated" date. Continued use of the Service after changes constitutes acceptance of the new Terms.</p>

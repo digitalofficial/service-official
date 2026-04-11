@@ -10,7 +10,7 @@ export default function PrivacyPolicyPage() {
         <Link href="/" className="text-sm text-blue-600 hover:underline mb-6 inline-block">← Back to Home</Link>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-        <p className="text-sm text-gray-500 mb-10">Last updated: April 10, 2026</p>
+        <p className="text-sm text-gray-500 mb-10">Last updated: April 11, 2026</p>
 
         <div className="prose prose-gray max-w-none text-gray-700 space-y-6 text-sm leading-relaxed">
 
@@ -54,15 +54,18 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-lg font-semibold text-gray-900 mt-8">6. Data Security</h2>
           <p>We implement industry-standard security measures including encryption in transit (TLS/SSL), encrypted data at rest, role-based access controls, and row-level security on all database tables. However, no method of transmission over the Internet is 100% secure.</p>
 
-          <h2 className="text-lg font-semibold text-gray-900 mt-8">7. Data Retention</h2>
-          <p>We retain your data for as long as your account is active or as needed to provide the Service. Contractors may retain customer data according to their own policies. You can request deletion of your account and associated data at any time.</p>
+          <h2 className="text-lg font-semibold text-gray-900 mt-8">7. Data Retention and Archival</h2>
+          <p>We retain your data for as long as your account is active or as needed to provide the Service. Contractors may retain customer data according to their own policies.</p>
+          <p><strong>Soft Deletion and Archival:</strong> When you delete records within the Service (including jobs, photos, invoices, estimates, time entries, purchase orders, and other data), those records are archived rather than permanently removed from our systems. Archived data is no longer visible in your active workspace but is retained for compliance, legal obligations, dispute resolution, audit trails, and data integrity purposes.</p>
+          <p>If you delete your account or organization, all associated data is archived in the same manner. User accounts are disabled but data is preserved.</p>
+          <p>Archived data is retained for a minimum of 7 years after deletion or as required by applicable law, whichever is longer. After the retention period, data may be permanently purged. To request information about your archived data, contact us at <a href="mailto:support@serviceofficial.app" className="text-blue-600 hover:underline">support@serviceofficial.app</a>.</p>
 
           <h2 className="text-lg font-semibold text-gray-900 mt-8">8. Your Rights</h2>
           <p>You have the right to:</p>
           <ul className="list-disc pl-5 space-y-1">
             <li>Access your personal information</li>
             <li>Update or correct your information</li>
-            <li>Delete your account and data</li>
+            <li>Delete your account (data will be archived per our retention policy)</li>
             <li>Opt out of SMS communications</li>
             <li>Request a copy of your data</li>
           </ul>

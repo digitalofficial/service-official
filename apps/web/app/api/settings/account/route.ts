@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
 
-// DELETE /api/settings/account — permanently delete current user's organization
+// DELETE /api/settings/account — soft-delete current user's organization (archive all data)
 export async function DELETE(request: NextRequest) {
   const supabase = createServerSupabaseClient()
   const serviceClient = createServiceRoleClient()
@@ -38,13 +38,9 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    // Get all profiles for this org
-    const { data: profiles } = await serviceClient
-      .from('profiles')
-      .select('id')
-      .eq('organization_id', orgId)
+    const now = new Date().toISOString()
 
-    // Delete related data in dependency order
+    // Soft-delete related data by setting deleted_at
     const tables = [
       'job_reminders',
       'photos',
@@ -57,35 +53,38 @@ export async function DELETE(request: NextRequest) {
       'messages',
       'notifications',
       'invitations',
-      'organization_sms_settings',
     ]
 
     for (const table of tables) {
-      await serviceClient.from(table).delete().eq('organization_id', orgId)
+      await serviceClient.from(table).update({ deleted_at: now }).eq('organization_id', orgId).is('deleted_at', null)
     }
 
-    // Delete profiles
-    await serviceClient.from('profiles').delete().eq('organization_id', orgId)
+    // Soft-delete profiles and disable auth users
+    const { data: profiles } = await serviceClient
+      .from('profiles')
+      .select('id')
+      .eq('organization_id', orgId)
 
-    // Delete auth users
+    await serviceClient.from('profiles').update({ deleted_at: now, is_active: false }).eq('organization_id', orgId)
+
     if (profiles && profiles.length > 0) {
       for (const p of profiles) {
-        await serviceClient.auth.admin.deleteUser(p.id)
+        await serviceClient.auth.admin.updateUserById(p.id, { ban_duration: '876600h' })
       }
     }
 
-    // Delete the organization
+    // Soft-delete the organization
     const { error: orgError } = await serviceClient
       .from('organizations')
-      .delete()
+      .update({ deleted_at: now })
       .eq('id', orgId)
 
     if (orgError) {
-      return NextResponse.json({ error: `Failed to delete organization: ${orgError.message}` }, { status: 500 })
+      return NextResponse.json({ error: `Failed to archive organization: ${orgError.message}` }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (err: any) {
-    return NextResponse.json({ error: err.message ?? 'Deletion failed' }, { status: 500 })
+    return NextResponse.json({ error: err.message ?? 'Archival failed' }, { status: 500 })
   }
 }

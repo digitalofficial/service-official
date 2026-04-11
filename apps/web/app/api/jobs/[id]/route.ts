@@ -21,6 +21,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     `)
     .eq('id', params.id)
     .eq('organization_id', profile!.organization_id)
+    .is('deleted_at', null)
     .single()
 
   if (error) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -97,7 +98,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
 
   const { error } = await supabase
     .from('jobs')
-    .delete()
+    .update({ deleted_at: new Date().toISOString(), is_active: false })
     .eq('id', params.id)
     .eq('organization_id', profile.organization_id)
 

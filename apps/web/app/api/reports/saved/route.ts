@@ -14,6 +14,7 @@ export async function GET() {
       .from('saved_reports')
       .select('*')
       .eq('organization_id', profile.organization_id)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
     if (error) throw error

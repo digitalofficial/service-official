@@ -57,13 +57,12 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // Delete from storage
-  if (photo.storage_path) {
-    await serviceClient.storage.from('files').remove([photo.storage_path])
-  }
-
-  // Delete from database
-  const { error } = await serviceClient.from('photos').delete().eq('id', id).eq('organization_id', profile!.organization_id)
+  // Soft-delete from database (preserve storage file for archival)
+  const { error } = await serviceClient
+    .from('photos')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('organization_id', profile!.organization_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })

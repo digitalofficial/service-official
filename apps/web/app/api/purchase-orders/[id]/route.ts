@@ -66,8 +66,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
   if (!po) return NextResponse.json({ error: 'PO not found' }, { status: 404 })
   if (po.status !== 'draft') return NextResponse.json({ error: 'Can only delete draft POs' }, { status: 400 })
 
-  await supabase.from('po_line_items').delete().eq('purchase_order_id', params.id)
-  const { error } = await supabase.from('purchase_orders').delete().eq('id', params.id)
+  const now = new Date().toISOString()
+  await supabase.from('po_line_items').update({ deleted_at: now }).eq('purchase_order_id', params.id)
+  const { error } = await supabase.from('purchase_orders').update({ deleted_at: now }).eq('id', params.id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })

@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
       project:projects(id, name)
     `)
     .eq('organization_id', profile!.organization_id)
+    .is('deleted_at', null)
     .order('scheduled_start', { ascending: true })
 
   // Field workers only see their own assigned jobs
