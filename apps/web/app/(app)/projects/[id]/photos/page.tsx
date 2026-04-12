@@ -10,6 +10,7 @@ export default async function ProjectPhotosPage({ params }: { params: { id: stri
     .from('photos')
     .select('*, uploader:profiles!uploaded_by(first_name, last_name)')
     .eq('project_id', params.id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   return (
