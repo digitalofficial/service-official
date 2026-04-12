@@ -116,8 +116,6 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
             <DetailRow label="Project Manager" value={`${project.project_manager?.first_name ?? ''} ${project.project_manager?.last_name ?? ''}`.trim() || '—'} />
             <DetailRow label="Foreman" value={`${project.foreman?.first_name ?? ''} ${project.foreman?.last_name ?? ''}`.trim() || '—'} />
             {project.permit_number && <DetailRow label="Permit #" value={project.permit_number} />}
-            {project.roof_type && <DetailRow label="Roof Type" value={project.roof_type} />}
-            {project.roof_squares && <DetailRow label="Squares" value={`${project.roof_squares} sq`} />}
           </div>
 
           {/* Items Tracker */}

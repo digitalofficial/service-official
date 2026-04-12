@@ -48,7 +48,7 @@ export default function NewProjectPage() {
     const body: Record<string, any> = {}
     fd.forEach((v, k) => {
       if (v === '') return
-      if (k === 'contract_value' || k === 'roof_squares') body[k] = Number(v)
+      if (k === 'contract_value') body[k] = Number(v)
       else body[k] = v
     })
 
@@ -93,7 +93,7 @@ export default function NewProjectPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="industry">Industry</Label>
-            <Select id="industry" name="industry" options={INDUSTRY_OPTIONS} defaultValue="roofing" />
+            <Select id="industry" name="industry" options={INDUSTRY_OPTIONS} defaultValue="general_contractor" />
           </div>
         </div>
 
@@ -148,19 +148,8 @@ export default function NewProjectPage() {
           </div>
         </div>
 
-        {/* Roofing-specific (conditional later) */}
+        {/* Additional Details */}
         <div className="space-y-4 pt-2 border-t border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-700">Trade Details</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="roof_type">Roof Type</Label>
-              <Input id="roof_type" name="roof_type" placeholder="Asphalt shingle, TPO, etc." />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="roof_squares">Roof Squares</Label>
-              <Input id="roof_squares" name="roof_squares" type="number" step="0.1" placeholder="0" />
-            </div>
-          </div>
           <div className="space-y-1.5">
             <Label htmlFor="permit_number">Permit Number</Label>
             <Input id="permit_number" name="permit_number" placeholder="Optional" />

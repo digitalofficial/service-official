@@ -4,6 +4,7 @@ import { getProfile } from '@/lib/auth/get-profile'
 import { getProjectById } from '@service-official/database/queries/projects'
 import { TabLink } from '@/components/projects/tab-link'
 import { ProjectTour } from '@/components/projects/project-tour'
+import { ProjectHeaderActions } from '@/components/projects/project-header-actions'
 
 export const dynamic = 'force-dynamic'
 import { ProjectStatusBadge } from '@/components/projects/status-badge'
@@ -79,14 +80,7 @@ export default async function ProjectDetailLayout({ children, params }: ProjectL
           </div>
 
           {/* Quick Actions */}
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-              Edit
-            </button>
-            <button className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              Create Invoice
-            </button>
-          </div>
+          <ProjectHeaderActions project={project} />
         </div>
 
         {/* Tab Navigation */}
