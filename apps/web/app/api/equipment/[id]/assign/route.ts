@@ -41,6 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from('equipment_assignments')
     .insert({
       equipment_id: params.id,
+      organization_id: profile.organization_id,
       ...validated,
       daily_rate: validated.daily_rate ?? equipment.daily_rate,
       created_by: user.id,

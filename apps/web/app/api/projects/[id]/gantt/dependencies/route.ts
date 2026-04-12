@@ -12,7 +12,7 @@ const depSchema = z.object({
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const result = await getApiProfile()
   if ('error' in result) return result.error
-  const { supabase } = result
+  const { profile, supabase } = result
 
   const body = await request.json()
   const validated = depSchema.parse(body)
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   const { data, error } = await supabase
     .from('gantt_dependencies')
-    .insert({ ...validated, project_id: params.id })
+    .insert({ ...validated, project_id: params.id, organization_id: profile.organization_id })
     .select()
     .single()
 

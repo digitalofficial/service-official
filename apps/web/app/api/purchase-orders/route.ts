@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
     .from('po_line_items')
     .insert(items.map(li => ({
       purchase_order_id: po.id,
+      organization_id: profile.organization_id,
       name: li.name,
       description: li.description,
       sku: li.sku,

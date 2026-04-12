@@ -4,7 +4,7 @@ import { getApiProfile } from '@/lib/auth/get-api-profile'
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const result = await getApiProfile()
   if ('error' in result) return result.error
-  const { supabase } = result
+  const { profile, supabase } = result
 
   // Get phases
   const { data: phases } = await supabase
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .filter(p => !linkedPhaseIds.has(p.id) && p.start_date && p.end_date)
     .map((p, i) => ({
       project_id: params.id,
+      organization_id: profile.organization_id,
       phase_id: p.id,
       name: p.name,
       start_date: p.start_date,

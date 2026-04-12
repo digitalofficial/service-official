@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
       for (const item of (section.items || []).sort((a: any, b: any) => a.order_index - b.order_index)) {
         inspectionItems.push({
           inspection_id: inspection.id,
+          organization_id: profile.organization_id,
           template_item_id: item.id,
           section_name: section.name,
           label: item.label,

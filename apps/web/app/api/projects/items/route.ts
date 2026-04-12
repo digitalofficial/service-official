@@ -52,6 +52,9 @@ export async function POST(request: NextRequest) {
   if (type === 'rfi') data.submitted_by = user.id
   if (type === 'change_order') data.created_by = user.id
 
+  // Include organization_id for multi-tenant isolation
+  data.organization_id = profile.organization_id
+
   const { data: itemResult, error } = await supabase
     .from(table)
     .insert(data)

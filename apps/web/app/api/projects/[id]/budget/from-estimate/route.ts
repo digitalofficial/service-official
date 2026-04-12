@@ -4,7 +4,7 @@ import { getApiProfile } from '@/lib/auth/get-api-profile'
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const result = await getApiProfile({ requireRole: ['owner', 'admin', 'office_manager', 'project_manager'] })
   if ('error' in result) return result.error
-  const { supabase } = result
+  const { profile, supabase } = result
 
   const body = await request.json()
   const { estimate_id } = body
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
       categories.push({
         project_id: params.id,
+        organization_id: profile.organization_id,
         name: section.name,
         type: 'other' as const,
         budgeted_amount: Math.round(sectionTotal * 100) / 100,
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // No sections — create a single category from total
     categories.push({
       project_id: params.id,
+      organization_id: profile.organization_id,
       name: estimate.title || 'Project Budget',
       type: 'other' as const,
       budgeted_amount: estimate.total || 0,

@@ -15,7 +15,7 @@ const receiveSchema = z.object({
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const result = await getApiProfile()
   if ('error' in result) return result.error
-  const { user, supabase } = result
+  const { user, profile, supabase } = result
 
   const body = await request.json()
   const validated = receiveSchema.parse(body)
@@ -25,6 +25,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from('po_receipts')
     .insert({
       purchase_order_id: params.id,
+      organization_id: profile.organization_id,
       received_by: user.id,
       notes: validated.notes,
     })

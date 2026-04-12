@@ -19,7 +19,7 @@ const taskSchema = z.object({
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const result = await getApiProfile()
   if ('error' in result) return result.error
-  const { supabase } = result
+  const { profile, supabase } = result
 
   const body = await request.json()
   const validated = taskSchema.parse(body)
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   const { data, error } = await supabase
     .from('gantt_tasks')
-    .insert({ ...validated, project_id: params.id, order_index: nextIndex })
+    .insert({ ...validated, project_id: params.id, organization_id: profile.organization_id, order_index: nextIndex })
     .select('*, assignee:profiles!assigned_to(first_name, last_name)')
     .single()
 

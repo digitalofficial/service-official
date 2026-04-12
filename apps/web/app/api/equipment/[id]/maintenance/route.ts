@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const result = await getApiProfile()
   if ('error' in result) return result.error
-  const { user, supabase } = result
+  const { user, profile, supabase } = result
 
   const body = await request.json()
   const validated = maintenanceSchema.parse(body)
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from('equipment_maintenance')
     .insert({
       equipment_id: params.id,
+      organization_id: profile.organization_id,
       ...validated,
       performed_by: validated.status === 'completed' ? user.id : null,
     })

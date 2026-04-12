@@ -42,7 +42,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   for (const section of sections || []) {
     const { data: newSection } = await supabase
       .from('template_sections')
-      .insert({ template_id: copy.id, name: section.name, description: section.description, order_index: section.order_index })
+      .insert({ template_id: copy.id, organization_id: profile.organization_id, name: section.name, description: section.description, order_index: section.order_index })
       .select()
       .single()
 
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       await supabase.from('template_items').insert(
         section.items.map((item: any) => ({
           template_id: copy.id,
+          organization_id: profile.organization_id,
           section_id: newSection.id,
           label: item.label,
           description: item.description,
