@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, X, Loader2, Camera } from 'lucide-react'
+import { Plus, X, Loader2, Camera, CheckCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 const CATEGORIES = [
@@ -124,6 +124,55 @@ export function AddExpenseButton({ projectId }: { projectId: string }) {
           </button>
         </div>
       </form>
+    </div>
+  )
+}
+
+export function ExpenseActions({ expenseId, status }: { expenseId: string; status: string }) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+
+  if (status !== 'pending') return null
+
+  async function handleAction(newStatus: 'approved' | 'rejected') {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/expenses', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expense_id: expenseId, status: newStatus }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error || 'Failed')
+      }
+      toast.success(newStatus === 'approved' ? 'Expense approved' : 'Expense rejected')
+      router.refresh()
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => handleAction('approved')}
+        disabled={loading}
+        className="p-1 text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50"
+        title="Approve"
+      >
+        <CheckCircle className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => handleAction('rejected')}
+        disabled={loading}
+        className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+        title="Reject"
+      >
+        <XCircle className="w-4 h-4" />
+      </button>
     </div>
   )
 }

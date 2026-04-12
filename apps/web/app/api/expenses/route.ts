@@ -72,3 +72,43 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ data, success: true }, { status: 201 })
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const result = await getApiProfile({ requireRole: ['owner', 'admin', 'office_manager', 'project_manager'] })
+    if ('error' in result) return result.error
+    const { user, profile, supabase } = result
+
+    const body = await request.json()
+    const { expense_id, status } = body
+
+    if (!expense_id) return NextResponse.json({ error: 'expense_id required' }, { status: 400 })
+    if (!['approved', 'rejected', 'reimbursed'].includes(status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    }
+
+    const updates: Record<string, unknown> = {
+      status,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (status === 'approved' || status === 'rejected') {
+      updates.approved_by = user.id
+      updates.approved_at = new Date().toISOString()
+    }
+
+    const { data, error } = await supabase
+      .from('expenses')
+      .update(updates)
+      .eq('id', expense_id)
+      .eq('organization_id', profile.organization_id)
+      .select()
+      .single()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ data, success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 })
+  }
+}

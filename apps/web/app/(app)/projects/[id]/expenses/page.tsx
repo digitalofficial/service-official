@@ -1,7 +1,7 @@
 import { getProfile } from '@/lib/auth/get-profile'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Plus, Receipt, CheckCircle, Clock, XCircle } from 'lucide-react'
-import { AddExpenseButton } from './project-expenses'
+import { AddExpenseButton, ExpenseActions } from './project-expenses'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Expenses' }
@@ -100,6 +100,7 @@ export default async function ProjectExpensesPage({ params }: { params: { id: st
                   <th className="text-left px-4 py-3 font-medium">Submitted By</th>
                   <th className="text-right px-4 py-3 font-medium">Amount</th>
                   <th className="text-left px-4 py-3 font-medium">Status</th>
+                  <th className="text-right px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -130,6 +131,9 @@ export default async function ProjectExpensesPage({ params }: { params: { id: st
                     </td>
                     <td className="px-4 py-3">
                       <StatusChip status={expense.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <ExpenseActions expenseId={expense.id} status={expense.status} />
                     </td>
                   </tr>
                 ))}
