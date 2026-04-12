@@ -1,6 +1,9 @@
 import { getProjectById, getProjectStats } from '@service-official/database/queries/projects'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { PhaseActions } from './phase-actions'
+
+export const dynamic = 'force-dynamic'
 
 export default async function ProjectOverviewPage({ params }: { params: { id: string } }) {
   const [project, stats] = await Promise.all([
@@ -142,12 +145,6 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 }
 
 function PhaseRow({ phase }: { phase: any }) {
-  const statusColors: Record<string, string> = {
-    not_started: 'bg-gray-100 text-gray-600',
-    in_progress: 'bg-blue-100 text-blue-700',
-    completed: 'bg-green-100 text-green-700',
-    on_hold: 'bg-amber-100 text-amber-700',
-  }
   return (
     <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
       <div className="flex items-center gap-3">
@@ -159,9 +156,7 @@ function PhaseRow({ phase }: { phase: any }) {
           )}
         </div>
       </div>
-      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[phase.status] ?? statusColors.not_started}`}>
-        {phase.status.replace(/_/g, ' ')}
-      </span>
+      <PhaseActions phaseId={phase.id} currentStatus={phase.status} />
     </div>
   )
 }

@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getProfile } from '@/lib/auth/get-profile'
 import { getProjectById } from '@service-official/database/queries/projects'
+
+export const dynamic = 'force-dynamic'
 import { ProjectStatusBadge } from '@/components/projects/status-badge'
 import { ArrowLeft, MapPin, Calendar, DollarSign, Users } from 'lucide-react'
 
