@@ -170,7 +170,7 @@ export default function BudgetPage({ params }: { params: { id: string } }) {
                   Actual: c.actual_amount,
                 }))}>
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} />
                   <Tooltip formatter={(v: number) => fmt(v)} />
                   <Legend />
                   <Bar dataKey="Budget" fill="#93c5fd" radius={[4, 4, 0, 0]} />

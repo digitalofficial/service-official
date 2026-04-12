@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       .in('status', ['approved', 'reimbursed']),
     supabase
       .from('project_materials')
-      .select('total_cost, budget_category_id')
+      .select('total_cost, unit_cost, quantity_estimated, budget_category_id')
       .eq('project_id', projectId),
     supabase
       .from('time_entries')
@@ -62,9 +62,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 
   // Map material costs by budget_category_id
+  const matCost = (m: any) => m.total_cost || ((m.unit_cost || 0) * (m.quantity_estimated || 0))
   for (const mat of materials) {
     if (mat.budget_category_id) {
-      categoryActuals[mat.budget_category_id] = (categoryActuals[mat.budget_category_id] || 0) + (mat.total_cost || 0)
+      categoryActuals[mat.budget_category_id] = (categoryActuals[mat.budget_category_id] || 0) + matCost(mat)
     }
   }
 
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   // Unassigned material costs
   const unassignedMaterialCost = materials
     .filter(m => !m.budget_category_id)
-    .reduce((sum, m) => sum + (m.total_cost || 0), 0)
+    .reduce((sum, m) => sum + matCost(m), 0)
 
   // Build enriched categories
   const enrichedCategories = (categories || []).map(cat => {
@@ -109,7 +110,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   })
 
   const totalBudget = enrichedCategories.reduce((sum, c) => sum + c.budgeted_amount, 0)
-  const totalActual = enrichedCategories.reduce((sum, c) => sum + c.actual_amount, 0)
+  const categoryActualTotal = enrichedCategories.reduce((sum, c) => sum + c.actual_amount, 0)
+
+  // Compute total actual from ALL project spending (not just category-assigned)
+  const allExpenses = expenses.reduce((sum, e) => sum + (e.total_amount || 0), 0)
+  const allMaterials = materials.reduce((sum, m) => sum + matCost(m), 0)
+  const totalActual = allExpenses + allMaterials + totalLaborCost
+  const unassignedActual = totalActual - categoryActualTotal
+
   const totalVariance = totalBudget - totalActual
   const percentUsed = totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0
 
@@ -129,6 +137,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       estimated_over_under: totalBudget - forecastAtCompletion,
       labor_hours: totalLaborHours,
       labor_cost: totalLaborCost,
+      unassigned_actual: unassignedActual,
+      all_expenses: allExpenses,
+      all_materials: allMaterials,
     }
   })
 }
