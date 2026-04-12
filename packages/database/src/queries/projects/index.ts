@@ -22,7 +22,8 @@ export async function getProjects(options: GetProjectsOptions): Promise<Paginate
       customer:customers(id, first_name, last_name, company_name, phone, email),
       project_manager:profiles!project_manager_id(id, first_name, last_name, avatar_url),
       foreman:profiles!foreman_id(id, first_name, last_name, avatar_url),
-      phases:project_phases(*)
+      phases:project_phases(*),
+      gantt_tasks(id, progress)
     `, { count: 'exact' })
     .eq('organization_id', organization_id)
     .order('created_at', { ascending: false })

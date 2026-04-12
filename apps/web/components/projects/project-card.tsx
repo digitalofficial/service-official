@@ -11,9 +11,12 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   const colors = statusColor(project.status)
-  const progress = project.phases?.length
-    ? Math.round((project.phases.filter(p => p.status === 'completed').length / project.phases.length) * 100)
-    : null
+  const tasks = (project as any).gantt_tasks ?? []
+  const progress = tasks.length > 0
+    ? Math.round(tasks.reduce((sum: number, t: any) => sum + (t.progress || 0), 0) / tasks.length)
+    : project.phases?.length
+      ? Math.round((project.phases.filter(p => p.status === 'completed').length / project.phases.length) * 100)
+      : null
 
   return (
     <Link href={`/projects/${project.id}`}>
