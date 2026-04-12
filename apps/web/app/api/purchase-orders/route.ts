@@ -129,5 +129,52 @@ export async function POST(request: NextRequest) {
 
   if (liError) return NextResponse.json({ error: liError.message }, { status: 500 })
 
+  // Auto-create project materials from PO line items when linked to a project
+  if (po.project_id) {
+    const materialEntries = items.map(li => ({
+      project_id: po.project_id,
+      organization_id: profile.organization_id,
+      name: li.name,
+      supplier: vendors?.find((v: any) => v.id === po.vendor_id)?.name || undefined,
+      quantity_estimated: li.quantity,
+      quantity_ordered: li.quantity,
+      unit: li.unit || 'ea',
+      unit_cost: li.unit_cost,
+      total_cost: li.total,
+      status: 'ordered',
+      po_number: poNumber,
+      purchase_order_id: po.id,
+    }))
+
+    // Fetch vendor name for supplier field
+    let supplierName: string | undefined
+    if (po.vendor_id) {
+      const { data: vendor } = await supabase.from('vendors').select('name').eq('id', po.vendor_id).single()
+      supplierName = vendor?.name
+    }
+
+    await supabase.from('project_materials').insert(
+      materialEntries.map(m => ({ ...m, supplier: supplierName }))
+    )
+
+    // Auto-create expense for the PO total
+    await supabase.from('expenses').insert({
+      organization_id: profile.organization_id,
+      project_id: po.project_id,
+      title: `PO ${poNumber}${supplierName ? ` — ${supplierName}` : ''}`,
+      category: 'materials',
+      amount: subtotal,
+      tax_amount: taxAmount,
+      total_amount: total,
+      vendor_name: supplierName,
+      expense_date: poData.issue_date,
+      status: 'approved',
+      submitted_by: user.id,
+      approved_by: user.id,
+      approved_at: new Date().toISOString(),
+      is_billable: false,
+    })
+  }
+
   return NextResponse.json({ data: { ...po, po_number: poNumber }, success: true }, { status: 201 })
 }
