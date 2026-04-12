@@ -23,6 +23,7 @@ export default function NewPurchaseOrderPage() {
   const [saving, setSaving] = useState(false)
   const [vendors, setVendors] = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
+  const [jobs, setJobs] = useState<any[]>([])
   const [showNewVendor, setShowNewVendor] = useState(false)
   const [newVendorName, setNewVendorName] = useState('')
 
@@ -30,6 +31,7 @@ export default function NewPurchaseOrderPage() {
     title: '',
     vendor_id: '',
     project_id: '',
+    job_id: '',
     issue_date: new Date().toISOString().split('T')[0],
     expected_delivery: '',
     tax_rate: '0',
@@ -47,6 +49,7 @@ export default function NewPurchaseOrderPage() {
   useEffect(() => {
     fetch('/api/vendors').then(r => r.json()).then(d => setVendors(d.data || []))
     fetch('/api/projects').then(r => r.json()).then(d => setProjects(d.data || []))
+    fetch('/api/jobs').then(r => r.json()).then(d => setJobs(d.data || []))
   }, [])
 
   function addLineItem() {
@@ -98,6 +101,7 @@ export default function NewPurchaseOrderPage() {
         ...form,
         vendor_id: form.vendor_id || undefined,
         project_id: form.project_id || undefined,
+        job_id: form.job_id || undefined,
         tax_rate: parseFloat(form.tax_rate) || 0,
         shipping_cost: parseFloat(form.shipping_cost) || 0,
         line_items: validItems.map(li => ({
@@ -164,6 +168,13 @@ export default function NewPurchaseOrderPage() {
               <Select value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))} options={[
                 { value: '', label: 'Select project...' },
                 ...projects.map(p => ({ value: p.id, label: p.name })),
+              ]} />
+            </div>
+            <div>
+              <Label>Job</Label>
+              <Select value={form.job_id} onChange={e => setForm(f => ({ ...f, job_id: e.target.value }))} options={[
+                { value: '', label: 'Select job...' },
+                ...jobs.map(j => ({ value: j.id, label: `${j.job_number ? j.job_number + ' — ' : ''}${j.title}` })),
               ]} />
             </div>
             <div>

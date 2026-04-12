@@ -16,6 +16,7 @@ const lineItemSchema = z.object({
 
 const poSchema = z.object({
   project_id: z.string().uuid().optional(),
+  job_id: z.string().uuid().optional(),
   vendor_id: z.string().uuid().optional(),
   title: z.string().optional(),
   issue_date: z.string().default(() => new Date().toISOString().split('T')[0]),
