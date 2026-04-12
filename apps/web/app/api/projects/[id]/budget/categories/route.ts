@@ -13,7 +13,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   try {
     const result = await getApiProfile({ requireRole: ['owner', 'admin', 'office_manager', 'project_manager'] })
     if ('error' in result) return result.error
-    const { supabase } = result
+    const { profile, supabase } = result
 
     const body = await request.json()
     const validated = categorySchema.parse(body)
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       .insert({
         ...validated,
         project_id: params.id,
+        organization_id: profile.organization_id,
         order_index: nextIndex,
       })
       .select()
