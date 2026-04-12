@@ -1,8 +1,14 @@
 import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
+import { ItemActions } from '@/components/projects/item-actions'
 import { formatCurrency, statusColor } from '@/lib/utils'
 import { Package } from 'lucide-react'
+
+const MATERIAL_STATUSES = [
+  { value: 'pending', label: 'Pending' }, { value: 'ordered', label: 'Ordered' },
+  { value: 'received', label: 'Received' }, { value: 'installed', label: 'Installed' },
+]
 
 const FIELDS = [
   { name: 'name', label: 'Material', type: 'text' as const, placeholder: 'e.g. Architectural Shingles', required: true, colSpan: 2 },
@@ -45,6 +51,7 @@ export default async function ProjectMaterialsPage({ params }: { params: { id: s
                 <th className="text-center font-medium text-gray-500 px-4 py-2.5">Qty</th>
                 <th className="text-right font-medium text-gray-500 px-4 py-2.5">Cost</th>
                 <th className="text-left font-medium text-gray-500 px-4 py-2.5">Status</th>
+                <th className="text-right font-medium text-gray-500 px-4 py-2.5">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -63,6 +70,9 @@ export default async function ProjectMaterialsPage({ params }: { params: { id: s
                     </td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${colors.bg} ${colors.text}`}>{m.status}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <ItemActions itemId={m.id} itemType="material" currentStatus={m.status} statuses={MATERIAL_STATUSES} />
                     </td>
                   </tr>
                 )

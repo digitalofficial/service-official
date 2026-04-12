@@ -1,8 +1,13 @@
 import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
+import { ItemActions } from '@/components/projects/item-actions'
 import { formatDate } from '@/lib/utils'
 import { ClipboardList, CheckCircle, Circle, Clock, MapPin, User } from 'lucide-react'
+
+const PUNCH_STATUSES = [
+  { value: 'open', label: 'Open' }, { value: 'in_progress', label: 'In Progress' }, { value: 'completed', label: 'Completed' },
+]
 
 const PRIORITY_COLORS: Record<string, string> = {
   high: 'text-red-600 bg-red-50', normal: 'text-blue-600 bg-blue-50', low: 'text-gray-600 bg-gray-100',
@@ -63,6 +68,7 @@ export default async function PunchListPage({ params }: { params: { id: string }
                   {item.due_date && <span>Due {formatDate(item.due_date, { month: 'short', day: 'numeric' })}</span>}
                 </div>
               </div>
+              <ItemActions itemId={item.id} itemType="punch_list" currentStatus={item.status} statuses={PUNCH_STATUSES} />
             </div>
           ))}
         </div>

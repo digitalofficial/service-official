@@ -1,5 +1,6 @@
 import { getProfile } from '@/lib/auth/get-profile'
 import { AddItemForm } from '@/components/projects/add-item-form'
+import { ItemActions } from '@/components/projects/item-actions'
 import { formatDate } from '@/lib/utils'
 import { Users, AlertTriangle } from 'lucide-react'
 import type { Metadata } from 'next'
@@ -61,6 +62,7 @@ export default async function DailyLogsPage({ params }: { params: { id: string }
                     Submitted by {log.submitter?.first_name} {log.submitter?.last_name}
                   </p>
                 </div>
+                <ItemActions itemId={log.id} itemType="daily_log" currentStatus="" statuses={[]} />
                 {log.weather_delay && (
                   <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-medium flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" /> Weather Delay {log.weather_delay_hours}h

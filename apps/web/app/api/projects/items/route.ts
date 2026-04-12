@@ -65,3 +65,62 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ data: itemResult, success: true }, { status: 201 })
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const result = await getApiProfile()
+    if ('error' in result) return result.error
+    const { profile, supabase } = result
+
+    const body = await request.json()
+    const { type, item_id, ...updates } = body
+
+    const table = ALLOWED_TABLES[type]
+    if (!table) return NextResponse.json({ error: `Invalid type: ${type}` }, { status: 400 })
+    if (!item_id) return NextResponse.json({ error: 'item_id required' }, { status: 400 })
+
+    updates.updated_at = new Date().toISOString()
+
+    const { data, error } = await supabase
+      .from(table)
+      .update(updates)
+      .eq('id', item_id)
+      .eq('organization_id', profile.organization_id)
+      .select()
+      .single()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ data, success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const result = await getApiProfile()
+    if ('error' in result) return result.error
+    const { profile, supabase } = result
+
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get('type')
+    const itemId = searchParams.get('item_id')
+
+    const table = type ? ALLOWED_TABLES[type] : null
+    if (!table) return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+    if (!itemId) return NextResponse.json({ error: 'item_id required' }, { status: 400 })
+
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .eq('id', itemId)
+      .eq('organization_id', profile.organization_id)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 })
+  }
+}

@@ -1,8 +1,14 @@
 import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
+import { ItemActions } from '@/components/projects/item-actions'
 import { formatCurrency, formatDate, statusColor } from '@/lib/utils'
 import { FileEdit, Clock } from 'lucide-react'
+
+const CO_STATUSES = [
+  { value: 'draft', label: 'Draft' }, { value: 'submitted', label: 'Submitted' },
+  { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' },
+]
 
 const FIELDS = [
   { name: 'title', label: 'Title', type: 'text' as const, placeholder: 'e.g. Additional bathroom rough-in', required: true, colSpan: 2 },
@@ -57,6 +63,7 @@ export default async function ChangeOrdersPage({ params }: { params: { id: strin
                   {co.approved_amount != null && co.status === 'approved' && <p className="text-xs text-green-600">Approved: {formatCurrency(co.approved_amount)}</p>}
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>{co.status}</span>
+                <ItemActions itemId={co.id} itemType="change_order" currentStatus={co.status} statuses={CO_STATUSES} />
               </div>
             )
           })}

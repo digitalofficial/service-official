@@ -1,8 +1,14 @@
 import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
+import { ItemActions } from '@/components/projects/item-actions'
 import { formatDate, statusColor } from '@/lib/utils'
 import { HelpCircle } from 'lucide-react'
+
+const RFI_STATUSES = [
+  { value: 'open', label: 'Open' }, { value: 'in_review', label: 'In Review' },
+  { value: 'answered', label: 'Answered' }, { value: 'closed', label: 'Closed' },
+]
 
 const FIELDS = [
   { name: 'title', label: 'Subject', type: 'text' as const, placeholder: 'e.g. Confirm header size over kitchen window', required: true, colSpan: 2 },
@@ -43,6 +49,7 @@ export default async function ProjectRFIsPage({ params }: { params: { id: string
                     {rfi.discipline && <p className="text-xs text-gray-500 capitalize mt-0.5">{rfi.discipline}</p>}
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>{rfi.status.replace(/_/g, ' ')}</span>
+                  <ItemActions itemId={rfi.id} itemType="rfi" currentStatus={rfi.status} statuses={RFI_STATUSES} />
                 </div>
                 <p className="text-sm text-gray-700 mb-2">{rfi.question}</p>
                 {rfi.answer && (

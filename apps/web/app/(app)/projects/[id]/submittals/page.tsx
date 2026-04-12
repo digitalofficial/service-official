@@ -1,8 +1,15 @@
 import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
+import { ItemActions } from '@/components/projects/item-actions'
 import { formatDate, statusColor } from '@/lib/utils'
 import { Send, FileText } from 'lucide-react'
+
+const SUBMITTAL_STATUSES = [
+  { value: 'draft', label: 'Draft' }, { value: 'submitted', label: 'Submitted' },
+  { value: 'in_review', label: 'In Review' }, { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' }, { value: 'resubmit', label: 'Resubmit' },
+]
 
 const FIELDS = [
   { name: 'title', label: 'Title', type: 'text' as const, placeholder: 'e.g. Shingle color samples', required: true, colSpan: 2 },
@@ -37,6 +44,7 @@ export default async function SubmittalsPage({ params }: { params: { id: string 
                   <p className="text-xs text-gray-400 mt-0.5">{formatDate(sub.created_at, { month: 'short', day: 'numeric' })}</p>
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>{sub.status.replace(/_/g, ' ')}</span>
+                <ItemActions itemId={sub.id} itemType="submittal" currentStatus={sub.status} statuses={SUBMITTAL_STATUSES} />
               </div>
             )
           })}
