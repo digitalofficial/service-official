@@ -129,44 +129,58 @@ export async function POST(request: NextRequest) {
 
   if (liError) return NextResponse.json({ error: liError.message }, { status: 500 })
 
-  // Auto-create project materials from PO line items when linked to a project
-  if (po.project_id) {
-    const materialEntries = items.map(li => ({
-      project_id: po.project_id,
+  // Resolve project_id — if only job_id was set, get project from the job
+  let syncProjectId = po.project_id
+  if (!syncProjectId && po.job_id) {
+    const { data: job } = await supabase.from('jobs').select('project_id').eq('id', po.job_id).single()
+    if (job?.project_id) syncProjectId = job.project_id
+  }
+
+  // Auto-create project materials and expense when PO is linked to a project
+  if (syncProjectId) {
+    // Fetch vendor name
+    let supplierName: string | undefined
+    if (poData.vendor_id) {
+      const { data: vendor } = await supabase.from('vendors').select('name').eq('id', poData.vendor_id).single()
+      supplierName = vendor?.name
+    }
+
+    // Create project materials from each PO line item
+    const matRows = items.map(li => ({
+      project_id: syncProjectId,
       organization_id: profile.organization_id,
       name: li.name,
-      supplier: vendors?.find((v: any) => v.id === po.vendor_id)?.name || undefined,
       quantity_estimated: li.quantity,
       quantity_ordered: li.quantity,
       unit: li.unit || 'ea',
       unit_cost: li.unit_cost,
       total_cost: li.total,
-      status: 'ordered',
+      status: 'ordered' as const,
+      supplier: supplierName || null,
       po_number: poNumber,
-      purchase_order_id: po.id,
     }))
 
-    // Fetch vendor name for supplier field
-    let supplierName: string | undefined
-    if (po.vendor_id) {
-      const { data: vendor } = await supabase.from('vendors').select('name').eq('id', po.vendor_id).single()
-      supplierName = vendor?.name
+    // Try with purchase_order_id first, fall back without it
+    let { error: matError } = await supabase.from('project_materials').insert(
+      matRows.map(m => ({ ...m, purchase_order_id: po.id }))
+    )
+    if (matError) {
+      console.error('PO materials sync (with po id):', matError.message)
+      // Retry without purchase_order_id in case column doesn't exist
+      const { error: matError2 } = await supabase.from('project_materials').insert(matRows)
+      if (matError2) console.error('PO materials sync (fallback):', matError2.message)
     }
 
-    await supabase.from('project_materials').insert(
-      materialEntries.map(m => ({ ...m, supplier: supplierName }))
-    )
-
-    // Auto-create expense for the PO total
-    await supabase.from('expenses').insert({
+    // Create approved expense for the PO total
+    const { error: expError } = await supabase.from('expenses').insert({
       organization_id: profile.organization_id,
-      project_id: po.project_id,
+      project_id: syncProjectId,
       title: `PO ${poNumber}${supplierName ? ` — ${supplierName}` : ''}`,
       category: 'materials',
       amount: subtotal,
       tax_amount: taxAmount,
       total_amount: total,
-      vendor_name: supplierName,
+      vendor_name: supplierName || null,
       expense_date: poData.issue_date,
       status: 'approved',
       submitted_by: user.id,
@@ -174,6 +188,7 @@ export async function POST(request: NextRequest) {
       approved_at: new Date().toISOString(),
       is_billable: false,
     })
+    if (expError) console.error('PO expense sync error:', expError.message)
   }
 
   return NextResponse.json({ data: { ...po, po_number: poNumber }, success: true }, { status: 201 })
