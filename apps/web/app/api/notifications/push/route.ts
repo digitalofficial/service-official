@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getApiProfile } from '@/lib/auth/get-api-profile'
+import { sendPushNotifications } from '@service-official/notifications'
 
 // POST /api/notifications/push — send push notification to a user
 export async function POST(request: NextRequest) {
@@ -26,21 +27,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'User has no push token registered' }, { status: 404 })
   }
 
-  // Send via Expo Push API
-  const pushResponse = await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to: targetProfile.push_token,
-      title,
-      body: messageBody,
-      sound: 'default',
-      badge: 1,
-      data: data ?? {},
-    }),
-  })
-
-  const pushResult = await pushResponse.json()
+  const pushResult = await sendPushNotifications([{
+    to: targetProfile.push_token,
+    title,
+    body: messageBody,
+    data: data ?? {},
+  }])
 
   return NextResponse.json({ success: true, result: pushResult })
 }

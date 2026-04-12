@@ -52,6 +52,7 @@ export type NotificationType =
   | 'timeline_milestone' | 'expense_submitted' | 'rfi_submitted' | 'change_order_approved'
   | 'weather_alert' | 'safety_incident' | 'inspection_scheduled' | 'payment_received'
   | 'client_message' | 'task_assigned' | 'task_overdue' | 'document_uploaded'
+  | 'announcement'
 
 export type MessageChannel = 'sms' | 'email' | 'in_app' | 'push'
 export type MessageDirection = 'inbound' | 'outbound'

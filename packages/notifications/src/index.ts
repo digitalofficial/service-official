@@ -206,6 +206,57 @@ export const notificationTemplates = {
   }),
 }
 
+// ── Push via Expo Push API ──────────────────────────────────
+
+interface PushMessage {
+  to: string
+  title: string
+  body: string
+  sound?: string
+  badge?: number
+  data?: Record<string, unknown>
+}
+
+/**
+ * Send push notifications via Expo Push API.
+ * Supports single or batch (up to 100 per request per Expo limits).
+ */
+export async function sendPushNotifications(messages: PushMessage[]) {
+  if (!messages.length) return { success: true, results: [] }
+
+  // Expo Push API accepts up to 100 messages per request
+  const BATCH_SIZE = 100
+  const results: any[] = []
+
+  for (let i = 0; i < messages.length; i += BATCH_SIZE) {
+    const batch = messages.slice(i, i + BATCH_SIZE).map(msg => ({
+      to: msg.to,
+      title: msg.title,
+      body: msg.body,
+      sound: msg.sound ?? 'default',
+      badge: msg.badge ?? 1,
+      data: msg.data ?? {},
+    }))
+
+    try {
+      const res = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(batch),
+      })
+      const json = await res.json()
+      results.push(...(json.data ?? []))
+    } catch (err) {
+      console.error('Expo Push API error:', err)
+    }
+  }
+
+  return { success: true, results }
+}
+
 // ── Broadcast to all org users by role ──────────────────────
 
 export async function notifyTeam(options: {
@@ -219,13 +270,16 @@ export async function notifyTeam(options: {
   entity_id?: string
   action_url?: string
   channels?: MessageChannel[]
+  data?: Record<string, unknown>
 }) {
   const { createServiceRoleClient } = await import('@service-official/database')
   const supabase = createServiceRoleClient()
 
+  const channels = options.channels ?? ['in_app']
+
   let query = supabase
     .from('profiles')
-    .select('id, notify_sms, notify_email, notify_push, phone, email')
+    .select('id, notify_sms, notify_email, notify_push, phone, email, push_token')
     .eq('organization_id', options.organization_id)
     .eq('is_active', true)
 
@@ -237,8 +291,9 @@ export async function notifyTeam(options: {
   }
 
   const { data: users } = await query
-  if (!users?.length) return
+  if (!users?.length) return { sent: 0 }
 
+  // Create in-app notifications
   const notifications = users.map(user => ({
     organization_id: options.organization_id,
     user_id: user.id,
@@ -248,10 +303,99 @@ export async function notifyTeam(options: {
     entity_type: options.entity_type,
     entity_id: options.entity_id,
     action_url: options.action_url,
-    channels: options.channels ?? ['in_app'],
+    channels,
   }))
 
   await supabase.from('notifications').insert(notifications)
+
+  // Send push notifications to users who have tokens and opted in
+  if (channels.includes('push')) {
+    const pushMessages: PushMessage[] = users
+      .filter(u => u.push_token && u.notify_push !== false)
+      .map(u => ({
+        to: u.push_token!,
+        title: options.title,
+        body: options.body ?? '',
+        data: {
+          type: options.type,
+          entity_type: options.entity_type,
+          entity_id: options.entity_id,
+          action_url: options.action_url,
+          ...options.data,
+        },
+      }))
+
+    if (pushMessages.length) {
+      await sendPushNotifications(pushMessages)
+    }
+  }
+
+  return { sent: users.length }
+}
+
+// ── Broadcast to ALL users across ALL orgs (super admin) ────
+
+export async function broadcastPushToAll(options: {
+  title: string
+  body: string
+  organization_id?: string
+  data?: Record<string, unknown>
+}) {
+  const { createServiceRoleClient } = await import('@service-official/database')
+  const supabase = createServiceRoleClient()
+
+  let query = supabase
+    .from('profiles')
+    .select('id, organization_id, push_token')
+    .eq('is_active', true)
+    .not('push_token', 'is', null)
+
+  // Optionally scope to a single org
+  if (options.organization_id) {
+    query = query.eq('organization_id', options.organization_id)
+  }
+
+  const { data: users, error } = await query
+  if (error) {
+    console.error('broadcastPushToAll query failed:', error)
+    return { success: false, error: error.message, sent: 0 }
+  }
+  if (!users?.length) return { success: true, sent: 0 }
+
+  // Build push messages
+  const pushMessages: PushMessage[] = users.map(u => ({
+    to: u.push_token!,
+    title: options.title,
+    body: options.body,
+    data: {
+      type: 'announcement' as const,
+      ...options.data,
+    },
+  }))
+
+  const result = await sendPushNotifications(pushMessages)
+
+  // Create in-app notification records grouped by org
+  const byOrg = new Map<string, string[]>()
+  for (const user of users) {
+    const arr = byOrg.get(user.organization_id) ?? []
+    arr.push(user.id)
+    byOrg.set(user.organization_id, arr)
+  }
+
+  for (const [orgId, userIds] of byOrg) {
+    const rows = userIds.map(uid => ({
+      organization_id: orgId,
+      user_id: uid,
+      type: 'announcement' as const,
+      title: options.title,
+      body: options.body,
+      channels: ['in_app', 'push'] as MessageChannel[],
+    }))
+    await supabase.from('notifications').insert(rows)
+  }
+
+  return { success: true, sent: users.length, results: result.results }
 }
 
 // ── Render Email Template ────────────────────────────────────
