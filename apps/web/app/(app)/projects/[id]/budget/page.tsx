@@ -319,6 +319,9 @@ function AddCategoryModal({ projectId, onClose, onSaved }: { projectId: string; 
     if (res.ok) {
       toast.success('Budget category added')
       onSaved()
+    } else {
+      const err = await res.json().catch(() => ({}))
+      toast.error(err.error || 'Failed to add category')
     }
     setSaving(false)
   }
