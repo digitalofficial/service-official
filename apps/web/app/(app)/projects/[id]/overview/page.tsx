@@ -16,7 +16,10 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
   const phases = project.phases ?? []
   const milestones = project.milestones ?? []
   const completedPhases = phases.filter(p => p.status === 'completed').length
-  const progress = phases.length ? Math.round((completedPhases / phases.length) * 100) : 0
+  // Use schedule task average if tasks exist, otherwise fall back to phase completion
+  const progress = stats.total_schedule_tasks > 0
+    ? stats.schedule_progress
+    : phases.length ? Math.round((completedPhases / phases.length) * 100) : 0
 
   return (
     <div className="space-y-6">
@@ -64,6 +67,25 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
               <p className="text-sm text-gray-400 py-4 text-center">No phases defined yet</p>
             )}
           </div>
+
+          {stats.schedule_tasks.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="font-semibold text-gray-900 mb-4">Schedule Tasks ({stats.schedule_progress}% avg)</h3>
+              <div className="space-y-2">
+                {stats.schedule_tasks.map((task: any) => (
+                  <div key={task.name} className="flex items-center justify-between py-1.5">
+                    <span className="text-sm text-gray-700">{task.name}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${task.progress >= 100 ? 'bg-green-500' : task.progress > 0 ? 'bg-blue-500' : 'bg-gray-300'}`} style={{ width: `${Math.min(task.progress, 100)}%` }} />
+                      </div>
+                      <span className="text-xs text-gray-500 w-8 text-right">{task.progress}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {milestones.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200 p-5">

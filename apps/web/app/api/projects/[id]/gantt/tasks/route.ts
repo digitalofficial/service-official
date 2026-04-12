@@ -63,13 +63,22 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Sync progress back to linked phase
+  // Sync progress back to linked phase — aggregate ALL tasks for this phase
   if (data.phase_id && updates.progress !== undefined) {
-    const phaseStatus = data.progress >= 100 ? 'completed' : data.progress > 0 ? 'in_progress' : 'not_started'
-    await supabase
-      .from('project_phases')
-      .update({ status: phaseStatus, updated_at: new Date().toISOString() })
-      .eq('id', data.phase_id)
+    const { data: phaseTasks } = await supabase
+      .from('gantt_tasks')
+      .select('progress')
+      .eq('phase_id', data.phase_id)
+      .is('deleted_at', null)
+
+    if (phaseTasks && phaseTasks.length > 0) {
+      const avgProgress = phaseTasks.reduce((sum, t) => sum + (t.progress || 0), 0) / phaseTasks.length
+      const phaseStatus = avgProgress >= 100 ? 'completed' : avgProgress > 0 ? 'in_progress' : 'not_started'
+      await supabase
+        .from('project_phases')
+        .update({ status: phaseStatus, updated_at: new Date().toISOString() })
+        .eq('id', data.phase_id)
+    }
   }
 
   return NextResponse.json({ data, success: true })

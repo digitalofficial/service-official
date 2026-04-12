@@ -118,7 +118,7 @@ export async function deleteProject(id: string, organization_id?: string): Promi
 export async function getProjectStats(project_id: string) {
   const supabase = createServiceRoleClient()
 
-  const [expenses, materials, photos, files, punch_list, rfis, change_orders, time_entries, submittals, daily_logs, inspections] = await Promise.all([
+  const [expenses, materials, photos, files, punch_list, rfis, change_orders, time_entries, submittals, daily_logs, inspections, gantt_tasks] = await Promise.all([
     supabase.from('expenses').select('total_amount, status').eq('project_id', project_id),
     supabase.from('project_materials').select('total_cost, unit_cost, quantity_estimated, status').eq('project_id', project_id),
     supabase.from('photos').select('id', { count: 'exact', head: true }).eq('project_id', project_id).is('deleted_at', null),
@@ -130,6 +130,7 @@ export async function getProjectStats(project_id: string) {
     supabase.from('submittals').select('status').eq('project_id', project_id),
     supabase.from('daily_logs').select('id', { count: 'exact', head: true }).eq('project_id', project_id),
     supabase.from('inspections').select('status').eq('project_id', project_id).is('deleted_at', null),
+    supabase.from('gantt_tasks').select('progress, name').eq('project_id', project_id).is('deleted_at', null),
   ])
 
   const total_expenses = expenses.data?.reduce((sum, e) => sum + (e.total_amount || 0), 0) ?? 0
@@ -193,5 +194,11 @@ export async function getProjectStats(project_id: string) {
     // Inspections
     pending_inspections,
     total_inspections,
+    // Schedule
+    schedule_tasks: gantt_tasks.data ?? [],
+    schedule_progress: gantt_tasks.data && gantt_tasks.data.length > 0
+      ? Math.round(gantt_tasks.data.reduce((sum, t) => sum + (t.progress || 0), 0) / gantt_tasks.data.length)
+      : 0,
+    total_schedule_tasks: gantt_tasks.data?.length ?? 0,
   }
 }

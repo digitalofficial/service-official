@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getProfile } from '@/lib/auth/get-profile'
 import { getProjectById } from '@service-official/database/queries/projects'
 import { TabLink } from '@/components/projects/tab-link'
+import { ProjectTour } from '@/components/projects/project-tour'
 
 export const dynamic = 'force-dynamic'
 import { ProjectStatusBadge } from '@/components/projects/status-badge'
@@ -104,6 +105,8 @@ export default async function ProjectDetailLayout({ children, params }: ProjectL
       <div className="p-6">
         {children}
       </div>
+
+      <ProjectTour projectId={params.id} />
     </div>
   )
 }
