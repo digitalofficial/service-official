@@ -63,6 +63,15 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Sync name/dates back to linked phase
+  if (data.phase_id && (updates.name || updates.start_date || updates.end_date)) {
+    const phaseUpdates: Record<string, any> = { updated_at: new Date().toISOString() }
+    if (updates.name) phaseUpdates.name = updates.name
+    if (updates.start_date) phaseUpdates.start_date = updates.start_date
+    if (updates.end_date) phaseUpdates.end_date = updates.end_date
+    await supabase.from('project_phases').update(phaseUpdates).eq('id', data.phase_id)
+  }
+
   // Sync progress back to linked phase — aggregate ALL tasks for this phase
   if (data.phase_id && updates.progress !== undefined) {
     const { data: phaseTasks } = await supabase

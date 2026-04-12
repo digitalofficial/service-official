@@ -50,21 +50,23 @@ export default async function ProjectTimelinePage({ params }: { params: { id: st
         ) : (
           <div className="space-y-2">
             {phases.map((phase: any, i: number) => (
-              <div key={phase.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-xs text-gray-400 w-6 text-center">{i + 1}</span>
-                  {PHASE_STATUS_ICON[phase.status] ?? PHASE_STATUS_ICON.not_started}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium text-gray-900">{phase.name}</h3>
-                  {phase.description && <p className="text-xs text-gray-500 mt-0.5">{phase.description}</p>}
-                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
-                    {phase.start_date && <span>{formatDate(phase.start_date, { month: 'short', day: 'numeric' })}</span>}
-                    {phase.start_date && phase.end_date && <span>—</span>}
-                    {phase.end_date && <span>{formatDate(phase.end_date, { month: 'short', day: 'numeric' })}</span>}
+              <div key={phase.id} className="bg-white rounded-xl border border-gray-200 p-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs text-gray-400 w-6 text-center">{i + 1}</span>
+                    {PHASE_STATUS_ICON[phase.status] ?? PHASE_STATUS_ICON.not_started}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900">{phase.name}</h3>
+                    {phase.description && <p className="text-xs text-gray-500 mt-0.5">{phase.description}</p>}
+                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                      {phase.start_date && <span>{formatDate(phase.start_date, { month: 'short', day: 'numeric' })}</span>}
+                      {phase.start_date && phase.end_date && <span>—</span>}
+                      {phase.end_date && <span>{formatDate(phase.end_date, { month: 'short', day: 'numeric' })}</span>}
+                    </div>
+                  </div>
+                  <PhaseStatusActions phase={phase} />
                 </div>
-                <PhaseStatusActions phaseId={phase.id} currentStatus={phase.status} />
               </div>
             ))}
           </div>
@@ -79,15 +81,17 @@ export default async function ProjectTimelinePage({ params }: { params: { id: st
         {milestones && milestones.length > 0 ? (
           <div className="space-y-2">
             {milestones.map((ms: any) => (
-              <div key={ms.id} className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
-                {ms.is_completed ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  : <Circle className="w-4 h-4 text-gray-400 shrink-0" />}
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm ${ms.is_completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{ms.name}</p>
-                  {ms.description && <p className="text-xs text-gray-500 mt-0.5">{ms.description}</p>}
+              <div key={ms.id} className="bg-white rounded-lg border border-gray-200 p-3">
+                <div className="flex items-center gap-3">
+                  {ms.is_completed ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                    : <Circle className="w-4 h-4 text-gray-400 shrink-0" />}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm ${ms.is_completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{ms.name}</p>
+                    {ms.description && <p className="text-xs text-gray-500 mt-0.5">{ms.description}</p>}
+                  </div>
+                  {ms.due_date && <span className="text-xs text-gray-400 shrink-0">{formatDate(ms.due_date, { month: 'short', day: 'numeric' })}</span>}
+                  <MilestoneToggle milestone={ms} />
                 </div>
-                {ms.due_date && <span className="text-xs text-gray-400 shrink-0">{formatDate(ms.due_date, { month: 'short', day: 'numeric' })}</span>}
-                <MilestoneToggle milestoneId={ms.id} isCompleted={ms.is_completed ?? false} />
               </div>
             ))}
           </div>
