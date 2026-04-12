@@ -11,11 +11,11 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await authClient.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: profile } = await authClient.from('profiles').select('organization_id').eq('id', user.id).single()
-  const orgId = profile!.organization_id
-
   // Use service role for data queries to bypass RLS
   const supabase = createServiceRoleClient()
+
+  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const orgId = profile!.organization_id
 
   const { searchParams } = new URL(request.url)
   const days = Math.min(parseInt(searchParams.get('days') ?? '7'), 14)
