@@ -1,29 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 // DELETE /api/settings/account — soft-delete current user's organization (archive all data)
 export async function DELETE(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const serviceClient = createServiceRoleClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  // Get profile + org
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.role !== 'owner') {
-    return NextResponse.json({ error: 'Only the organization owner can delete the account' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const orgId = profile.organization_id
 
   // Get org name for confirmation
-  const { data: org } = await serviceClient
+  const { data: org } = await supabase
     .from('organizations')
     .select('name')
     .eq('id', orgId)
@@ -56,25 +43,25 @@ export async function DELETE(request: NextRequest) {
     ]
 
     for (const table of tables) {
-      await serviceClient.from(table).update({ deleted_at: now }).eq('organization_id', orgId).is('deleted_at', null)
+      await supabase.from(table).update({ deleted_at: now }).eq('organization_id', orgId).is('deleted_at', null)
     }
 
     // Soft-delete profiles and disable auth users
-    const { data: profiles } = await serviceClient
+    const { data: profiles } = await supabase
       .from('profiles')
       .select('id')
       .eq('organization_id', orgId)
 
-    await serviceClient.from('profiles').update({ deleted_at: now, is_active: false }).eq('organization_id', orgId)
+    await supabase.from('profiles').update({ deleted_at: now, is_active: false }).eq('organization_id', orgId)
 
     if (profiles && profiles.length > 0) {
       for (const p of profiles) {
-        await serviceClient.auth.admin.updateUserById(p.id, { ban_duration: '876600h' })
+        await supabase.auth.admin.updateUserById(p.id, { ban_duration: '876600h' })
       }
     }
 
     // Soft-delete the organization
-    const { error: orgError } = await serviceClient
+    const { error: orgError } = await supabase
       .from('organizations')
       .update({ deleted_at: now })
       .eq('id', orgId)

@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { v4 as uuidv4 } from 'uuid'
 
 // Step 1: Get a signed upload URL for direct-to-storage upload (bypasses API body limits)
 // Step 2: After client uploads directly to storage, create blueprint + file records
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+    const result = await getApiProfile()
+    if ('error' in result) return result.error
+    const { user, profile, supabase } = result
 
     const body = await request.json()
     const { action } = body
@@ -29,11 +27,10 @@ export async function POST(request: NextRequest) {
 
       const ext = file_name.split('.').pop() || 'pdf'
       const fileId = uuidv4()
-      const storagePath = `${profile!.organization_id}/blueprints/${project_id || 'general'}/${fileId}.${ext}`
+      const storagePath = `${profile.organization_id}/blueprints/${project_id || 'general'}/${fileId}.${ext}`
 
       // Create a signed upload URL using service role
-      const serviceClient = createServiceRoleClient()
-      const { data: signedUrl, error: signError } = await serviceClient.storage
+      const { data: signedUrl, error: signError } = await supabase.storage
         .from('files')
         .createSignedUploadUrl(storagePath)
 
@@ -68,16 +65,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'storage_path and file_name required' }, { status: 400 })
       }
 
-      const serviceClient = createServiceRoleClient()
-
       // Get public URL
-      const { data: { publicUrl } } = serviceClient.storage.from('files').getPublicUrl(storage_path)
+      const { data: { publicUrl } } = supabase.storage.from('files').getPublicUrl(storage_path)
 
       // Create file record
       const { data: fileRecord, error: fileError } = await supabase
         .from('files')
         .insert({
-          organization_id: profile!.organization_id,
+          organization_id: profile.organization_id,
           project_id: project_id || null,
           name: name || file_name.split('.')[0],
           original_name: file_name,
@@ -101,7 +96,7 @@ export async function POST(request: NextRequest) {
       const { data: blueprint, error: bpError } = await supabase
         .from('blueprints')
         .insert({
-          organization_id: profile!.organization_id,
+          organization_id: profile.organization_id,
           project_id: project_id || null,
           name: name || file_name.split('.')[0],
           description: description || null,
@@ -143,7 +138,7 @@ export async function POST(request: NextRequest) {
       const { data: blueprint, error: bpError } = await supabase
         .from('blueprints')
         .insert({
-          organization_id: profile!.organization_id,
+          organization_id: profile.organization_id,
           project_id: project_id || null,
           name: name || file_name?.split('.')[0] || 'Blueprint',
           description: description || null,

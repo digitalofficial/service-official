@@ -1,23 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('first_name, last_name, email, role, organization:organizations(name)')
-    .eq('id', user.id)
-    .single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const { message, currentPage } = await request.json()
   const org = (profile as any)?.organization
 
   // Find super admin(s) in the service-official org
-  const serviceClient = createServiceRoleClient()
-  const { data: adminOrg } = await serviceClient
+  const { data: adminOrg } = await supabase
     .from('organizations')
     .select('id')
     .eq('slug', 'service-official')
@@ -25,7 +18,7 @@ export async function POST(request: NextRequest) {
 
   if (!adminOrg) return NextResponse.json({ error: 'Admin org not found' }, { status: 500 })
 
-  const { data: admins } = await serviceClient
+  const { data: admins } = await supabase
     .from('profiles')
     .select('id')
     .eq('organization_id', adminOrg.id)
@@ -53,7 +46,7 @@ export async function POST(request: NextRequest) {
     },
   }))
 
-  const { error } = await serviceClient.from('notifications').insert(notifications)
+  const { error } = await supabase.from('notifications').insert(notifications)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { v4 as uuidv4 } from 'uuid'
 
 // Increase max duration for large uploads on Vercel
@@ -19,11 +19,9 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+    const result = await getApiProfile()
+    if ('error' in result) return result.error
+    const { user, profile, supabase } = result
 
     const formData = await request.formData()
     const file = formData.get('file') as File
@@ -45,12 +43,11 @@ export async function POST(request: NextRequest) {
     const ext = file.name.split('.').pop()
     const uniqueName = `${uuidv4()}.${ext}`
     const entityPath = project_id ? `projects/${project_id}` : job_id ? `jobs/${job_id}` : `customers/${customer_id ?? 'general'}`
-    const storagePath = `${profile!.organization_id}/${entityPath}/${uniqueName}`
+    const storagePath = `${profile.organization_id}/${entityPath}/${uniqueName}`
 
     // Upload to Supabase Storage using service role (bypasses storage RLS)
-    const serviceClient = createServiceRoleClient()
     const bytes = await file.arrayBuffer()
-    const { data: upload, error: uploadError } = await serviceClient.storage
+    const { data: upload, error: uploadError } = await supabase.storage
       .from('files')
       .upload(storagePath, bytes, {
         contentType: file.type,
@@ -63,13 +60,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get public URL
-    const { data: { publicUrl } } = serviceClient.storage.from('files').getPublicUrl(storagePath)
+    const { data: { publicUrl } } = supabase.storage.from('files').getPublicUrl(storagePath)
 
     // Save to database
     const { data: fileRecord, error: dbError } = await supabase
       .from('files')
       .insert({
-        organization_id: profile!.organization_id,
+        organization_id: profile.organization_id,
         project_id,
         job_id,
         customer_id,
@@ -100,9 +97,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { supabase } = result
 
   const { searchParams } = new URL(request.url)
   const project_id = searchParams.get('project_id')

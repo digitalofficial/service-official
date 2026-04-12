@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { v4 as uuidv4 } from 'uuid'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+    const result = await getApiProfile()
+    if ('error' in result) return result.error
+    const { user, profile, supabase } = result
 
     const formData = await request.formData()
     const file = formData.get('file') as File
@@ -26,12 +24,11 @@ export async function POST(request: NextRequest) {
     const ext = file.name.split('.').pop() ?? 'jpg'
     const uniqueName = `${uuidv4()}.${ext}`
     const entityPath = job_id ? `jobs/${job_id}` : project_id ? `projects/${project_id}` : 'general'
-    const storagePath = `${profile!.organization_id}/photos/${entityPath}/${uniqueName}`
+    const storagePath = `${profile.organization_id}/photos/${entityPath}/${uniqueName}`
 
     // Upload to storage
-    const serviceClient = createServiceRoleClient()
     const bytes = await file.arrayBuffer()
-    const { error: uploadError } = await serviceClient.storage
+    const { error: uploadError } = await supabase.storage
       .from('files')
       .upload(storagePath, bytes, { contentType: file.type, upsert: false })
 
@@ -40,13 +37,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
     }
 
-    const { data: { publicUrl } } = serviceClient.storage.from('files').getPublicUrl(storagePath)
+    const { data: { publicUrl } } = supabase.storage.from('files').getPublicUrl(storagePath)
 
     // Create photo record only (NOT in files table)
     const { data: photo, error: dbError } = await supabase
       .from('photos')
       .insert({
-        organization_id: profile!.organization_id,
+        organization_id: profile.organization_id,
         job_id: job_id || null,
         project_id: project_id || null,
         storage_path: storagePath,

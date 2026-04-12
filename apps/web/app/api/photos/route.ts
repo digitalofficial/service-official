@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const body = await request.json()
   const { project_id, job_id, storage_path, public_url, caption, is_before, is_after } = body
@@ -18,7 +16,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('photos')
     .insert({
-      organization_id: profile!.organization_id,
+      organization_id: profile.organization_id,
       project_id: project_id || null,
       job_id: job_id || null,
       storage_path,
@@ -37,32 +35,27 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
-
-  // Use service role for storage operations but verify org ownership first
-  const serviceClient = createServiceRoleClient()
-
   // Get the photo and verify it belongs to the user's org
-  const { data: photo } = await serviceClient.from('photos').select('storage_path, organization_id').eq('id', id).single()
+  const { data: photo } = await supabase.from('photos').select('storage_path, organization_id').eq('id', id).single()
   if (!photo) return NextResponse.json({ error: 'Photo not found' }, { status: 404 })
-  if (photo.organization_id !== profile!.organization_id) {
+  if (photo.organization_id !== profile.organization_id) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
   // Soft-delete from database (preserve storage file for archival)
-  const { error } = await serviceClient
+  const { error } = await supabase
     .from('photos')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })
