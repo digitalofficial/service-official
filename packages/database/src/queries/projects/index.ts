@@ -118,7 +118,7 @@ export async function deleteProject(id: string, organization_id?: string): Promi
 export async function getProjectStats(project_id: string) {
   const supabase = createServiceRoleClient()
 
-  const [expenses, materials, photos, files, punch_list, rfis, change_orders, time_entries] = await Promise.all([
+  const [expenses, materials, photos, files, punch_list, rfis, change_orders, time_entries, submittals, daily_logs, inspections] = await Promise.all([
     supabase.from('expenses').select('total_amount, status').eq('project_id', project_id),
     supabase.from('project_materials').select('total_cost, unit_cost, quantity_estimated, status').eq('project_id', project_id),
     supabase.from('photos').select('id', { count: 'exact', head: true }).eq('project_id', project_id),
@@ -127,6 +127,9 @@ export async function getProjectStats(project_id: string) {
     supabase.from('rfis').select('status').eq('project_id', project_id),
     supabase.from('change_orders').select('amount, approved_amount, status').eq('project_id', project_id),
     supabase.from('time_entries').select('hours, jobs!inner(project_id)').eq('jobs.project_id', project_id),
+    supabase.from('submittals').select('status').eq('project_id', project_id),
+    supabase.from('daily_logs').select('id', { count: 'exact', head: true }).eq('project_id', project_id),
+    supabase.from('inspections').select('status').eq('project_id', project_id),
   ])
 
   const total_expenses = expenses.data?.reduce((sum, e) => sum + (e.total_amount || 0), 0) ?? 0
@@ -136,12 +139,27 @@ export async function getProjectStats(project_id: string) {
   }, 0) ?? 0
   const total_labor_hours = time_entries.data?.reduce((sum: number, t: any) => sum + (t.hours || 0), 0) ?? 0
   const total_labor_cost = total_labor_hours * 45 // Default hourly rate
+  const actual_cost = total_expenses + total_materials + total_labor_cost
+
+  // Counts
   const open_punch_items = punch_list.data?.filter(p => p.status === 'open' || p.status === 'in_progress').length ?? 0
+  const total_punch_items = punch_list.data?.length ?? 0
+  const completed_punch_items = punch_list.data?.filter(p => p.status === 'completed').length ?? 0
   const open_rfis = rfis.data?.filter(r => r.status !== 'closed' && r.status !== 'answered').length ?? 0
+  const total_rfis = rfis.data?.length ?? 0
   const approved_change_orders = change_orders.data
     ?.filter(c => c.status === 'approved')
     .reduce((sum, c) => sum + (c.approved_amount ?? c.amount ?? 0), 0) ?? 0
-  const actual_cost = total_expenses + total_materials + total_labor_cost
+  const total_change_orders = change_orders.data?.length ?? 0
+  const pending_change_orders = change_orders.data?.filter(c => c.status === 'draft' || c.status === 'submitted').length ?? 0
+  const pending_submittals = submittals.data?.filter(s => s.status !== 'approved' && s.status !== 'rejected').length ?? 0
+  const total_submittals = submittals.data?.length ?? 0
+  const pending_expenses = expenses.data?.filter(e => e.status === 'pending').length ?? 0
+  const total_expenses_count = expenses.data?.length ?? 0
+  const materials_pending = materials.data?.filter(m => m.status === 'pending' || m.status === 'ordered').length ?? 0
+  const total_materials_count = materials.data?.length ?? 0
+  const pending_inspections = inspections.data?.filter(i => i.status === 'scheduled' || i.status === 'in_progress').length ?? 0
+  const total_inspections = inspections.data?.length ?? 0
 
   return {
     total_expenses,
@@ -151,8 +169,29 @@ export async function getProjectStats(project_id: string) {
     actual_cost,
     photo_count: photos.count ?? 0,
     file_count: files.count ?? 0,
+    daily_log_count: daily_logs.count ?? 0,
+    // Punch list
     open_punch_items,
+    total_punch_items,
+    completed_punch_items,
+    // RFIs
     open_rfis,
+    total_rfis,
+    // Change orders
     approved_change_orders,
+    total_change_orders,
+    pending_change_orders,
+    // Submittals
+    pending_submittals,
+    total_submittals,
+    // Expenses
+    pending_expenses,
+    total_expenses_count,
+    // Materials
+    materials_pending,
+    total_materials_count,
+    // Inspections
+    pending_inspections,
+    total_inspections,
   }
 }
