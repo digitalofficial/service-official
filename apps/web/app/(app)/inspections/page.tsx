@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogHeader, DialogTitle, DialogBody, DialogFooter } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import {
@@ -285,40 +285,46 @@ function CreateInspectionModal({ templates, onClose, onCreated }: { templates: a
   }
 
   return (
-    <Dialog open onClose={onClose} title="New Inspection">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label>Template</Label>
-          <Select value={form.template_id} onChange={e => setForm(f => ({ ...f, template_id: e.target.value }))} options={[
-            { value: '', label: 'No template (blank inspection)' },
-            ...templates.map(t => ({ value: t.id, label: `${t.name}${t.is_system ? ' (System)' : ''}` })),
-          ]} />
-        </div>
-        <div>
-          <Label required>Title</Label>
-          <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
-        </div>
-        <div>
-          <Label>Project</Label>
-          <Select value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))} options={[
-            { value: '', label: 'No project' },
-            ...projects.map(p => ({ value: p.id, label: p.name })),
-          ]} />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
+    <Dialog open onClose={onClose}>
+      <DialogClose onClose={onClose} />
+      <form onSubmit={handleSubmit}>
+        <DialogHeader>
+          <DialogTitle>New Inspection</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
           <div>
-            <Label>Scheduled Date</Label>
-            <Input type="date" value={form.scheduled_date} onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))} />
+            <Label>Template</Label>
+            <Select value={form.template_id} onChange={e => setForm(f => ({ ...f, template_id: e.target.value }))} options={[
+              { value: '', label: 'No template (blank inspection)' },
+              ...templates.map(t => ({ value: t.id, label: `${t.name}${t.is_system ? ' (System)' : ''}` })),
+            ]} />
           </div>
           <div>
-            <Label>Location</Label>
-            <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Building A, Floor 2" />
+            <Label required>Title</Label>
+            <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
           </div>
-        </div>
-        <div className="flex justify-end gap-3 pt-4 border-t">
+          <div>
+            <Label>Project</Label>
+            <Select value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))} options={[
+              { value: '', label: 'No project' },
+              ...projects.map(p => ({ value: p.id, label: p.name })),
+            ]} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Scheduled Date</Label>
+              <Input type="date" value={form.scheduled_date} onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Location</Label>
+              <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Building A, Floor 2" />
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={saving || !form.title}>{saving ? 'Creating...' : 'Create'}</Button>
-        </div>
+        </DialogFooter>
       </form>
     </Dialog>
   )

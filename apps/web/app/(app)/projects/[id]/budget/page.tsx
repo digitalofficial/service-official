@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogHeader, DialogTitle, DialogBody, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle,
@@ -324,28 +324,34 @@ function AddCategoryModal({ projectId, onClose, onSaved }: { projectId: string; 
   }
 
   return (
-    <Dialog open onClose={onClose} title="Add Budget Category">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label required>Category Name</Label>
-          <Input placeholder="e.g. Roofing Materials" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
-        </div>
-        <div>
-          <Label required>Type</Label>
-          <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as BudgetCategoryType }))} options={CATEGORY_TYPES} />
-        </div>
-        <div>
-          <Label required>Budgeted Amount ($)</Label>
-          <Input type="number" step="0.01" placeholder="0.00" value={form.budgeted_amount} onChange={e => setForm(f => ({ ...f, budgeted_amount: e.target.value }))} required />
-        </div>
-        <div>
-          <Label>Description</Label>
-          <Input placeholder="Optional description..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-        </div>
-        <div className="flex justify-end gap-3 pt-4 border-t">
+    <Dialog open onClose={onClose}>
+      <DialogClose onClose={onClose} />
+      <form onSubmit={handleSubmit}>
+        <DialogHeader>
+          <DialogTitle>Add Budget Category</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
+          <div>
+            <Label required>Category Name</Label>
+            <Input placeholder="e.g. Roofing Materials" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+          </div>
+          <div>
+            <Label required>Type</Label>
+            <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as BudgetCategoryType }))} options={CATEGORY_TYPES} />
+          </div>
+          <div>
+            <Label required>Budgeted Amount ($)</Label>
+            <Input type="number" step="0.01" placeholder="0.00" value={form.budgeted_amount} onChange={e => setForm(f => ({ ...f, budgeted_amount: e.target.value }))} required />
+          </div>
+          <div>
+            <Label>Description</Label>
+            <Input placeholder="Optional description..." value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+          </div>
+        </DialogBody>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={saving || !form.name}>{saving ? 'Adding...' : 'Add Category'}</Button>
-        </div>
+        </DialogFooter>
       </form>
     </Dialog>
   )

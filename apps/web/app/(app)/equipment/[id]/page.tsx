@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogHeader, DialogTitle, DialogBody, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import {
   ArrowLeft, Wrench, Truck, MapPin, Calendar, DollarSign,
@@ -392,44 +392,50 @@ function AssignModal({ equipmentId, dailyRate, onClose, onAssigned }: { equipmen
   }
 
   return (
-    <Dialog open onClose={onClose} title="Assign Equipment">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label>Project</Label>
-          <Select value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))} options={[
-            { value: '', label: 'Select a project...' },
-            ...projects.map((p: any) => ({ value: p.id, label: p.name }))
-          ]} />
-        </div>
-        <div>
-          <Label>Assign To</Label>
-          <Select value={form.assigned_to} onChange={e => setForm(f => ({ ...f, assigned_to: e.target.value }))} options={[
-            { value: '', label: 'Select team member...' },
-            ...team.map((t: any) => ({ value: t.id, label: `${t.first_name} ${t.last_name}` }))
-          ]} />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
+    <Dialog open onClose={onClose}>
+      <DialogClose onClose={onClose} />
+      <form onSubmit={handleSubmit}>
+        <DialogHeader>
+          <DialogTitle>Assign Equipment</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
           <div>
-            <Label required>Start Date</Label>
-            <Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} required />
+            <Label>Project</Label>
+            <Select value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))} options={[
+              { value: '', label: 'Select a project...' },
+              ...projects.map((p: any) => ({ value: p.id, label: p.name }))
+            ]} />
           </div>
           <div>
-            <Label>Expected Return</Label>
-            <Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} />
+            <Label>Assign To</Label>
+            <Select value={form.assigned_to} onChange={e => setForm(f => ({ ...f, assigned_to: e.target.value }))} options={[
+              { value: '', label: 'Select team member...' },
+              ...team.map((t: any) => ({ value: t.id, label: `${t.first_name} ${t.last_name}` }))
+            ]} />
           </div>
-        </div>
-        <div>
-          <Label>Daily Rate ($)</Label>
-          <Input type="number" step="0.01" value={form.daily_rate} onChange={e => setForm(f => ({ ...f, daily_rate: e.target.value }))} />
-        </div>
-        <div>
-          <Label>Notes</Label>
-          <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional notes..." />
-        </div>
-        <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label required>Start Date</Label>
+              <Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} required />
+            </div>
+            <div>
+              <Label>Expected Return</Label>
+              <Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} />
+            </div>
+          </div>
+          <div>
+            <Label>Daily Rate ($)</Label>
+            <Input type="number" step="0.01" value={form.daily_rate} onChange={e => setForm(f => ({ ...f, daily_rate: e.target.value }))} />
+          </div>
+          <div>
+            <Label>Notes</Label>
+            <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Optional notes..." />
+          </div>
+        </DialogBody>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={saving}>{saving ? 'Assigning...' : 'Assign'}</Button>
-        </div>
+        </DialogFooter>
       </form>
     </Dialog>
   )
@@ -469,63 +475,69 @@ function MaintenanceModal({ equipmentId, onClose, onSaved }: { equipmentId: stri
   }
 
   return (
-    <Dialog open onClose={onClose} title="Log Maintenance">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label required>Title</Label>
-          <Input placeholder="e.g. Oil change, Tire rotation" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
+    <Dialog open onClose={onClose}>
+      <DialogClose onClose={onClose} />
+      <form onSubmit={handleSubmit}>
+        <DialogHeader>
+          <DialogTitle>Log Maintenance</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
           <div>
-            <Label>Type</Label>
-            <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} options={[
-              { value: 'preventive', label: 'Preventive' },
-              { value: 'corrective', label: 'Corrective' },
-              { value: 'inspection', label: 'Inspection' },
-              { value: 'calibration', label: 'Calibration' },
-            ]} />
+            <Label required>Title</Label>
+            <Input placeholder="e.g. Oil change, Tire rotation" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Type</Label>
+              <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} options={[
+                { value: 'preventive', label: 'Preventive' },
+                { value: 'corrective', label: 'Corrective' },
+                { value: 'inspection', label: 'Inspection' },
+                { value: 'calibration', label: 'Calibration' },
+              ]} />
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} options={[
+                { value: 'scheduled', label: 'Scheduled' },
+                { value: 'in_progress', label: 'In Progress' },
+                { value: 'completed', label: 'Completed' },
+              ]} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Scheduled Date</Label>
+              <Input type="date" value={form.scheduled_date} onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Completed Date</Label>
+              <Input type="date" value={form.completed_date} onChange={e => setForm(f => ({ ...f, completed_date: e.target.value }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Cost ($)</Label>
+              <Input type="number" step="0.01" value={form.cost} onChange={e => setForm(f => ({ ...f, cost: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Vendor</Label>
+              <Input value={form.vendor_name} onChange={e => setForm(f => ({ ...f, vendor_name: e.target.value }))} placeholder="Vendor name" />
+            </div>
           </div>
           <div>
-            <Label>Status</Label>
-            <Select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} options={[
-              { value: 'scheduled', label: 'Scheduled' },
-              { value: 'in_progress', label: 'In Progress' },
-              { value: 'completed', label: 'Completed' },
-            ]} />
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Scheduled Date</Label>
-            <Input type="date" value={form.scheduled_date} onChange={e => setForm(f => ({ ...f, scheduled_date: e.target.value }))} />
+            <Label>Description</Label>
+            <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Work performed..." />
           </div>
           <div>
-            <Label>Completed Date</Label>
-            <Input type="date" value={form.completed_date} onChange={e => setForm(f => ({ ...f, completed_date: e.target.value }))} />
+            <Label>Notes</Label>
+            <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Additional notes..." />
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Cost ($)</Label>
-            <Input type="number" step="0.01" value={form.cost} onChange={e => setForm(f => ({ ...f, cost: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Vendor</Label>
-            <Input value={form.vendor_name} onChange={e => setForm(f => ({ ...f, vendor_name: e.target.value }))} placeholder="Vendor name" />
-          </div>
-        </div>
-        <div>
-          <Label>Description</Label>
-          <Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Work performed..." />
-        </div>
-        <div>
-          <Label>Notes</Label>
-          <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Additional notes..." />
-        </div>
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        </DialogBody>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={saving || !form.title}>{saving ? 'Saving...' : 'Save'}</Button>
-        </div>
+        </DialogFooter>
       </form>
     </Dialog>
   )

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogHeader, DialogTitle, DialogBody, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import {
   ArrowLeft, Send, CheckCircle2, Package, Trash2,
@@ -292,47 +292,53 @@ function ReceiveModal({ po, onClose, onReceived }: { po: any; onClose: () => voi
   }
 
   return (
-    <Dialog open onClose={onClose} title="Receive Items">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {items.map((item: any, i: number) => (
-          <div key={item.po_line_item_id} className="border border-gray-100 rounded-lg p-3 space-y-2">
-            <div className="flex justify-between">
-              <span className="font-medium text-sm text-gray-900">{item.name}</span>
-              <span className="text-xs text-gray-500">{item.remaining} remaining</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>Qty Received</Label>
-                <Input
-                  type="number" step="0.01" min="0"
-                  value={item.quantity_received}
-                  onChange={e => setItems((prev: any[]) => prev.map((p, j) => j === i ? { ...p, quantity_received: e.target.value } : p))}
-                />
+    <Dialog open onClose={onClose}>
+      <DialogClose onClose={onClose} />
+      <form onSubmit={handleSubmit}>
+        <DialogHeader>
+          <DialogTitle>Receive Items</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
+          {items.map((item: any, i: number) => (
+            <div key={item.po_line_item_id} className="border border-gray-100 rounded-lg p-3 space-y-2">
+              <div className="flex justify-between">
+                <span className="font-medium text-sm text-gray-900">{item.name}</span>
+                <span className="text-xs text-gray-500">{item.remaining} remaining</span>
               </div>
-              <div>
-                <Label>Condition</Label>
-                <select
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                  value={item.condition}
-                  onChange={e => setItems((prev: any[]) => prev.map((p, j) => j === i ? { ...p, condition: e.target.value } : p))}
-                >
-                  <option value="good">Good</option>
-                  <option value="damaged">Damaged</option>
-                  <option value="wrong_item">Wrong Item</option>
-                  <option value="short">Short</option>
-                </select>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Qty Received</Label>
+                  <Input
+                    type="number" step="0.01" min="0"
+                    value={item.quantity_received}
+                    onChange={e => setItems((prev: any[]) => prev.map((p, j) => j === i ? { ...p, quantity_received: e.target.value } : p))}
+                  />
+                </div>
+                <div>
+                  <Label>Condition</Label>
+                  <select
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    value={item.condition}
+                    onChange={e => setItems((prev: any[]) => prev.map((p, j) => j === i ? { ...p, condition: e.target.value } : p))}
+                  >
+                    <option value="good">Good</option>
+                    <option value="damaged">Damaged</option>
+                    <option value="wrong_item">Wrong Item</option>
+                    <option value="short">Short</option>
+                  </select>
+                </div>
               </div>
             </div>
+          ))}
+          <div>
+            <Label>Receipt Notes</Label>
+            <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any notes about this delivery..." />
           </div>
-        ))}
-        <div>
-          <Label>Receipt Notes</Label>
-          <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any notes about this delivery..." />
-        </div>
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        </DialogBody>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={saving}>{saving ? 'Recording...' : 'Record Receipt'}</Button>
-        </div>
+        </DialogFooter>
       </form>
     </Dialog>
   )

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogClose } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import {
   Plus, RefreshCw, ZoomIn, ZoomOut, Diamond,
@@ -384,44 +384,50 @@ function TaskModal({ projectId, task, onClose, onSaved }: { projectId: string; t
   }
 
   return (
-    <Dialog open onClose={onClose} title={task ? 'Edit Task' : 'Add Task'}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label required>Task Name</Label>
-          <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
+    <Dialog open onClose={onClose}>
+      <DialogClose onClose={onClose} />
+      <form onSubmit={handleSubmit}>
+        <DialogHeader>
+          <DialogTitle>{task ? 'Edit Task' : 'Add Task'}</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
           <div>
-            <Label required>Start Date</Label>
-            <Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} required />
+            <Label required>Task Name</Label>
+            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label required>Start Date</Label>
+              <Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} required />
+            </div>
+            <div>
+              <Label required>End Date</Label>
+              <Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} required />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Progress (%)</Label>
+              <Input type="number" min="0" max="100" value={form.progress} onChange={e => setForm(f => ({ ...f, progress: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Color</Label>
+              <Input type="color" value={form.color || '#2563eb'} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} className="h-10" />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.is_milestone} onChange={e => setForm(f => ({ ...f, is_milestone: e.target.checked }))} className="rounded" />
+            This is a milestone
+          </label>
           <div>
-            <Label required>End Date</Label>
-            <Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} required />
+            <Label>Notes</Label>
+            <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label>Progress (%)</Label>
-            <Input type="number" min="0" max="100" value={form.progress} onChange={e => setForm(f => ({ ...f, progress: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Color</Label>
-            <Input type="color" value={form.color || '#2563eb'} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} className="h-10" />
-          </div>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={form.is_milestone} onChange={e => setForm(f => ({ ...f, is_milestone: e.target.checked }))} className="rounded" />
-          This is a milestone
-        </label>
-        <div>
-          <Label>Notes</Label>
-          <Input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-        </div>
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        </DialogBody>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={saving || !form.name}>{saving ? 'Saving...' : task ? 'Update' : 'Create'}</Button>
-        </div>
+        </DialogFooter>
       </form>
     </Dialog>
   )
@@ -447,35 +453,41 @@ function DependencyModal({ projectId, tasks, onClose, onSaved }: { projectId: st
   const taskOptions = tasks.map(t => ({ value: t.id, label: t.name }))
 
   return (
-    <Dialog open onClose={onClose} title="Add Dependency">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label required>Predecessor (must finish first)</Label>
-          <Select value={form.predecessor_id} onChange={e => setForm(f => ({ ...f, predecessor_id: e.target.value }))} options={[{ value: '', label: 'Select task...' }, ...taskOptions]} />
-        </div>
-        <div>
-          <Label required>Successor (starts after)</Label>
-          <Select value={form.successor_id} onChange={e => setForm(f => ({ ...f, successor_id: e.target.value }))} options={[{ value: '', label: 'Select task...' }, ...taskOptions]} />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
+    <Dialog open onClose={onClose}>
+      <DialogClose onClose={onClose} />
+      <form onSubmit={handleSubmit}>
+        <DialogHeader>
+          <DialogTitle>Add Dependency</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
           <div>
-            <Label>Type</Label>
-            <Select value={form.dependency_type} onChange={e => setForm(f => ({ ...f, dependency_type: e.target.value }))} options={[
-              { value: 'FS', label: 'Finish-to-Start' },
-              { value: 'FF', label: 'Finish-to-Finish' },
-              { value: 'SS', label: 'Start-to-Start' },
-              { value: 'SF', label: 'Start-to-Finish' },
-            ]} />
+            <Label required>Predecessor (must finish first)</Label>
+            <Select value={form.predecessor_id} onChange={e => setForm(f => ({ ...f, predecessor_id: e.target.value }))} options={[{ value: '', label: 'Select task...' }, ...taskOptions]} />
           </div>
           <div>
-            <Label>Lag (days)</Label>
-            <Input type="number" value={form.lag_days} onChange={e => setForm(f => ({ ...f, lag_days: e.target.value }))} />
+            <Label required>Successor (starts after)</Label>
+            <Select value={form.successor_id} onChange={e => setForm(f => ({ ...f, successor_id: e.target.value }))} options={[{ value: '', label: 'Select task...' }, ...taskOptions]} />
           </div>
-        </div>
-        <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Type</Label>
+              <Select value={form.dependency_type} onChange={e => setForm(f => ({ ...f, dependency_type: e.target.value }))} options={[
+                { value: 'FS', label: 'Finish-to-Start' },
+                { value: 'FF', label: 'Finish-to-Finish' },
+                { value: 'SS', label: 'Start-to-Start' },
+                { value: 'SF', label: 'Start-to-Finish' },
+              ]} />
+            </div>
+            <div>
+              <Label>Lag (days)</Label>
+              <Input type="number" value={form.lag_days} onChange={e => setForm(f => ({ ...f, lag_days: e.target.value }))} />
+            </div>
+          </div>
+        </DialogBody>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={saving || !form.predecessor_id || !form.successor_id}>{saving ? 'Adding...' : 'Add'}</Button>
-        </div>
+        </DialogFooter>
       </form>
     </Dialog>
   )

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { Dialog } from '@/components/ui/dialog'
+import { Dialog, DialogClose, DialogHeader, DialogTitle, DialogBody, DialogFooter } from '@/components/ui/dialog'
 import {
   Wrench, Plus, Search, Truck, AlertTriangle,
   CheckCircle2, XCircle, PauseCircle, Settings2, MapPin
@@ -274,78 +274,83 @@ function CreateEquipmentModal({ onClose, onCreated }: { onClose: () => void; onC
   }
 
   return (
-    <Dialog open onClose={onClose} title="Add Equipment">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2">
-            <Label required>Name</Label>
-            <Input placeholder="e.g. CAT 320 Excavator" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+    <Dialog open onClose={onClose}>
+      <DialogClose onClose={onClose} />
+      <form onSubmit={handleSubmit}>
+        <DialogHeader>
+          <DialogTitle>Add Equipment</DialogTitle>
+        </DialogHeader>
+        <DialogBody className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <Label required>Name</Label>
+              <Input placeholder="e.g. CAT 320 Excavator" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+            </div>
+            <div>
+              <Label>Type</Label>
+              <Input placeholder="e.g. Excavator, Generator, Truck" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Make</Label>
+              <Input placeholder="e.g. Caterpillar" value={form.make} onChange={e => setForm(f => ({ ...f, make: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Model</Label>
+              <Input placeholder="e.g. 320" value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Year</Label>
+              <Input type="number" placeholder="e.g. 2022" value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Serial Number</Label>
+              <Input placeholder="Serial #" value={form.serial_number} onChange={e => setForm(f => ({ ...f, serial_number: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Condition</Label>
+              <Select value={form.condition} onChange={e => setForm(f => ({ ...f, condition: e.target.value }))} options={[
+                { value: 'excellent', label: 'Excellent' },
+                { value: 'good', label: 'Good' },
+                { value: 'fair', label: 'Fair' },
+                { value: 'poor', label: 'Poor' },
+              ]} />
+            </div>
+            <div>
+              <Label>Daily Rate ($)</Label>
+              <Input type="number" step="0.01" placeholder="0.00" value={form.daily_rate} onChange={e => setForm(f => ({ ...f, daily_rate: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Hourly Rate ($)</Label>
+              <Input type="number" step="0.01" placeholder="0.00" value={form.hourly_rate} onChange={e => setForm(f => ({ ...f, hourly_rate: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Purchase Price ($)</Label>
+              <Input type="number" step="0.01" placeholder="0.00" value={form.purchase_price} onChange={e => setForm(f => ({ ...f, purchase_price: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Current Value ($)</Label>
+              <Input type="number" step="0.01" placeholder="0.00" value={form.current_value} onChange={e => setForm(f => ({ ...f, current_value: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Meter Unit</Label>
+              <Select value={form.meter_unit} onChange={e => setForm(f => ({ ...f, meter_unit: e.target.value }))} options={[
+                { value: 'hours', label: 'Hours' },
+                { value: 'miles', label: 'Miles' },
+                { value: 'kilometers', label: 'Kilometers' },
+              ]} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Notes</Label>
+              <Input placeholder="Any additional notes..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+            </div>
           </div>
-          <div>
-            <Label>Type</Label>
-            <Input placeholder="e.g. Excavator, Generator, Truck" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Make</Label>
-            <Input placeholder="e.g. Caterpillar" value={form.make} onChange={e => setForm(f => ({ ...f, make: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Model</Label>
-            <Input placeholder="e.g. 320" value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Year</Label>
-            <Input type="number" placeholder="e.g. 2022" value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Serial Number</Label>
-            <Input placeholder="Serial #" value={form.serial_number} onChange={e => setForm(f => ({ ...f, serial_number: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Condition</Label>
-            <Select value={form.condition} onChange={e => setForm(f => ({ ...f, condition: e.target.value }))} options={[
-              { value: 'excellent', label: 'Excellent' },
-              { value: 'good', label: 'Good' },
-              { value: 'fair', label: 'Fair' },
-              { value: 'poor', label: 'Poor' },
-            ]} />
-          </div>
-          <div>
-            <Label>Daily Rate ($)</Label>
-            <Input type="number" step="0.01" placeholder="0.00" value={form.daily_rate} onChange={e => setForm(f => ({ ...f, daily_rate: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Hourly Rate ($)</Label>
-            <Input type="number" step="0.01" placeholder="0.00" value={form.hourly_rate} onChange={e => setForm(f => ({ ...f, hourly_rate: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Purchase Price ($)</Label>
-            <Input type="number" step="0.01" placeholder="0.00" value={form.purchase_price} onChange={e => setForm(f => ({ ...f, purchase_price: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Current Value ($)</Label>
-            <Input type="number" step="0.01" placeholder="0.00" value={form.current_value} onChange={e => setForm(f => ({ ...f, current_value: e.target.value }))} />
-          </div>
-          <div>
-            <Label>Meter Unit</Label>
-            <Select value={form.meter_unit} onChange={e => setForm(f => ({ ...f, meter_unit: e.target.value }))} options={[
-              { value: 'hours', label: 'Hours' },
-              { value: 'miles', label: 'Miles' },
-              { value: 'kilometers', label: 'Kilometers' },
-            ]} />
-          </div>
-          <div className="sm:col-span-2">
-            <Label>Notes</Label>
-            <Input placeholder="Any additional notes..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        </DialogBody>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
           <Button type="submit" disabled={saving || !form.name}>
             {saving ? 'Adding...' : 'Add Equipment'}
           </Button>
-        </div>
+        </DialogFooter>
       </form>
     </Dialog>
   )
