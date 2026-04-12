@@ -118,27 +118,37 @@ export async function deleteProject(id: string, organization_id?: string): Promi
 export async function getProjectStats(project_id: string) {
   const supabase = createServiceRoleClient()
 
-  const [expenses, materials, photos, files, punch_list, rfis, change_orders] = await Promise.all([
-    supabase.from('expenses').select('total_amount').eq('project_id', project_id),
-    supabase.from('project_materials').select('total_cost, status').eq('project_id', project_id),
+  const [expenses, materials, photos, files, punch_list, rfis, change_orders, time_entries] = await Promise.all([
+    supabase.from('expenses').select('total_amount, status').eq('project_id', project_id),
+    supabase.from('project_materials').select('total_cost, unit_cost, quantity_estimated, status').eq('project_id', project_id),
     supabase.from('photos').select('id', { count: 'exact', head: true }).eq('project_id', project_id),
     supabase.from('files').select('id', { count: 'exact', head: true }).eq('project_id', project_id),
     supabase.from('punch_list_items').select('status').eq('project_id', project_id),
     supabase.from('rfis').select('status').eq('project_id', project_id),
-    supabase.from('change_orders').select('amount, status').eq('project_id', project_id),
+    supabase.from('change_orders').select('amount, approved_amount, status').eq('project_id', project_id),
+    supabase.from('time_entries').select('hours, jobs!inner(project_id)').eq('jobs.project_id', project_id),
   ])
 
   const total_expenses = expenses.data?.reduce((sum, e) => sum + (e.total_amount || 0), 0) ?? 0
-  const total_materials = materials.data?.reduce((sum, m) => sum + (m.total_cost || 0), 0) ?? 0
-  const open_punch_items = punch_list.data?.filter(p => p.status === 'open').length ?? 0
-  const open_rfis = rfis.data?.filter(r => r.status !== 'closed').length ?? 0
+  const total_materials = materials.data?.reduce((sum, m) => {
+    const cost = m.total_cost || ((m.unit_cost || 0) * (m.quantity_estimated || 0))
+    return sum + cost
+  }, 0) ?? 0
+  const total_labor_hours = time_entries.data?.reduce((sum: number, t: any) => sum + (t.hours || 0), 0) ?? 0
+  const total_labor_cost = total_labor_hours * 45 // Default hourly rate
+  const open_punch_items = punch_list.data?.filter(p => p.status === 'open' || p.status === 'in_progress').length ?? 0
+  const open_rfis = rfis.data?.filter(r => r.status !== 'closed' && r.status !== 'answered').length ?? 0
   const approved_change_orders = change_orders.data
     ?.filter(c => c.status === 'approved')
-    .reduce((sum, c) => sum + (c.amount || 0), 0) ?? 0
+    .reduce((sum, c) => sum + (c.approved_amount ?? c.amount ?? 0), 0) ?? 0
+  const actual_cost = total_expenses + total_materials + total_labor_cost
 
   return {
     total_expenses,
     total_materials,
+    total_labor_hours,
+    total_labor_cost,
+    actual_cost,
     photo_count: photos.count ?? 0,
     file_count: files.count ?? 0,
     open_punch_items,

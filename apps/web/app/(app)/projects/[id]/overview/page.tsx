@@ -23,7 +23,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
       {/* Stats Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <StatCard label="Contract Value" value={fmt(project.contract_value)} />
-        <StatCard label="Actual Cost" value={fmt(project.actual_cost)} />
+        <StatCard label="Actual Cost" value={fmt(stats.actual_cost)} color={stats.actual_cost > (project.contract_value || 0) ? 'red' : 'default'} />
         <StatCard label="Expenses" value={fmt(stats.total_expenses)} />
         <StatCard label="Change Orders" value={fmt(stats.approved_change_orders)} />
         <StatCard label="Photos" value={String(stats.photo_count)} />
@@ -94,7 +94,7 @@ function StatCard({ label, value, color = 'default' }: { label: string; value: s
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4">
       <p className="text-xs text-gray-500 mb-1">{label}</p>
-      <p className={`text-lg font-bold ${color === 'amber' ? 'text-amber-600' : color === 'green' ? 'text-green-600' : 'text-gray-900'}`}>
+      <p className={`text-lg font-bold ${color === 'amber' ? 'text-amber-600' : color === 'green' ? 'text-green-600' : color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
         {value}
       </p>
     </div>
