@@ -12,6 +12,7 @@ import { JobTimeEntries } from './job-time-entries'
 import { ConvertEstimateButton } from './convert-estimate-button'
 import { WorkflowBar } from './workflow-bar'
 import { ActivityFeed } from './activity-feed'
+import { JobNotes } from './job-notes'
 import {
   ArrowLeft, MapPin, Clock, User, Phone, Calendar, FileText,
   Camera, DollarSign, MessageSquare, Briefcase, Mail, ExternalLink,
@@ -41,13 +42,14 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
   if (!job) notFound()
 
-  // Get photos, files, expenses, estimates, and invoices for this job
-  const [{ data: photos }, { data: files }, { data: expenses }, { data: estimates }, { data: invoices }] = await Promise.all([
+  // Get photos, files, expenses, estimates, invoices, and customer addresses for this job
+  const [{ data: photos }, { data: files }, { data: expenses }, { data: estimates }, { data: invoices }, { data: customerAddresses }] = await Promise.all([
     supabase.from('photos').select('*').eq('job_id', params.id).order('created_at', { ascending: false }),
     supabase.from('files').select('*').eq('job_id', params.id).order('created_at', { ascending: false }),
     supabase.from('expenses').select('*').eq('job_id', params.id).order('created_at', { ascending: false }),
     supabase.from('estimates').select('id, estimate_number, status, total, created_at').eq('job_id', params.id).order('created_at', { ascending: false }),
     supabase.from('invoices').select('id, invoice_number, status, total, created_at').eq('job_id', params.id).order('created_at', { ascending: false }),
+    job.customer_id ? supabase.from('customer_addresses').select('*').eq('customer_id', job.customer_id).order('is_primary', { ascending: false }) : Promise.resolve({ data: null }),
   ])
 
   const colors = statusColor(job.status)
@@ -149,17 +151,20 @@ export default async function JobDetailPage({ params }: { params: { id: string }
             </div>
           </div>
 
+          {/* Notes */}
+          <JobNotes jobId={params.id} notes={job.description} />
+
           {/* Crew Instructions */}
           {(job.instructions || job.completion_notes) && (
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h2 className="text-sm font-semibold text-gray-900 mb-3">Crew Instructions</h2>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Crew Instructions</h2>
               {job.instructions && (
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{job.instructions}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{job.instructions}</p>
               )}
               {job.completion_notes && (
-                <div className={job.instructions ? 'mt-4 pt-4 border-t border-gray-100' : ''}>
+                <div className={job.instructions ? 'mt-4 pt-4 border-t border-gray-100 dark:border-gray-700' : ''}>
                   <p className="text-xs text-gray-500 mb-1">Completion Notes</p>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{job.completion_notes}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{job.completion_notes}</p>
                 </div>
               )}
             </div>
@@ -282,22 +287,39 @@ export default async function JobDetailPage({ params }: { params: { id: string }
                 <Link href={`/customers/${customer.id}`} className="text-sm font-medium text-blue-600 hover:underline block">
                   {customer.company_name ?? `${customer.first_name} ${customer.last_name}`}
                 </Link>
-                {customerAddress && (
+                {customerAddresses && customerAddresses.length > 0 ? (
+                  <div className="space-y-2">
+                    {customerAddresses.map((addr: any) => {
+                      const addrStr = [addr.address_line1, addr.city, addr.state, addr.zip].filter(Boolean).join(', ')
+                      return (
+                        <div key={addr.id} className="flex items-start gap-2">
+                          <MapPin className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-sm text-gray-600">{addrStr}</p>
+                              {addr.is_primary && <span className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded">Primary</span>}
+                            </div>
+                            {addr.label && <p className="text-xs text-gray-400">{addr.label}</p>}
+                            {addr.notes && <p className="text-xs text-amber-600 mt-0.5">{addr.notes}</p>}
+                            <a href={`https://maps.google.com/?q=${encodeURIComponent(addrStr)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                              <ExternalLink className="w-3 h-3" /> Directions
+                            </a>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : customerAddress ? (
                   <div className="flex items-start gap-2">
                     <MapPin className="w-3.5 h-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-sm text-gray-600">{customerAddress}</p>
-                      <a
-                        href={`https://maps.google.com/?q=${encodeURIComponent(customerAddress)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
-                      >
+                      <a href={`https://maps.google.com/?q=${encodeURIComponent(customerAddress)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
                         <ExternalLink className="w-3 h-3" /> Directions
                       </a>
                     </div>
                   </div>
-                )}
+                ) : null}
                 {customer.phone && (
                   <a href={`tel:${customer.phone}`} className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600">
                     <Phone className="w-3.5 h-3.5 text-gray-400" /> {formatPhone(customer.phone)}
