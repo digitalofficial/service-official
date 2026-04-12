@@ -19,6 +19,9 @@ const nextConfig = {
   ],
   experimental: {
     serverComponentsExternalPackages: ['pdf-parse', 'sharp'],
+    staleTimes: {
+      dynamic: 0,
+    },
   },
   images: {
     remotePatterns: [
