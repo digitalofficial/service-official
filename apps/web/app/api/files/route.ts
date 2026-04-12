@@ -119,3 +119,43 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ data })
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const result = await getApiProfile()
+    if ('error' in result) return result.error
+    const { profile, supabase } = result
+
+    const { searchParams } = new URL(request.url)
+    const fileId = searchParams.get('file_id')
+    if (!fileId) return NextResponse.json({ error: 'file_id required' }, { status: 400 })
+
+    // Get file record to find storage path
+    const { data: file } = await supabase
+      .from('files')
+      .select('id, storage_path')
+      .eq('id', fileId)
+      .eq('organization_id', profile.organization_id)
+      .single()
+
+    if (!file) return NextResponse.json({ error: 'File not found' }, { status: 404 })
+
+    // Delete from storage
+    if (file.storage_path) {
+      await supabase.storage.from('files').remove([file.storage_path])
+    }
+
+    // Delete from database
+    const { error } = await supabase
+      .from('files')
+      .delete()
+      .eq('id', fileId)
+      .eq('organization_id', profile.organization_id)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Internal error' }, { status: 500 })
+  }
+}

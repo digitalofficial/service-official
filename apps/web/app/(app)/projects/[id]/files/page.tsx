@@ -1,6 +1,6 @@
 import { getProfile } from '@/lib/auth/get-profile'
 import { FileUpload } from '@/components/upload/file-upload'
-import { FileGrid } from '@/components/files/file-grid'
+import { ProjectFiles } from './project-files'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'Project Files' }
@@ -34,23 +34,7 @@ export default async function ProjectFilesPage({ params }: { params: { id: strin
       </div>
 
       {/* File Sections */}
-      {Object.entries(grouped).map(([category, categoryFiles]) =>
-        categoryFiles.length > 0 ? (
-          <div key={category}>
-            <h3 className="font-semibold text-gray-700 capitalize mb-3">
-              {category} ({categoryFiles.length})
-            </h3>
-            <FileGrid files={categoryFiles} />
-          </div>
-        ) : null
-      )}
-
-      {files?.length === 0 && (
-        <div className="text-center py-12 text-gray-400">
-          <p className="text-lg font-medium">No files yet</p>
-          <p className="text-sm mt-1">Upload the first document for this project above.</p>
-        </div>
-      )}
+      <ProjectFiles grouped={grouped} />
     </div>
   )
 }
