@@ -7,7 +7,8 @@ import { createClient } from '@service-official/database/client'
 import { NotificationBell } from './notification-bell'
 import { SupportForm } from './support-form'
 import { ThemeToggle } from './theme-toggle'
-import { LogOut, Settings, ChevronDown, HelpCircle, BookOpen, Mail, Sun, Moon } from 'lucide-react'
+import { LogOut, Settings, ChevronDown, HelpCircle, BookOpen, Mail, Sun, Moon, Lightbulb, ChevronRight } from 'lucide-react'
+import { useFeatureGuide, FEATURE_TOUR_LIST } from './feature-guides'
 
 interface TopBarProps {
   profile: any
@@ -18,7 +19,9 @@ export function TopBar({ profile }: TopBarProps) {
   const { theme, setTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [guidesOpen, setGuidesOpen] = useState(false)
   const [supportOpen, setSupportOpen] = useState(false)
+  const { startTour: startFeatureTour } = useFeatureGuide()
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -73,6 +76,34 @@ export function TopBar({ profile }: TopBarProps) {
                   <p className="text-xs text-gray-400">Walk through the basics</p>
                 </div>
               </button>
+              <div className="relative">
+                <button
+                  onClick={() => setGuidesOpen(!guidesOpen)}
+                  className="flex items-center justify-between w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Lightbulb className="w-4 h-4 text-amber-500" />
+                    <div className="text-left">
+                      <p className="font-medium">Feature Guides</p>
+                      <p className="text-xs text-gray-400">Learn how each feature works</p>
+                    </div>
+                  </div>
+                  <ChevronRight className={`w-3.5 h-3.5 text-gray-400 transition-transform ${guidesOpen ? 'rotate-90' : ''}`} />
+                </button>
+                {guidesOpen && (
+                  <div className="border-t border-gray-100 bg-gray-50 max-h-64 overflow-y-auto">
+                    {FEATURE_TOUR_LIST.map(item => (
+                      <button
+                        key={item.key}
+                        onClick={() => { startFeatureTour(item.key); setHelpOpen(false); setGuidesOpen(false) }}
+                        className="w-full px-5 py-2 text-left text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                      >
+                        {item.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={openSupport}
                 className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"

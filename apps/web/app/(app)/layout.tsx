@@ -6,6 +6,7 @@ import { TopBar } from '@/components/layout/topbar'
 import { OrgSwitcher } from '@/components/admin/org-switcher'
 import { AlfredChat } from '@/components/alfred/alfred-chat'
 import { OnboardingTour } from '@/components/onboarding/onboarding-tour'
+import { FeatureGuideProvider } from '@/components/layout/feature-guides'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const authClient = createServerSupabaseClient()
@@ -110,33 +111,35 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   // Pass activeOrgId as a data attribute so client components can read it
   return (
-    <div className="flex h-[100dvh] bg-gray-50 dark:bg-gray-950 overflow-hidden max-w-[100vw]" data-org-id={activeOrgId}>
-      <Sidebar profile={profile} organization={activeOrg} isSuperAdmin={isSuperAdmin} tier={activeOrg?.subscription_tier ?? 'solo'} subscriptionStatus={activeOrg?.subscription_status} />
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <header className="flex items-center justify-between h-14 px-2 sm:px-4 lg:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">
-          {/* Left side — spacer for hamburger on mobile + org switcher */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-9 lg:hidden shrink-0" /> {/* Spacer for hamburger button */}
-            {isSuperAdmin && (
-              <OrgSwitcher
-                currentOrgId={activeOrgId}
-                currentOrgName={activeOrg?.name ?? 'Unknown'}
-                isSuperAdmin={isSuperAdmin}
-              />
-            )}
-          </div>
-          <TopBar profile={profile} />
-        </header>
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6">
-          <div className="max-w-full">
-            {children}
-          </div>
-        </main>
+    <FeatureGuideProvider>
+      <div className="flex h-[100dvh] bg-gray-50 dark:bg-gray-950 overflow-hidden max-w-[100vw]" data-org-id={activeOrgId}>
+        <Sidebar profile={profile} organization={activeOrg} isSuperAdmin={isSuperAdmin} tier={activeOrg?.subscription_tier ?? 'solo'} subscriptionStatus={activeOrg?.subscription_status} />
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+          <header className="flex items-center justify-between h-14 px-2 sm:px-4 lg:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">
+            {/* Left side — spacer for hamburger on mobile + org switcher */}
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="w-9 lg:hidden shrink-0" /> {/* Spacer for hamburger button */}
+              {isSuperAdmin && (
+                <OrgSwitcher
+                  currentOrgId={activeOrgId}
+                  currentOrgName={activeOrg?.name ?? 'Unknown'}
+                  isSuperAdmin={isSuperAdmin}
+                />
+              )}
+            </div>
+            <TopBar profile={profile} />
+          </header>
+          <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6">
+            <div className="max-w-full">
+              {children}
+            </div>
+          </main>
+        </div>
+        <AlfredChat userName={profile.first_name} />
+        {['owner', 'admin'].includes(profile.role) && (
+          <OnboardingTour profileId={profile.id ?? user.id} onboardingCompleted={!!profile.onboarding_completed_at} />
+        )}
       </div>
-      <AlfredChat userName={profile.first_name} />
-      {['owner', 'admin'].includes(profile.role) && (
-        <OnboardingTour profileId={profile.id ?? user.id} onboardingCompleted={!!profile.onboarding_completed_at} />
-      )}
-    </div>
+    </FeatureGuideProvider>
   )
 }

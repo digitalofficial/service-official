@@ -495,16 +495,123 @@ Timeline is for high-level planning — define phases and milestones. Schedule i
 
 **Safety** — Safety records and incidents.
 
-### Other Features
-- **Blueprints & Takeoffs** — Upload drawings, AI extracts material quantities
-- **Messages** — SMS/email to customers via Twilio
-- **Notifications** — In-app, SMS, email, push notifications
-- **Automation** — Trigger-based workflows
-- **Dispatch** — Map-based job assignment with team availability
-- **Calendar** — Visual schedule of all jobs (month/week/day views)
-- **Equipment** — Track equipment, assignments, and maintenance logs
-- **Purchase Orders** — Create POs to vendors, receive items
-- **Reports** — Revenue, profit margin, expenses, client breakdown, lead conversion, job status
+### DISPATCH — How to Create & Assign Jobs
+Dispatch is the job creation hub at /dispatch:
+1. **Select customer** — toggle between existing (search by name/phone/email) or create new inline
+2. **Job details** — title, priority (Low/Normal/High/Urgent), lead source, address, instructions
+3. **Schedule** — pick date, start time, end time (auto-calculates 1 hour)
+4. **Team availability widget** — shows who's free on the selected date. Click a slot to auto-assign
+5. **Assign** — select team member from dropdown
+6. **Notifications** — customer gets email confirmation automatically. Optional SMS checkbox
+7. **Submit** — creates the job, shows confirmation with job number
+Jobs appear immediately on Calendar, Jobs list, Dashboard, and mobile app.
+
+### CALENDAR — Viewing Your Schedule
+Calendar at /calendar shows all scheduled jobs in 3 views:
+- **Month view** — grid with colored dots per job (Red=Urgent, Orange=High, Blue=Normal, Gray=Low). "+N more" when overflow. Click a day to see details.
+- **Week view** — 7 columns with job cards showing title + time
+- **Day view** — detailed list of all jobs for that day with priority bar, customer, status
+Navigate with Previous/Next arrows and "Today" button to return to current date.
+
+### ESTIMATES — Creating Priced Proposals
+Create estimates at /estimates/new:
+1. **Header** — title, select customer, select project (optional), issue date, expiry date
+2. **Line items** — add items with name, quantity, unit cost. Each item can be marked taxable, optional, or have a markup %. Total auto-calculates.
+3. **Totals** — subtotal (non-optional items), discount (% or $), tax rate, final total
+4. **Terms** — payment terms, internal notes (not visible to customer)
+5. **Save** — creates as Draft
+6. **Send** — sends to customer via email with a public link
+7. **Customer views** — view count tracked, customer can approve or decline from the public page
+8. **Convert** — approved estimates can be converted to invoices or imported as project budget categories
+Workflow: Draft → Sent → Viewed → Approved/Declined/Expired
+
+### DASHBOARD — Your Command Center
+Dashboard at /dashboard shows:
+- **Greeting** + quick Dispatch Job button
+- **Overdue invoice alert** (red banner if applicable)
+- **5 metric cards**: Pending estimates (count+value), Approved estimates, Active projects, Jobs today, Outstanding invoices
+- **Jobs map** with all active job pins
+- **Today's jobs** list with status, time, customer, assignee
+- **Upcoming this week** list
+- **Active projects** with contract values
+- **Team schedule** (owner/admin only) — weekly view by employee
+- **Notifications** — 5 most recent unread
+- **Quick actions**: Dispatch Job, Create Invoice, Add Customer, New Estimate
+
+### LEADS — Sales Pipeline
+Kanban board at /leads with 5 columns: New → Contacted → Qualified → Proposal → Negotiating
+- Each column shows card count + pipeline value
+- Lead cards show: title, customer name, estimated value, follow-up date, assignee avatar, tags
+- Add leads with: title, customer, description, estimated value, source, follow-up date
+- Won leads convert to customers/projects
+
+### MESSAGES — Customer Communication
+Split-panel at /messages:
+- Left: conversation list searchable by customer name, showing channel (SMS/email), last message date
+- Right: chat thread with inbound (left, gray) and outbound (right, blue) bubbles
+- Compose new messages at bottom
+- Integrated with Twilio for SMS delivery
+
+### NOTIFICATIONS — How They Work
+Notifications are triggered automatically:
+- **Job events**: created, assigned, status changes → email + optional SMS to customer
+- **SMS reminders**: scheduled via job_reminders table, sent via Twilio before appointments
+- **Estimate events**: sent, viewed, approved, declined → in-app notification
+- **Invoice events**: sent, paid, overdue → in-app + email
+- **Push notifications**: sent to mobile app via Expo push tokens
+- **In-app**: stored in notifications table, shown on Dashboard (5 most recent)
+- **Channels**: each notification can go to in_app, sms, email, push (configurable per user in Settings > Notifications)
+- Admins can broadcast push notifications from /admin/push
+
+### EQUIPMENT — Asset Management
+Track company equipment at /equipment:
+- List with status filter: Available, Assigned, Maintenance, Repair, Retired
+- Create equipment with name, type, serial number, daily rate, condition
+- **Assign** to projects/team members with start/end dates and daily rate
+- **Log maintenance** with type (preventive/corrective), cost, vendor, dates
+- Equipment detail shows: assignments history, maintenance logs
+
+### PURCHASE ORDERS — Vendor Ordering
+Create POs at /purchase-orders/new:
+- Select vendor, add line items (name, qty, unit cost), tax rate, shipping
+- PO number auto-generated
+- Send to vendor
+- **Receive items** — record quantities received, condition (good/damaged/wrong/short)
+- Auto-updates project materials when PO items are linked
+
+### REPORTS — Analytics
+Reports at /reports show:
+- Revenue + expenses chart (12-month trend)
+- Profit margin %, total revenue, total expenses
+- Client breakdown, lead conversion rate
+- Top 10 customers by revenue
+- Job status breakdown
+
+### INSPECTIONS — Checklists
+- Create from templates with sections and checklist items
+- Each item: pass/fail/NA with notes and photos
+- Templates reusable across projects
+- Results: overall pass/fail with item counts
+
+### DATABASE SCHEMA (Key Tables)
+Alfred knows the full data model:
+- **Core**: organizations, profiles, invitations, organization_domains
+- **CRM**: customers, customer_addresses, leads
+- **Jobs**: jobs, job_reminders
+- **Projects**: projects, project_phases, project_milestones, project_team, project_materials, punch_list_items, daily_logs, rfis, change_orders, submittals
+- **Schedule**: gantt_tasks, gantt_dependencies
+- **Estimates**: estimates, estimate_sections, estimate_line_items
+- **Invoices**: invoices, invoice_line_items, payments
+- **Budget**: budget_categories, budget_line_items
+- **Expenses**: expenses
+- **Equipment**: equipment, equipment_assignments, equipment_maintenance
+- **Purchasing**: vendors, purchase_orders, po_line_items, po_receipts
+- **Inspections**: inspection_templates, template_sections, template_items, inspections, inspection_items
+- **Files**: files, photos, blueprints, blueprint_sheets
+- **Messaging**: conversations, messages, notifications
+- **Takeoffs**: takeoffs, takeoff_items
+- **Materials**: material_catalog, subcontractors, project_subcontractors
+- **System**: audit_logs, automation_rules, automation_logs, report_snapshots, organization_sms_settings, team_messages, portal_users, portal_messages
 
 ### Navigation
 Sidebar: Dashboard, Dispatch, Projects, Jobs, Calendar, Equipment, Customers, Leads, Estimates, Invoices, Purchase Orders, Payments, Inspections, Estimator, Blueprints, Takeoffs, Messages, Automation, Reports, Settings
