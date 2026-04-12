@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -26,8 +26,8 @@ const ITEM_STATUS_CONFIG: Record<string, { bg: string; icon: typeof CheckCircle2
   pending: { bg: 'bg-white border-gray-200', icon: ClipboardCheck },
 }
 
-export default function InspectionDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function InspectionDetailPage({ params }: { params: { id: string } }) {
+  const id = params.id
   const router = useRouter()
   const [inspection, setInspection] = useState<any>(null)
   const [items, setItems] = useState<InspectionItem[]>([])

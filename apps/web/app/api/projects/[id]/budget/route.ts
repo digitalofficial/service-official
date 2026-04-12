@@ -23,6 +23,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     .from('budget_categories')
     .select('*')
     .eq('project_id', projectId)
+    .is('deleted_at', null)
     .order('order_index')
 
   // Fetch actuals in parallel

@@ -38,6 +38,20 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
   const jobs = (customer as any).jobs ?? []
   const conversations = (customer as any).conversations ?? []
 
+  const isMultiAddress = ['commercial', 'property_manager', 'hoa'].includes(customer.type)
+
+  // Fetch additional addresses for multi-address customer types
+  let addresses: any[] = []
+  if (isMultiAddress) {
+    const { data: addrData } = await supabase
+      .from('customer_addresses')
+      .select('*')
+      .eq('customer_id', customer.id)
+      .order('is_primary', { ascending: false })
+      .order('created_at', { ascending: true })
+    addresses = addrData ?? []
+  }
+
   const address = [customer.address_line1, customer.city, customer.state, customer.zip].filter(Boolean).join(', ')
   const mapQuery = encodeURIComponent(address)
 
@@ -133,7 +147,38 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                   <Phone className="w-4 h-4 text-gray-400" /> {formatPhone(customer.phone)}
                 </a>
               )}
-              {address && (
+              {isMultiAddress && addresses.length > 0 ? (
+                <div className="space-y-3">
+                  {addresses.map((addr: any) => {
+                    const addrStr = [addr.address_line1, addr.city, addr.state, addr.zip].filter(Boolean).join(', ')
+                    const addrMapQ = encodeURIComponent(addrStr)
+                    return (
+                      <div key={addr.id} className="flex items-start gap-2.5 text-sm text-gray-600">
+                        <MapPin className={`w-4 h-4 mt-0.5 ${addr.is_primary ? 'text-blue-500' : 'text-gray-400'}`} />
+                        <div>
+                          <p className="flex items-center gap-1.5">
+                            <span className="font-medium text-gray-800">{addr.label}</span>
+                            {addr.is_primary && (
+                              <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">Primary</span>
+                            )}
+                          </p>
+                          <p>{addr.address_line1}</p>
+                          {addr.address_line2 && <p>{addr.address_line2}</p>}
+                          <p>{[addr.city, addr.state, addr.zip].filter(Boolean).join(', ')}</p>
+                          <a
+                            href={`https://maps.google.com/?q=${addrMapQ}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-1"
+                          >
+                            <ExternalLink className="w-3 h-3" /> Open in Maps
+                          </a>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : address ? (
                 <div className="flex items-start gap-2.5 text-sm text-gray-600">
                   <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
                   <div>
@@ -150,7 +195,7 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                     </a>
                   </div>
                 </div>
-              )}
+              ) : null}
               {customer.company_name && (customer.first_name || customer.last_name) && (
                 <div className="flex items-center gap-2.5 text-sm text-gray-600">
                   <User className="w-4 h-4 text-gray-400" />

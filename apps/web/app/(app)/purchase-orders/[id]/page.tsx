@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -25,8 +25,8 @@ const STATUS_COLORS: Record<string, string> = {
   canceled: 'bg-red-100 text-red-700',
 }
 
-export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function PurchaseOrderDetailPage({ params }: { params: { id: string } }) {
+  const id = params.id
   const router = useRouter()
   const [po, setPo] = useState<any>(null)
   const [loading, setLoading] = useState(true)

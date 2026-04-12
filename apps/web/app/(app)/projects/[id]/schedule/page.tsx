@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,8 +19,8 @@ type ZoomLevel = keyof typeof ZOOM_LEVELS
 
 const TASK_COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#be185d', '#65a30d']
 
-export default function SchedulePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: projectId } = use(params)
+export default function SchedulePage({ params }: { params: { id: string } }) {
+  const projectId = params.id
   const [tasks, setTasks] = useState<GanttTask[]>([])
   const [dependencies, setDependencies] = useState<GanttDependency[]>([])
   const [loading, setLoading] = useState(true)

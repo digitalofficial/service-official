@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ClipboardCheck, Plus, CheckCircle2, XCircle } from 'lucide-react'
@@ -12,8 +12,8 @@ const STATUS_COLORS: Record<string, string> = {
   failed: 'bg-red-100 text-red-700',
 }
 
-export default function ProjectInspectionsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: projectId } = use(params)
+export default function ProjectInspectionsPage({ params }: { params: { id: string } }) {
+  const projectId = params.id
   const [inspections, setInspections] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 

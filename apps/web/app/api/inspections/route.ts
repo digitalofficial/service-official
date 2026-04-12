@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     .from('inspections')
     .select('*, assignee:profiles!assigned_to(first_name, last_name), project:projects(id, name), template:inspection_templates(name)')
     .eq('organization_id', profile.organization_id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (searchParams.get('status')) query = query.eq('status', searchParams.get('status')!)

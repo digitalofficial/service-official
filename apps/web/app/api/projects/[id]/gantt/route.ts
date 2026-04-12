@@ -15,11 +15,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       .from('gantt_tasks')
       .select('*, assignee:profiles!assigned_to(first_name, last_name, avatar_url)')
       .eq('project_id', params.id)
+      .is('deleted_at', null)
       .order('order_index'),
     supabase
       .from('gantt_dependencies')
       .select('*')
-      .eq('project_id', params.id),
+      .eq('project_id', params.id)
+      .is('deleted_at', null),
   ])
 
   return NextResponse.json({

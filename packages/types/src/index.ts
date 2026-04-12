@@ -150,6 +150,24 @@ export interface Customer extends BaseRecord, Address {
   portal_access: boolean
 }
 
+// ── Customer Address ────────────────────────────────────────
+
+export interface CustomerAddress extends BaseRecord {
+  customer_id: string
+  organization_id: string
+  label: string
+  address_line1: string
+  address_line2?: string
+  city?: string
+  state?: string
+  zip?: string
+  country?: string
+  is_primary: boolean
+  notes?: string
+}
+
+export const MULTI_ADDRESS_TYPES = ['commercial', 'property_manager', 'hoa'] as const
+
 // ── Lead ─────────────────────────────────────────────────────
 
 export interface Lead extends BaseRecord {

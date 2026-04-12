@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -8,8 +8,8 @@ import {
   FileText, MessageSquare, Send, MapPin, Calendar
 } from 'lucide-react'
 
-export default function PortalProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function PortalProjectDetailPage({ params }: { params: { id: string } }) {
+  const id = params.id
   const router = useRouter()
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -31,8 +31,8 @@ const CATEGORY_TYPES: { value: BudgetCategoryType; label: string }[] = [
 
 const COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#be185d', '#65a30d', '#6b7280']
 
-export default function BudgetPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: projectId } = use(params)
+export default function BudgetPage({ params }: { params: { id: string } }) {
+  const projectId = params.id
   const [budget, setBudget] = useState<BudgetSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
