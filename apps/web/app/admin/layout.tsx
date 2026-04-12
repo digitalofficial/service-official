@@ -1,12 +1,14 @@
 import { redirect } from 'next/navigation'
-import { createServerSupabaseClient } from '@service-official/database'
+import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
 import { AdminSidebar } from './admin-sidebar'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const authClient = createServerSupabaseClient()
+  const { data: { user } } = await authClient.auth.getUser()
 
   if (!user) redirect('/auth/login')
+
+  const supabase = createServiceRoleClient()
 
   const { data: profile } = await supabase
     .from('profiles')

@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '../../client'
+import { createServiceRoleClient } from '../../client-server'
 import type { Project, PaginatedResponse } from '@service-official/types'
 
 export interface GetProjectsOptions {
@@ -12,7 +12,7 @@ export interface GetProjectsOptions {
 }
 
 export async function getProjects(options: GetProjectsOptions): Promise<PaginatedResponse<Project>> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
   const { organization_id, status, customer_id, search, page = 1, per_page = 20 } = options
 
   let query = supabase
@@ -45,7 +45,7 @@ export async function getProjects(options: GetProjectsOptions): Promise<Paginate
 }
 
 export async function getProjectById(id: string, organization_id?: string): Promise<Project | null> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
 
   let query = supabase
     .from('projects')
@@ -69,7 +69,7 @@ export async function getProjectById(id: string, organization_id?: string): Prom
 }
 
 export async function createProject(data: Partial<Project>): Promise<Project> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
 
   // Auto-generate project number
   const { count } = await supabase
@@ -90,7 +90,7 @@ export async function createProject(data: Partial<Project>): Promise<Project> {
 }
 
 export async function updateProject(id: string, updates: Partial<Project>, organization_id?: string): Promise<Project> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
 
   let query = supabase
     .from('projects')
@@ -106,7 +106,7 @@ export async function updateProject(id: string, updates: Partial<Project>, organ
 }
 
 export async function deleteProject(id: string, organization_id?: string): Promise<void> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
 
   let query = supabase.from('projects').delete().eq('id', id)
   if (organization_id) query = query.eq('organization_id', organization_id)
@@ -116,7 +116,7 @@ export async function deleteProject(id: string, organization_id?: string): Promi
 }
 
 export async function getProjectStats(project_id: string) {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
 
   const [expenses, materials, photos, files, punch_list, rfis, change_orders] = await Promise.all([
     supabase.from('expenses').select('total_amount').eq('project_id', project_id),

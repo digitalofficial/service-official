@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@service-official/database'
+import { createServerSupabaseClient, createServiceRoleClient } from '@service-official/database'
 import { NextResponse } from 'next/server'
 import { tierHasFeature, getTierMaxUsers } from './tier-access'
 
@@ -12,9 +12,11 @@ export async function checkTierAccess(feature: string): Promise<{
   profile?: any
   org?: any
 }> {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const authClient = createServerSupabaseClient()
+  const { data: { user } } = await authClient.auth.getUser()
   if (!user) return { allowed: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+
+  const supabase = createServiceRoleClient()
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -52,7 +54,7 @@ export async function checkUserLimit(organizationId: string, tier: string): Prom
   current: number
   max: number
 }> {
-  const supabase = createServerSupabaseClient()
+  const supabase = createServiceRoleClient()
 
   const { count } = await supabase
     .from('profiles')
