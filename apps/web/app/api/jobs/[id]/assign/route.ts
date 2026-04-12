@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
 import { notifyCustomer } from '@/lib/sms'
 import { tierHasSms } from '@/lib/auth/tier-access'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id, organization:organizations(subscription_tier, subscription_status)').eq('id', user.id).single()
-  const orgData = (profile as any)?.organization as any
+  const orgData = profile.organization as any
   const orgTier = orgData?.subscription_tier ?? 'solo'
   const orgStatus = orgData?.subscription_status
   const body = await request.json()

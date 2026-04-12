@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildSystemPrompt } from '@/lib/alfred/system-prompt'
 
@@ -31,11 +31,9 @@ export async function POST(request: NextRequest) {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-    const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const result = await getApiProfile()
+    if ('error' in result) return result.error
+    const { user, profile } = result
 
     if (!checkRateLimit(user.id)) {
       return NextResponse.json(
@@ -44,12 +42,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('first_name, role, organization:organizations(name, industry)')
-      .eq('id', user.id)
-      .single()
-
     const body = await request.json()
     const { messages, currentPage } = body
 
@@ -57,10 +49,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Messages required' }, { status: 400 })
     }
 
-    const org = (profile as any)?.organization
+    const org = profile.organization as any
     const systemPrompt = buildSystemPrompt({
-      userName: profile?.first_name ?? 'there',
-      userRole: profile?.role ?? 'user',
+      userName: profile.first_name ?? 'there',
+      userRole: profile.role ?? 'user',
       orgName: org?.name ?? 'your organization',
       orgIndustry: org?.industry?.replace(/_/g, ' ') ?? 'contracting',
       currentPage: currentPage ?? '/',

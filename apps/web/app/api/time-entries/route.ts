@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { z } from 'zod'
 
 const timeEntrySchema = z.object({
@@ -14,11 +14,9 @@ const timeEntrySchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const { searchParams } = new URL(request.url)
   const job_id = searchParams.get('job_id')
@@ -26,7 +24,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('time_entries')
     .select('*, profile:profiles!profile_id(id, first_name, last_name, avatar_url, hourly_rate, role)')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .is('deleted_at', null)
     .order('date', { ascending: false })
 
@@ -39,15 +37,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, hourly_rate')
-    .eq('id', user.id)
-    .single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const body = await request.json()
   const validated = timeEntrySchema.parse(body)
@@ -65,7 +57,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('time_entries')
     .insert({
-      organization_id: profile!.organization_id,
+      organization_id: profile.organization_id,
       job_id: validated.job_id,
       profile_id: validated.profile_id,
       date: validated.date,
@@ -87,17 +79,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
   const managerRoles = ['owner', 'admin', 'office_manager', 'project_manager']
-  const isManager = managerRoles.includes(profile?.role ?? '')
+  const isManager = managerRoles.includes(profile.role ?? '')
 
   // Non-managers can only delete their own time entries
   if (!isManager) {
@@ -111,7 +102,7 @@ export async function DELETE(request: NextRequest) {
     .from('time_entries')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ success: true })

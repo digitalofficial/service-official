@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { z } from 'zod'
 
 const lineItemSchema = z.object({
@@ -31,17 +31,16 @@ const poSchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const { searchParams } = new URL(request.url)
 
   let query = supabase
     .from('purchase_orders')
     .select('*, vendor:vendors(id, name), project:projects(id, name)')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
@@ -55,14 +54,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
-  if (!['owner', 'admin', 'office_manager', 'project_manager'].includes(profile!.role)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin', 'office_manager', 'project_manager'] })
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const body = await request.json()
   const validated = poSchema.parse(body)
@@ -73,7 +67,7 @@ export async function POST(request: NextRequest) {
   const { data: lastPo } = await supabase
     .from('purchase_orders')
     .select('po_number')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .like('po_number', `PO-${year}-%`)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -100,7 +94,7 @@ export async function POST(request: NextRequest) {
     .from('purchase_orders')
     .insert({
       ...poData,
-      organization_id: profile!.organization_id,
+      organization_id: profile.organization_id,
       po_number: poNumber,
       status: poData.requires_approval ? 'pending_approval' : 'draft',
       subtotal,

@@ -1,21 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 // PATCH /api/invoices/[id] — update invoice (mark paid, adjust amounts, etc.)
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!['owner', 'admin', 'office_manager'].includes(profile?.role ?? '')) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin', 'office_manager'] })
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   // Verify invoice belongs to user's org
   const { data: invoice } = await supabase

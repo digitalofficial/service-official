@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@service-official/notifications'
 
@@ -13,17 +13,9 @@ function getServiceClient() {
 
 // POST — submit a support ticket
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, first_name, last_name, email, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const { data: org } = await supabase
     .from('organizations')

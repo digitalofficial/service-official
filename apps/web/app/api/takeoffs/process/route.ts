@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { extractTakeoffFromBlueprint, applyTradeRules } from '@service-official/ai/takeoffs'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
-
-    const allowedRoles = ['owner', 'admin', 'estimator', 'project_manager']
-    if (!allowedRoles.includes(profile?.role ?? '')) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+    const result = await getApiProfile({ requireRole: ['owner', 'admin', 'estimator', 'project_manager'] })
+    if ('error' in result) return result.error
+    const { supabase } = result
 
     const { takeoff_id, blueprint_url, trade, sheet_title, scale } = await request.json()
 
@@ -28,7 +21,7 @@ export async function POST(request: NextRequest) {
       .eq('id', takeoff_id)
 
     // Run AI extraction
-    const result = await extractTakeoffFromBlueprint({
+    const extraction = await extractTakeoffFromBlueprint({
       blueprint_url,
       trade,
       sheet_title,
@@ -36,7 +29,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Apply trade-specific expansion rules
-    const expandedItems = applyTradeRules(result.items, trade)
+    const expandedItems = applyTradeRules(extraction.items, trade)
 
     // Save items to DB
     const itemInserts = expandedItems.map(item => ({
@@ -63,7 +56,7 @@ export async function POST(request: NextRequest) {
       .from('takeoffs')
       .update({
         status: 'review',
-        ai_confidence: result.total_confidence,
+        ai_confidence: extraction.total_confidence,
         processing_completed_at: new Date().toISOString(),
       })
       .eq('id', takeoff_id)
@@ -72,9 +65,9 @@ export async function POST(request: NextRequest) {
       data: {
         takeoff_id,
         items_extracted: expandedItems.length,
-        total_confidence: result.total_confidence,
-        summary: result.summary,
-        processing_time_ms: result.processing_time_ms,
+        total_confidence: extraction.total_confidence,
+        summary: extraction.summary,
+        processing_time_ms: extraction.processing_time_ms,
       },
       success: true,
     })

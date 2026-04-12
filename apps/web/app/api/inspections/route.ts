@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { z } from 'zod'
 
 const inspectionSchema = z.object({
@@ -15,17 +15,16 @@ const inspectionSchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const { searchParams } = new URL(request.url)
 
   let query = supabase
     .from('inspections')
     .select('*, assignee:profiles!assigned_to(first_name, last_name), project:projects(id, name), template:inspection_templates(name)')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .order('created_at', { ascending: false })
 
   if (searchParams.get('status')) query = query.eq('status', searchParams.get('status')!)
@@ -37,11 +36,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const body = await request.json()
   const validated = inspectionSchema.parse(body)
 
@@ -50,7 +48,7 @@ export async function POST(request: NextRequest) {
   const { data: last } = await supabase
     .from('inspections')
     .select('inspection_number')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .like('inspection_number', `INS-${year}-%`)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -67,7 +65,7 @@ export async function POST(request: NextRequest) {
     .from('inspections')
     .insert({
       ...validated,
-      organization_id: profile!.organization_id,
+      organization_id: profile.organization_id,
       inspection_number: inspectionNumber,
       status: 'scheduled',
       created_by: user.id,

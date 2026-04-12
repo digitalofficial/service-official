@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { z } from 'zod'
 
 const leadSchema = z.object({
@@ -15,11 +15,10 @@ const leadSchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const { searchParams } = new URL(request.url)
 
   let query = supabase
@@ -29,7 +28,7 @@ export async function GET(request: NextRequest) {
       customer:customers(id, first_name, last_name, company_name),
       assignee:profiles!assigned_to(id, first_name, last_name, avatar_url)
     `)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .order('created_at', { ascending: false })
 
   if (searchParams.get('status')) query = query.eq('status', searchParams.get('status')!)
@@ -40,17 +39,16 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const body = await request.json()
   const validated = leadSchema.parse(body)
 
   const { data, error } = await supabase
     .from('leads')
-    .insert({ ...validated, organization_id: profile!.organization_id, created_by: user.id })
+    .insert({ ...validated, organization_id: profile.organization_id, created_by: user.id })
     .select()
     .single()
 

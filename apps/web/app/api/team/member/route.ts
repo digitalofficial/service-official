@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 export async function PATCH(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!['owner', 'admin'].includes(profile?.role ?? '')) {
-    return NextResponse.json({ error: 'Only owners and admins can edit team members' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const { id, role, phone, title, hourly_rate, is_active, reminder_pref_1, reminder_pref_2, notify_sms } = await request.json()
   if (!id) return NextResponse.json({ error: 'Member ID required' }, { status: 400 })
@@ -28,7 +18,7 @@ export async function PATCH(request: NextRequest) {
     .from('profiles')
     .update(updates)
     .eq('id', id)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

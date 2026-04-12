@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { z } from 'zod'
 
 const updateSchema = z.object({
@@ -32,17 +32,15 @@ const updateSchema = z.object({
 })
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const { data: equipment, error } = await supabase
     .from('equipment')
     .select('*')
     .eq('id', params.id)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .single()
 
   if (error || !equipment) return NextResponse.json({ error: 'Equipment not found' }, { status: 404 })
@@ -83,14 +81,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
-  if (!['owner', 'admin', 'office_manager'].includes(profile!.role)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin', 'office_manager'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const body = await request.json()
   const validated = updateSchema.parse(body)
@@ -99,7 +92,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     .from('equipment')
     .update({ ...validated, updated_at: new Date().toISOString() })
     .eq('id', params.id)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .select()
     .single()
 
@@ -109,21 +102,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
-  if (!['owner', 'admin'].includes(profile!.role)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   // Soft delete
   const { error } = await supabase
     .from('equipment')
     .update({ is_active: false, updated_at: new Date().toISOString() })
     .eq('id', params.id)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

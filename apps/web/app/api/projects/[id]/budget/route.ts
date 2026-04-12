@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const projectId = params.id
 
   // Verify project belongs to org
@@ -14,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     .from('projects')
     .select('id, contract_value')
     .eq('id', projectId)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .single()
 
   if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })

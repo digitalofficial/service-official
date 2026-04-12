@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { z } from 'zod'
 
 const equipmentSchema = z.object({
@@ -29,17 +29,16 @@ const equipmentSchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const { searchParams } = new URL(request.url)
 
   let query = supabase
     .from('equipment')
     .select('*')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
 
@@ -53,14 +52,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
-  if (!['owner', 'admin', 'office_manager'].includes(profile!.role)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin', 'office_manager'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const body = await request.json()
   const validated = equipmentSchema.parse(body)
@@ -69,7 +63,7 @@ export async function POST(request: NextRequest) {
     .from('equipment')
     .insert({
       ...validated,
-      organization_id: profile!.organization_id,
+      organization_id: profile.organization_id,
       status: 'available',
     })
     .select()

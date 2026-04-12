@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 // GET /api/team/messages — list team messages
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const { searchParams } = new URL(request.url)
   const with_user = searchParams.get('with') // specific user conversation
@@ -24,7 +18,7 @@ export async function GET(request: NextRequest) {
       sender:profiles!sender_id(id, first_name, last_name, avatar_url, role),
       recipient:profiles!recipient_id(id, first_name, last_name, avatar_url, role)
     `)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .order('created_at', { ascending: false })
     .limit(100)
 
@@ -47,7 +41,7 @@ export async function GET(request: NextRequest) {
   const { data: members } = await supabase
     .from('profiles')
     .select('id, first_name, last_name, email, phone, role, avatar_url, push_token, is_active')
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .eq('is_active', true)
     .order('first_name')
 
@@ -55,7 +49,7 @@ export async function GET(request: NextRequest) {
   const { count: unreadCount } = await supabase
     .from('team_messages')
     .select('*', { count: 'exact', head: true })
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .or(`recipient_id.eq.${user.id},recipient_id.is.null`)
     .eq('is_read', false)
     .neq('sender_id', user.id)
@@ -65,15 +59,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/team/messages — send internal message
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role, first_name, last_name, push_token')
-    .eq('id', user.id)
-    .single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const body = await request.json()
   const { recipient_ids, message, job_id, project_id } = body
@@ -82,14 +70,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Message is required' }, { status: 400 })
   }
 
-  const senderName = `${profile!.first_name} ${profile!.last_name}`
+  const senderName = `${profile.first_name} ${profile.last_name}`
   const messagesToInsert: any[] = []
   const isBroadcast = !recipient_ids || recipient_ids.includes('all')
 
   if (isBroadcast) {
     // Broadcast: recipient_id = null
     messagesToInsert.push({
-      organization_id: profile!.organization_id,
+      organization_id: profile.organization_id,
       sender_id: user.id,
       recipient_id: null,
       body: message.trim(),
@@ -100,7 +88,7 @@ export async function POST(request: NextRequest) {
     // Individual messages
     for (const rid of recipient_ids) {
       messagesToInsert.push({
-        organization_id: profile!.organization_id,
+        organization_id: profile.organization_id,
         sender_id: user.id,
         recipient_id: rid,
         body: message.trim(),
@@ -123,7 +111,7 @@ export async function POST(request: NextRequest) {
     ? supabase
         .from('profiles')
         .select('id, push_token')
-        .eq('organization_id', profile!.organization_id)
+        .eq('organization_id', profile.organization_id)
         .eq('is_active', true)
         .neq('id', user.id)
         .not('push_token', 'is', null)
@@ -164,24 +152,18 @@ export async function POST(request: NextRequest) {
 
 // PATCH /api/team/messages — mark messages as read
 export async function PATCH(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const body = await request.json()
   const { message_ids, mark_all } = body
 
   if (mark_all) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('organization_id')
-      .eq('id', user.id)
-      .single()
-
     await supabase
       .from('team_messages')
       .update({ is_read: true, read_at: new Date().toISOString() })
-      .eq('organization_id', profile!.organization_id)
+      .eq('organization_id', profile.organization_id)
       .or(`recipient_id.eq.${user.id},recipient_id.is.null`)
       .eq('is_read', false)
       .neq('sender_id', user.id)

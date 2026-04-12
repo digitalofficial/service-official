@@ -1,23 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 // POST /api/notifications/push — send push notification to a user
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  // Only managers can send push notifications
-  const managerRoles = ['owner', 'admin', 'office_manager', 'project_manager', 'dispatcher']
-  if (!managerRoles.includes(profile!.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin', 'office_manager', 'project_manager', 'dispatcher'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const body = await request.json()
   const { user_id, title, body: messageBody, data } = body
@@ -31,7 +19,7 @@ export async function POST(request: NextRequest) {
     .from('profiles')
     .select('push_token')
     .eq('id', user_id)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .single()
 
   if (!targetProfile?.push_token) {
@@ -52,7 +40,7 @@ export async function POST(request: NextRequest) {
     }),
   })
 
-  const result = await pushResponse.json()
+  const pushResult = await pushResponse.json()
 
-  return NextResponse.json({ success: true, result })
+  return NextResponse.json({ success: true, result: pushResult })
 }

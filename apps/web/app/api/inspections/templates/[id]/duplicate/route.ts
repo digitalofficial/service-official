@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   // Get original template
   const { data: original } = await supabase
@@ -21,7 +19,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   const { data: copy, error } = await supabase
     .from('inspection_templates')
     .insert({
-      organization_id: profile!.organization_id,
+      organization_id: profile.organization_id,
       name: `${original.name} (Copy)`,
       description: original.description,
       trade: original.trade,

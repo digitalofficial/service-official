@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { randomBytes } from 'crypto'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   // Get customer
   const { data: customer } = await supabase
     .from('customers')
     .select('*')
     .eq('id', params.id)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .single()
 
   if (!customer) return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
@@ -40,7 +38,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     .from('portal_users')
     .insert({
       customer_id: params.id,
-      organization_id: profile!.organization_id,
+      organization_id: profile.organization_id,
       email: customer.email.toLowerCase(),
       magic_link_token: token,
       magic_link_expires_at: expiresAt,

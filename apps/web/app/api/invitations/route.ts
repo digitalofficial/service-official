@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
 import { sendEmail } from '@service-official/notifications'
 import { z } from 'zod'
 import crypto from 'crypto'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { getTierMaxUsers } from '@/lib/auth/tier-access'
 
 const inviteSchema = z.object({
@@ -12,14 +12,9 @@ const inviteSchema = z.object({
 
 // GET — list invitations for the org
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
-  if (!profile || !['owner', 'admin'].includes(profile.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const { data, error } = await supabase
     .from('invitations')
@@ -33,19 +28,9 @@ export async function GET(request: NextRequest) {
 
 // POST — send a new invitation
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role, organization:organizations(name, subscription_tier, subscription_status)')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || !['owner', 'admin'].includes(profile.role)) {
-    return NextResponse.json({ error: 'Only owners and admins can invite team members' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin'] })
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const body = await request.json()
   const validated = inviteSchema.parse(body)
@@ -121,16 +106,7 @@ export async function POST(request: NextRequest) {
   const orgName = (profile.organization as any)?.name ?? 'your organization'
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/accept-invite?token=${token}`
 
-  // Get inviter name for the email
-  const { data: inviterProfile } = await supabase
-    .from('profiles')
-    .select('first_name, last_name')
-    .eq('id', user.id)
-    .single()
-
-  const inviterName = inviterProfile
-    ? `${inviterProfile.first_name ?? ''} ${inviterProfile.last_name ?? ''}`.trim()
-    : undefined
+  const inviterName = `${profile.first_name ?? ''} ${profile.last_name ?? ''}`.trim() || undefined
 
   // Send invitation email
   await sendEmail({

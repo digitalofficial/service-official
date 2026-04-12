@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
 import { createProject, getProjects } from '@service-official/database/queries/projects'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { trigger } from '@service-official/workflows'
 import { z } from 'zod'
 
@@ -28,16 +28,13 @@ const createProjectSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    const result = await getApiProfile()
+    if ('error' in result) return result.error
+    const { profile } = result
 
     const { searchParams } = new URL(request.url)
 
-    const result = await getProjects({
+    const data = await getProjects({
       organization_id: profile.organization_id,
       status: searchParams.get('status') ?? undefined,
       customer_id: searchParams.get('customer_id') ?? undefined,
@@ -46,7 +43,7 @@ export async function GET(request: NextRequest) {
       per_page: Number(searchParams.get('per_page') ?? 20),
     })
 
-    return NextResponse.json(result)
+    return NextResponse.json(data)
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -54,18 +51,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
-    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
-
-    // Role check
-    const allowedRoles = ['owner', 'admin', 'office_manager', 'project_manager', 'estimator']
-    if (!allowedRoles.includes(profile.role)) {
-      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-    }
+    const result = await getApiProfile({ requireRole: ['owner', 'admin', 'office_manager', 'project_manager', 'estimator'] })
+    if ('error' in result) return result.error
+    const { user, profile } = result
 
     const body = await request.json()
     const validated = createProjectSchema.parse(body)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { z } from 'zod'
 
 const customerSchema = z.object({
@@ -21,11 +21,10 @@ const customerSchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search')
   const tag = searchParams.get('tag')
@@ -35,7 +34,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('customers')
     .select('*', { count: 'exact' })
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .range((page - 1) * per_page, page * per_page - 1)
@@ -52,17 +51,16 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const body = await request.json()
   const validated = customerSchema.parse(body)
 
   const { data, error } = await supabase
     .from('customers')
-    .insert({ ...validated, organization_id: profile!.organization_id, created_by: user.id })
+    .insert({ ...validated, organization_id: profile.organization_id, created_by: user.id })
     .select()
     .single()
 

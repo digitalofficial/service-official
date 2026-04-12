@@ -1,21 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { DEFAULT_PORTAL_PERMISSIONS } from '@/lib/portal/permissions'
 
 export async function GET() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || !['owner', 'admin'].includes(profile.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const { data: org } = await supabase
     .from('organizations')
@@ -29,19 +19,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || !['owner', 'admin'].includes(profile.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const body = await request.json()
   const { permissions } = body

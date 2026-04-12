@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 const DEFAULT_EXPORT_ROLES = ['owner', 'admin']
 
 export async function GET() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
-  if (!profile) return NextResponse.json({ error: 'No profile' }, { status: 403 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const { data: org } = await supabase
     .from('organizations')
@@ -23,14 +20,9 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
-  if (!['owner', 'admin'].includes(profile?.role ?? '')) {
-    return NextResponse.json({ error: 'Only owners and admins can update export permissions' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const { roles } = await request.json()
   if (!Array.isArray(roles)) return NextResponse.json({ error: 'roles must be an array' }, { status: 400 })
@@ -42,7 +34,7 @@ export async function PATCH(request: NextRequest) {
   const { data: org } = await supabase
     .from('organizations')
     .select('settings')
-    .eq('id', profile!.organization_id)
+    .eq('id', profile.organization_id)
     .single()
 
   const currentSettings = (org?.settings as Record<string, unknown>) ?? {}
@@ -50,7 +42,7 @@ export async function PATCH(request: NextRequest) {
   const { error } = await supabase
     .from('organizations')
     .update({ settings: { ...currentSettings, export_allowed_roles: finalRoles } })
-    .eq('id', profile!.organization_id)
+    .eq('id', profile.organization_id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

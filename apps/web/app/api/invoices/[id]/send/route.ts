@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { sendEmail } from '@service-official/notifications'
 import { sendOrgSms } from '@/lib/sms'
 import { logMessage } from '@/lib/log-message'
@@ -7,11 +7,9 @@ import Stripe from 'stripe'
 
 // POST /api/invoices/[id]/send
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const { data: invoice } = await supabase
     .from('invoices')

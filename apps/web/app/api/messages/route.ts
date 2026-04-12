@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { sendSMS } from '@service-official/notifications'
 
 export async function GET(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const { searchParams } = new URL(request.url)
   const customer_id = searchParams.get('customer_id')
   const project_id = searchParams.get('project_id')
@@ -19,7 +18,7 @@ export async function GET(request: NextRequest) {
       customer:customers(id, first_name, last_name, company_name, phone),
       messages(id, body, direction, sent_at, status, read_at)
     `)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .eq('is_archived', false)
     .order('last_message_at', { ascending: false })
 
@@ -32,11 +31,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
   const { conversation_id, customer_id, body, channel = 'sms', media_urls = [] } = await request.json()
 
   // Get or create conversation
@@ -65,7 +63,7 @@ export async function POST(request: NextRequest) {
       const { data: newConvo } = await supabase
         .from('conversations')
         .insert({
-          organization_id: profile!.organization_id,
+          organization_id: profile.organization_id,
           customer_id,
           channel,
           phone_number: phoneNumber,
@@ -88,7 +86,7 @@ export async function POST(request: NextRequest) {
   // Send SMS via Twilio (per-org credentials)
   let twilioSid: string | undefined
   if (channel === 'sms' && phoneNumber) {
-    const result = await sendSMS({ organization_id: profile!.organization_id, to: phoneNumber, body, media_urls })
+    const result = await sendSMS({ organization_id: profile.organization_id, to: phoneNumber, body, media_urls })
     if (result.success) twilioSid = result.sid
   }
 
@@ -97,7 +95,7 @@ export async function POST(request: NextRequest) {
     .from('messages')
     .insert({
       conversation_id: convoId,
-      organization_id: profile!.organization_id,
+      organization_id: profile.organization_id,
       direction: 'outbound',
       channel,
       body,

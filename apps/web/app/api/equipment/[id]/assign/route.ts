@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { z } from 'zod'
 
 const assignSchema = z.object({
@@ -13,21 +13,16 @@ const assignSchema = z.object({
 })
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id, role').eq('id', user.id).single()
-  if (!['owner', 'admin', 'office_manager', 'project_manager', 'foreman', 'dispatcher'].includes(profile!.role)) {
-    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin', 'office_manager', 'project_manager', 'foreman', 'dispatcher'] })
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   // Verify equipment belongs to org and is available
   const { data: equipment } = await supabase
     .from('equipment')
     .select('id, status, daily_rate')
     .eq('id', params.id)
-    .eq('organization_id', profile!.organization_id)
+    .eq('organization_id', profile.organization_id)
     .single()
 
   if (!equipment) return NextResponse.json({ error: 'Equipment not found' }, { status: 404 })

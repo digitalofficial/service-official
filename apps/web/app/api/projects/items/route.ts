@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 // Generic API for creating project sub-items:
 // punch_list_items, project_phases, project_milestones, daily_logs,
@@ -29,11 +29,9 @@ const TYPE_ROLES: Record<string, string[]> = {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   const body = await request.json()
   const { type, ...data } = body
@@ -44,7 +42,7 @@ export async function POST(request: NextRequest) {
 
   // Enforce role-based access per item type
   const allowedRoles = TYPE_ROLES[type]
-  if (allowedRoles && !allowedRoles.includes(profile?.role ?? '')) {
+  if (allowedRoles && !allowedRoles.includes(profile.role)) {
     return NextResponse.json({ error: 'You do not have permission to create this item' }, { status: 403 })
   }
 
@@ -54,7 +52,7 @@ export async function POST(request: NextRequest) {
   if (type === 'rfi') data.submitted_by = user.id
   if (type === 'change_order') data.created_by = user.id
 
-  const { data: result, error } = await supabase
+  const { data: itemResult, error } = await supabase
     .from(table)
     .insert(data)
     .select()
@@ -62,5 +60,5 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ data: result, success: true }, { status: 201 })
+  return NextResponse.json({ data: itemResult, success: true }, { status: 201 })
 }

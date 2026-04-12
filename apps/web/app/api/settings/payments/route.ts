@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 // GET /api/settings/payments — return org's payment settings (mask secret key)
 export async function GET() {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const { data: org } = await supabase
     .from('organizations')
@@ -68,19 +60,9 @@ export async function GET() {
 
 // PATCH /api/settings/payments — save Stripe keys to org
 export async function PATCH(request: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('organization_id, role')
-    .eq('id', user.id)
-    .single()
-
-  if (!['owner', 'admin'].includes(profile?.role ?? '')) {
-    return NextResponse.json({ error: 'Only owners and admins can update payment settings' }, { status: 403 })
-  }
+  const result = await getApiProfile({ requireRole: ['owner', 'admin'] })
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
 
   const body = await request.json()
   const updates: Record<string, any> = {}
@@ -129,7 +111,7 @@ export async function PATCH(request: NextRequest) {
   const { error } = await supabase
     .from('organizations')
     .update(updates)
-    .eq('id', profile!.organization_id)
+    .eq('id', profile.organization_id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

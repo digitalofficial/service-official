@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@service-official/database'
+import { getApiProfile } from '@/lib/auth/get-api-profile'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: profile } = await supabase.from('profiles').select('organization_id').eq('id', user.id).single()
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { user, profile, supabase } = result
 
   // Find current assignment
   const { data: assignment } = await supabase
@@ -56,7 +54,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   // Create expense record if there's a cost and a project
   if (totalCost && assignment.project_id) {
     await supabase.from('expenses').insert({
-      organization_id: profile!.organization_id,
+      organization_id: profile.organization_id,
       project_id: assignment.project_id,
       title: `Equipment rental`,
       description: `Equipment assignment ${days} days`,

@@ -1,4 +1,5 @@
 import { getProfile } from '@/lib/auth/get-profile'
+import { createServiceRoleClient } from '@service-official/database'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -11,7 +12,8 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = { title: 'Team Settings' }
 
 export default async function TeamSettingsPage() {
-  const { supabase, profile } = await getProfile()
+  const { profile } = await getProfile()
+  const supabase = createServiceRoleClient()
 
   const isOwnerOrAdmin = profile?.role === 'owner' || profile?.role === 'admin'
 
