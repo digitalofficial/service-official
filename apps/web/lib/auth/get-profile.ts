@@ -85,5 +85,8 @@ export async function getProfile() {
     redirect('/auth/login?error=setup_failed')
   }
 
-  return { supabase, user, profile }
+  // Return service role client for data queries — RLS policies block the
+  // session client after the security migration enabled RLS on all tables.
+  // Auth is already verified above via the session client.
+  return { supabase: createServiceRoleClient(), user, profile }
 }
