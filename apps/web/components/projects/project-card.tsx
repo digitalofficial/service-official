@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+
 import { MapPin, Calendar, DollarSign, Users, ChevronRight } from 'lucide-react'
 import { statusColor, formatCurrency, formatDate } from '@/lib/utils'
 import type { Project } from '@service-official/types'
@@ -19,7 +19,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
       : null
 
   return (
-    <Link href={`/projects/${project.id}`}>
+    <a href={`/projects/${project.id}/overview`}>
       <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer group">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
@@ -97,6 +97,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-400 transition-colors" />
         </div>
       </div>
-    </Link>
+    </a>
   )
 }

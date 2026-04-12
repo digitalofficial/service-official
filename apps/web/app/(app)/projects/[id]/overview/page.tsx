@@ -127,6 +127,7 @@ export default async function ProjectOverviewPage({ params }: { params: { id: st
             <TrackerRow label="Submittals" open={stats.pending_submittals} total={stats.total_submittals} href={`/projects/${params.id}/submittals`} />
             <TrackerRow label="Materials" open={stats.materials_pending} total={stats.total_materials_count} href={`/projects/${params.id}/materials`} />
             <TrackerRow label="Inspections" open={stats.pending_inspections} total={stats.total_inspections} href={`/projects/${params.id}/inspections`} />
+            <TrackerRow label="Purchase Orders" open={stats.open_pos} total={stats.total_pos} href="/purchase-orders" />
           </div>
 
           {/* Activity Counts */}

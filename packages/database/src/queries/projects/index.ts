@@ -119,7 +119,7 @@ export async function deleteProject(id: string, organization_id?: string): Promi
 export async function getProjectStats(project_id: string) {
   const supabase = createServiceRoleClient()
 
-  const [expenses, materials, photos, files, punch_list, rfis, change_orders, time_entries, submittals, daily_logs, inspections, gantt_tasks] = await Promise.all([
+  const [expenses, materials, photos, files, punch_list, rfis, change_orders, time_entries, submittals, daily_logs, inspections, gantt_tasks, purchase_orders] = await Promise.all([
     supabase.from('expenses').select('total_amount, status').eq('project_id', project_id),
     supabase.from('project_materials').select('total_cost, unit_cost, quantity_estimated, status').eq('project_id', project_id),
     supabase.from('photos').select('id', { count: 'exact', head: true }).eq('project_id', project_id).is('deleted_at', null),
@@ -132,6 +132,7 @@ export async function getProjectStats(project_id: string) {
     supabase.from('daily_logs').select('id', { count: 'exact', head: true }).eq('project_id', project_id),
     supabase.from('inspections').select('status').eq('project_id', project_id).is('deleted_at', null),
     supabase.from('gantt_tasks').select('progress, name').eq('project_id', project_id).is('deleted_at', null),
+    supabase.from('purchase_orders').select('total, status').eq('project_id', project_id),
   ])
 
   const total_expenses = expenses.data?.reduce((sum, e) => sum + (e.total_amount || 0), 0) ?? 0
@@ -201,5 +202,9 @@ export async function getProjectStats(project_id: string) {
       ? Math.round(gantt_tasks.data.reduce((sum, t) => sum + (t.progress || 0), 0) / gantt_tasks.data.length)
       : 0,
     total_schedule_tasks: gantt_tasks.data?.length ?? 0,
+    // Purchase Orders
+    total_po_value: purchase_orders.data?.reduce((sum, po) => sum + (po.total || 0), 0) ?? 0,
+    total_pos: purchase_orders.data?.length ?? 0,
+    open_pos: purchase_orders.data?.filter(po => !['fulfilled', 'closed', 'canceled'].includes(po.status)).length ?? 0,
   }
 }
