@@ -8,7 +8,7 @@ export const reportTemplates: ReportTemplate[] = [
     description: 'Revenue minus expenses over a date range',
     category: 'financial',
     icon: 'TrendingUp',
-    availableFilters: ['date_range'],
+    availableFilters: ['date_range', 'project_id', 'job_id'],
     columns: [
       { key: 'category', label: 'Category', format: 'text', sortable: true },
       { key: 'revenue', label: 'Revenue', format: 'currency', sortable: true, align: 'right', showTotal: true },
@@ -23,7 +23,7 @@ export const reportTemplates: ReportTemplate[] = [
     description: 'Breakdown of all revenue by month or customer',
     category: 'financial',
     icon: 'DollarSign',
-    availableFilters: ['date_range', 'customer_id', 'group_by'],
+    availableFilters: ['date_range', 'customer_id', 'project_id', 'group_by'],
     columns: [
       { key: 'period', label: 'Period', format: 'text', sortable: true },
       { key: 'invoiced', label: 'Invoiced', format: 'currency', sortable: true, align: 'right', showTotal: true },
@@ -39,7 +39,7 @@ export const reportTemplates: ReportTemplate[] = [
     description: 'All expenses grouped by category or vendor',
     category: 'financial',
     icon: 'CreditCard',
-    availableFilters: ['date_range', 'group_by'],
+    availableFilters: ['date_range', 'project_id', 'job_id', 'group_by'],
     columns: [
       { key: 'date', label: 'Date', format: 'date', sortable: true },
       { key: 'category', label: 'Category', format: 'text', sortable: true },
@@ -123,7 +123,7 @@ export const reportTemplates: ReportTemplate[] = [
     description: 'Revenue vs cost per job to see margin',
     category: 'operations',
     icon: 'Hammer',
-    availableFilters: ['date_range', 'status'],
+    availableFilters: ['date_range', 'job_id', 'project_id', 'status'],
     columns: [
       { key: 'job_title', label: 'Job', format: 'text', sortable: true },
       { key: 'customer', label: 'Customer', format: 'text', sortable: true },
@@ -141,7 +141,7 @@ export const reportTemplates: ReportTemplate[] = [
     description: 'Budgeted vs actual costs per project',
     category: 'operations',
     icon: 'FolderKanban',
-    availableFilters: ['date_range', 'status', 'customer_id'],
+    availableFilters: ['date_range', 'project_id', 'status', 'customer_id'],
     columns: [
       { key: 'project_name', label: 'Project', format: 'text', sortable: true },
       { key: 'customer', label: 'Customer', format: 'text', sortable: true },
@@ -213,7 +213,7 @@ export const reportTemplates: ReportTemplate[] = [
     description: 'Hours worked by team member with labor costs',
     category: 'labor',
     icon: 'Clock',
-    availableFilters: ['date_range', 'project_id'],
+    availableFilters: ['date_range', 'project_id', 'job_id'],
     columns: [
       { key: 'team_member', label: 'Team Member', format: 'text', sortable: true },
       { key: 'date', label: 'Date', format: 'date', sortable: true },

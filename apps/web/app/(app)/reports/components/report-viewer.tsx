@@ -21,9 +21,13 @@ export function ReportViewer({ slug }: Props) {
     date_to: '',
     customer_id: '',
     project_id: '',
+    job_id: '',
     status: '',
     group_by: template?.defaultGroupBy ?? '',
   })
+  const [projects, setProjects] = useState<any[]>([])
+  const [jobs, setJobs] = useState<any[]>([])
+  const [customers, setCustomers] = useState<any[]>([])
   const [rows, setRows] = useState<ReportRow[]>([])
   const [columns, setColumns] = useState<ColumnDef[]>(template?.columns ?? [])
   const [summary, setSummary] = useState<Record<string, number>>({})
@@ -41,6 +45,7 @@ export function ReportViewer({ slug }: Props) {
       if (filters.date_to) params.set('date_to', filters.date_to)
       if (filters.customer_id) params.set('customer_id', filters.customer_id)
       if (filters.project_id) params.set('project_id', filters.project_id)
+      if (filters.job_id) params.set('job_id', filters.job_id)
       if (filters.status) params.set('status', filters.status)
       if (filters.group_by) params.set('group_by', filters.group_by)
 
@@ -62,6 +67,12 @@ export function ReportViewer({ slug }: Props) {
   useEffect(() => {
     fetchReport()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetch('/api/projects').then(r => r.json()).then(d => setProjects(d.data || []))
+    fetch('/api/jobs').then(r => r.json()).then(d => setJobs(d.data || []))
+    fetch('/api/customers').then(r => r.json()).then(d => setCustomers(d.data || []))
+  }, [])
 
   async function handleSave() {
     if (!saveName.trim()) return
@@ -178,37 +189,63 @@ export function ReportViewer({ slug }: Props) {
           {hasFilter('status') && (
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
-              <input
-                type="text"
-                placeholder="e.g. paid, draft"
+              <select
                 value={filters.status ?? ''}
                 onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-36"
-              />
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[130px]"
+              >
+                <option value="">All Statuses</option>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="paid">Paid</option>
+                <option value="partial">Partial</option>
+                <option value="overdue">Overdue</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="completed">Completed</option>
+                <option value="in_progress">In Progress</option>
+                <option value="scheduled">Scheduled</option>
+              </select>
             </div>
           )}
           {hasFilter('customer_id') && (
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Customer ID</label>
-              <input
-                type="text"
-                placeholder="UUID"
+              <label className="block text-xs font-medium text-gray-500 mb-1">Customer</label>
+              <select
                 value={filters.customer_id ?? ''}
                 onChange={e => setFilters(f => ({ ...f, customer_id: e.target.value }))}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-36"
-              />
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[160px]"
+              >
+                <option value="">All Customers</option>
+                {customers.map(c => <option key={c.id} value={c.id}>{c.company_name || `${c.first_name} ${c.last_name}`}</option>)}
+              </select>
             </div>
           )}
           {hasFilter('project_id') && (
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Project ID</label>
-              <input
-                type="text"
-                placeholder="UUID"
+              <label className="block text-xs font-medium text-gray-500 mb-1">Project</label>
+              <select
                 value={filters.project_id ?? ''}
                 onChange={e => setFilters(f => ({ ...f, project_id: e.target.value }))}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-36"
-              />
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[160px]"
+              >
+                <option value="">All Projects</option>
+                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
+          {hasFilter('job_id') && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Job</label>
+              <select
+                value={filters.job_id ?? ''}
+                onChange={e => setFilters(f => ({ ...f, job_id: e.target.value }))}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[160px]"
+              >
+                <option value="">All Jobs</option>
+                {jobs.map(j => <option key={j.id} value={j.id}>{j.job_number ? `${j.job_number} — ` : ''}{j.title}</option>)}
+              </select>
             </div>
           )}
           {hasFilter('group_by') && (
@@ -221,6 +258,9 @@ export function ReportViewer({ slug }: Props) {
               >
                 <option value="month">Month</option>
                 <option value="customer">Customer</option>
+                <option value="project">Project</option>
+                <option value="job">Job</option>
+                <option value="category">Category</option>
               </select>
             </div>
           )}

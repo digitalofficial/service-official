@@ -23,13 +23,14 @@ export interface ReportTemplate {
   showTotals: boolean
 }
 
-export type FilterKey = 'date_range' | 'customer_id' | 'project_id' | 'status' | 'group_by'
+export type FilterKey = 'date_range' | 'customer_id' | 'project_id' | 'job_id' | 'status' | 'group_by'
 
 export interface ReportFilters {
   date_from?: string
   date_to?: string
   customer_id?: string
   project_id?: string
+  job_id?: string
   status?: string
   group_by?: string
 }

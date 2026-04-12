@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     date_to: searchParams.get('date_to') ?? undefined,
     customer_id: searchParams.get('customer_id') ?? undefined,
     project_id: searchParams.get('project_id') ?? undefined,
+    job_id: searchParams.get('job_id') ?? undefined,
     status: searchParams.get('status') ?? undefined,
     group_by: searchParams.get('group_by') ?? template.defaultGroupBy,
   }

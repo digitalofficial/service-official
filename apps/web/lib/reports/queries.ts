@@ -11,6 +11,16 @@ function dateFilter(query: any, field: string, filters: ReportFilters) {
   return query
 }
 
+function jobFilter(query: any, filters: ReportFilters) {
+  if (filters.job_id) query = query.eq('job_id', filters.job_id)
+  return query
+}
+
+function projectFilter(query: any, filters: ReportFilters) {
+  if (filters.project_id) query = query.eq('project_id', filters.project_id)
+  return query
+}
+
 function agingBucket(days: number): string {
   if (days <= 0) return 'Current'
   if (days <= 30) return '1-30 days'
@@ -37,6 +47,8 @@ const profitAndLoss: QueryFn = async (supabase, orgId, filters) => {
 
   let expQuery = supabase.from('expenses').select('total_amount, category, expense_date').eq('organization_id', orgId)
   expQuery = dateFilter(expQuery, 'expense_date', filters)
+  expQuery = projectFilter(expQuery, filters)
+  expQuery = jobFilter(expQuery, filters)
   const { data: expenses } = await expQuery
 
   const revenue = (invoices ?? []).reduce((s, i) => s + (i.amount_paid ?? 0), 0)
@@ -91,6 +103,8 @@ const revenueSummary: QueryFn = async (supabase, orgId, filters) => {
 const expenseReport: QueryFn = async (supabase, orgId, filters) => {
   let query = supabase.from('expenses').select('expense_date, category, vendor_name, description, total_amount').eq('organization_id', orgId).order('expense_date', { ascending: false })
   query = dateFilter(query, 'expense_date', filters)
+  query = projectFilter(query, filters)
+  query = jobFilter(query, filters)
   const { data } = await query
 
   return (data ?? []).map(e => ({
@@ -177,8 +191,10 @@ const paymentsReceived: QueryFn = async (supabase, orgId, filters) => {
 // ─── Operations ──────────────────────────────────────────────
 
 const jobProfitability: QueryFn = async (supabase, orgId, filters) => {
-  let query = supabase.from('jobs').select('title, status, total_price, actual_cost, customer:customers(company_name, first_name, last_name)').eq('organization_id', orgId)
+  let query = supabase.from('jobs').select('id, title, status, total_price, actual_cost, customer:customers(company_name, first_name, last_name)').eq('organization_id', orgId)
   query = dateFilter(query, 'created_at', filters)
+  if (filters.job_id) query = query.eq('id', filters.job_id)
+  if (filters.project_id) query = query.eq('project_id', filters.project_id)
   if (filters.status) query = query.eq('status', filters.status)
   const { data } = await query
 
@@ -200,6 +216,7 @@ const jobProfitability: QueryFn = async (supabase, orgId, filters) => {
 const projectProfitability: QueryFn = async (supabase, orgId, filters) => {
   let query = supabase.from('projects').select('name, status, budget, actual_cost, total_invoiced, customer:customers(company_name, first_name, last_name)').eq('organization_id', orgId)
   query = dateFilter(query, 'created_at', filters)
+  if (filters.project_id) query = query.eq('id', filters.project_id)
   if (filters.status) query = query.eq('status', filters.status)
   if (filters.customer_id) query = query.eq('customer_id', filters.customer_id)
   const { data } = await query
@@ -284,8 +301,10 @@ const customerRevenue: QueryFn = async (supabase, orgId, filters) => {
 // ─── Labor ───────────────────────────────────────────────────
 
 const timeLabor: QueryFn = async (supabase, orgId, filters) => {
-  let query = supabase.from('time_entries').select('date, hours, profile:profiles!profile_id(first_name, last_name, hourly_rate), job:jobs(title)').eq('organization_id', orgId).order('date', { ascending: false })
+  let query = supabase.from('time_entries').select('date, hours, project_id, job_id, profile:profiles!profile_id(first_name, last_name, hourly_rate), job:jobs(title)').eq('organization_id', orgId).order('date', { ascending: false })
   query = dateFilter(query, 'date', filters)
+  query = projectFilter(query, filters)
+  query = jobFilter(query, filters)
   const { data } = await query
 
   return (data ?? []).map(te => {
