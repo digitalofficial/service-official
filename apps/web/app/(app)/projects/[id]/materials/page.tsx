@@ -26,7 +26,7 @@ const FIELDS = [
 export default async function ProjectMaterialsPage({ params }: { params: { id: string } }) {
   const { supabase } = await getProfile()
   const { data: materials } = await supabase.from('project_materials').select('*').eq('project_id', params.id).order('created_at', { ascending: false })
-  const totalCost = (materials ?? []).reduce((sum: number, m: any) => sum + (m.total_cost ?? 0), 0)
+  const totalCost = (materials ?? []).reduce((sum: number, m: any) => sum + (m.total_cost || ((m.unit_cost || 0) * (m.quantity_estimated || 0))), 0)
 
   return (
     <div className="space-y-4">

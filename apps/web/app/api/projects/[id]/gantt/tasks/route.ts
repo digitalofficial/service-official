@@ -62,6 +62,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Sync progress back to linked phase
+  if (data.phase_id && updates.progress !== undefined) {
+    const phaseStatus = data.progress >= 100 ? 'completed' : data.progress > 0 ? 'in_progress' : 'not_started'
+    await supabase
+      .from('project_phases')
+      .update({ status: phaseStatus, updated_at: new Date().toISOString() })
+      .eq('id', data.phase_id)
+  }
+
   return NextResponse.json({ data, success: true })
 }
 

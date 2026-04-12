@@ -1,8 +1,11 @@
 import { getProfile } from '@/lib/auth/get-profile'
 import { EmptyState } from '@/components/ui/empty-state'
 import { AddItemForm } from '@/components/projects/add-item-form'
-import { formatDate, statusColor } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import { Clock, CheckCircle, Circle, AlertCircle } from 'lucide-react'
+import { PhaseStatusActions, MilestoneToggle } from './timeline-actions'
+
+export const dynamic = 'force-dynamic'
 
 const PHASE_FIELDS = [
   { name: 'name', label: 'Phase Name', type: 'text' as const, placeholder: 'e.g. Demolition', required: true, colSpan: 2 },
@@ -46,31 +49,24 @@ export default async function ProjectTimelinePage({ params }: { params: { id: st
           <EmptyState icon={<Clock className="w-10 h-10" />} title="No phases yet" description="Break your project into phases to track progress." />
         ) : (
           <div className="space-y-2">
-            {phases.map((phase: any, i: number) => {
-              const colors = statusColor(phase.status)
-              return (
-                <div key={phase.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-xs text-gray-400 w-6 text-center">{i + 1}</span>
-                    {PHASE_STATUS_ICON[phase.status] ?? PHASE_STATUS_ICON.not_started}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-medium text-gray-900">{phase.name}</h3>
-                      {phase.color && <div className="w-3 h-3 rounded-full" style={{ backgroundColor: phase.color }} />}
-                    </div>
-                    {phase.description && <p className="text-xs text-gray-500 mt-0.5">{phase.description}</p>}
-                  </div>
-                  <div className="text-right text-xs text-gray-500 shrink-0">
-                    {phase.start_date && <p>{formatDate(phase.start_date, { month: 'short', day: 'numeric' })}</p>}
-                    {phase.end_date && <p>to {formatDate(phase.end_date, { month: 'short', day: 'numeric' })}</p>}
-                  </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>
-                    {phase.status.replace(/_/g, ' ')}
-                  </span>
+            {phases.map((phase: any, i: number) => (
+              <div key={phase.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-4">
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-xs text-gray-400 w-6 text-center">{i + 1}</span>
+                  {PHASE_STATUS_ICON[phase.status] ?? PHASE_STATUS_ICON.not_started}
                 </div>
-              )
-            })}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-gray-900">{phase.name}</h3>
+                  {phase.description && <p className="text-xs text-gray-500 mt-0.5">{phase.description}</p>}
+                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
+                    {phase.start_date && <span>{formatDate(phase.start_date, { month: 'short', day: 'numeric' })}</span>}
+                    {phase.start_date && phase.end_date && <span>—</span>}
+                    {phase.end_date && <span>{formatDate(phase.end_date, { month: 'short', day: 'numeric' })}</span>}
+                  </div>
+                </div>
+                <PhaseStatusActions phaseId={phase.id} currentStatus={phase.status} />
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -80,20 +76,23 @@ export default async function ProjectTimelinePage({ params }: { params: { id: st
           <h2 className="font-semibold text-gray-900">Milestones ({milestones?.length ?? 0})</h2>
           <AddItemForm projectId={params.id} itemType="milestone" buttonLabel="Add Milestone" formTitle="New Milestone" fields={MILESTONE_FIELDS} />
         </div>
-        {milestones && milestones.length > 0 && (
+        {milestones && milestones.length > 0 ? (
           <div className="space-y-2">
             {milestones.map((ms: any) => (
               <div key={ms.id} className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
-                {ms.status === 'completed' ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  : ms.status === 'missed' ? <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                {ms.is_completed ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
                   : <Circle className="w-4 h-4 text-gray-400 shrink-0" />}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm ${ms.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{ms.name}</p>
+                  <p className={`text-sm ${ms.is_completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{ms.name}</p>
+                  {ms.description && <p className="text-xs text-gray-500 mt-0.5">{ms.description}</p>}
                 </div>
-                {ms.due_date && <span className="text-xs text-gray-500">{formatDate(ms.due_date, { month: 'short', day: 'numeric' })}</span>}
+                {ms.due_date && <span className="text-xs text-gray-400 shrink-0">{formatDate(ms.due_date, { month: 'short', day: 'numeric' })}</span>}
+                <MilestoneToggle milestoneId={ms.id} isCompleted={ms.is_completed ?? false} />
               </div>
             ))}
           </div>
+        ) : (
+          <EmptyState icon={<CheckCircle className="w-10 h-10" />} title="No milestones yet" description="Add key milestones to track important dates." />
         )}
       </div>
     </div>

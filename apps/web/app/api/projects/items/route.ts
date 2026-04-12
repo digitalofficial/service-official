@@ -55,6 +55,11 @@ export async function POST(request: NextRequest) {
   // Include organization_id for multi-tenant isolation
   data.organization_id = profile.organization_id
 
+  // Compute total_cost for materials
+  if (type === 'material' && data.unit_cost && data.quantity_estimated) {
+    data.total_cost = Math.round((parseFloat(data.unit_cost) || 0) * (parseFloat(data.quantity_estimated) || 0) * 100) / 100
+  }
+
   const { data: itemResult, error } = await supabase
     .from(table)
     .insert(data)
@@ -80,6 +85,33 @@ export async function PATCH(request: NextRequest) {
     if (!item_id) return NextResponse.json({ error: 'item_id required' }, { status: 400 })
 
     updates.updated_at = new Date().toISOString()
+
+    // Set approved_amount when approving a change order
+    if (type === 'change_order' && updates.status === 'approved') {
+      const { data: existing } = await supabase
+        .from(table)
+        .select('amount')
+        .eq('id', item_id)
+        .single()
+      if (existing) {
+        updates.approved_amount = existing.amount
+        updates.approved_by = (await getApiProfile()).user?.id
+      }
+    }
+
+    // Recompute total_cost for materials
+    if (type === 'material' && (updates.unit_cost !== undefined || updates.quantity_estimated !== undefined)) {
+      const { data: existing } = await supabase
+        .from(table)
+        .select('unit_cost, quantity_estimated')
+        .eq('id', item_id)
+        .single()
+      if (existing) {
+        const unitCost = updates.unit_cost ?? existing.unit_cost ?? 0
+        const qty = updates.quantity_estimated ?? existing.quantity_estimated ?? 0
+        updates.total_cost = Math.round(unitCost * qty * 100) / 100
+      }
+    }
 
     const { data, error } = await supabase
       .from(table)

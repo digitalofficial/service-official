@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getProfile } from '@/lib/auth/get-profile'
 import { getProjectById } from '@service-official/database/queries/projects'
+import { TabLink } from '@/components/projects/tab-link'
 
 export const dynamic = 'force-dynamic'
 import { ProjectStatusBadge } from '@/components/projects/status-badge'
@@ -90,13 +91,11 @@ export default async function ProjectDetailLayout({ children, params }: ProjectL
         {/* Tab Navigation */}
         <div className="flex items-center gap-0 overflow-x-auto">
           {PROJECT_TABS.map(tab => (
-            <Link
+            <TabLink
               key={tab.label}
-              href={`${baseHref}${tab.href}`}
-              className="px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-colors"
-            >
-              {tab.label}
-            </Link>
+              href={tab.href ? `${baseHref}${tab.href}` : `${baseHref}/overview`}
+              label={tab.label}
+            />
           ))}
         </div>
       </div>

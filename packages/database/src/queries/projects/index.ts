@@ -121,7 +121,7 @@ export async function getProjectStats(project_id: string) {
   const [expenses, materials, photos, files, punch_list, rfis, change_orders, time_entries, submittals, daily_logs, inspections] = await Promise.all([
     supabase.from('expenses').select('total_amount, status').eq('project_id', project_id),
     supabase.from('project_materials').select('total_cost, unit_cost, quantity_estimated, status').eq('project_id', project_id),
-    supabase.from('photos').select('id', { count: 'exact', head: true }).eq('project_id', project_id),
+    supabase.from('photos').select('id', { count: 'exact', head: true }).eq('project_id', project_id).is('deleted_at', null),
     supabase.from('files').select('id', { count: 'exact', head: true }).eq('project_id', project_id),
     supabase.from('punch_list_items').select('status').eq('project_id', project_id),
     supabase.from('rfis').select('status').eq('project_id', project_id),
@@ -129,7 +129,7 @@ export async function getProjectStats(project_id: string) {
     supabase.from('time_entries').select('hours, jobs!inner(project_id)').eq('jobs.project_id', project_id),
     supabase.from('submittals').select('status').eq('project_id', project_id),
     supabase.from('daily_logs').select('id', { count: 'exact', head: true }).eq('project_id', project_id),
-    supabase.from('inspections').select('status').eq('project_id', project_id),
+    supabase.from('inspections').select('status').eq('project_id', project_id).is('deleted_at', null),
   ])
 
   const total_expenses = expenses.data?.reduce((sum, e) => sum + (e.total_amount || 0), 0) ?? 0
