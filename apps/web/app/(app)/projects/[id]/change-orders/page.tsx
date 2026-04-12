@@ -63,7 +63,17 @@ export default async function ChangeOrdersPage({ params }: { params: { id: strin
                   {co.approved_amount != null && co.status === 'approved' && <p className="text-xs text-green-600">Approved: {formatCurrency(co.approved_amount)}</p>}
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>{co.status}</span>
-                <ItemActions itemId={co.id} itemType="change_order" currentStatus={co.status} statuses={CO_STATUSES} />
+                <ItemActions itemId={co.id} itemType="change_order" currentStatus={co.status} statuses={CO_STATUSES}
+                  editTitle="Change Order"
+                  editFields={[
+                    { name: 'title', label: 'Title', type: 'text' },
+                    { name: 'description', label: 'Description', type: 'textarea' },
+                    { name: 'reason', label: 'Reason', type: 'text' },
+                    { name: 'amount', label: 'Amount ($)', type: 'number', step: '0.01' },
+                    { name: 'schedule_days_impact', label: 'Schedule Impact (days)', type: 'number' },
+                  ]}
+                  itemData={co}
+                />
               </div>
             )
           })}

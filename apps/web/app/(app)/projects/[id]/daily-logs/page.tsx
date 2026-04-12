@@ -62,7 +62,19 @@ export default async function DailyLogsPage({ params }: { params: { id: string }
                     Submitted by {log.submitter?.first_name} {log.submitter?.last_name}
                   </p>
                 </div>
-                <ItemActions itemId={log.id} itemType="daily_log" currentStatus="" statuses={[]} />
+                <ItemActions itemId={log.id} itemType="daily_log" currentStatus="" statuses={[]}
+                  editTitle="Daily Log"
+                  editFields={[
+                    { name: 'log_date', label: 'Date', type: 'date' },
+                    { name: 'weather', label: 'Weather', type: 'select', options: [{ label: 'Clear', value: 'clear' }, { label: 'Partly Cloudy', value: 'partly_cloudy' }, { label: 'Cloudy', value: 'cloudy' }, { label: 'Rain', value: 'rain' }, { label: 'Heavy Rain', value: 'heavy_rain' }, { label: 'Wind', value: 'wind' }, { label: 'Storm', value: 'storm' }] },
+                    { name: 'crew_count', label: 'Crew Count', type: 'number' },
+                    { name: 'crew_hours', label: 'Crew Hours', type: 'number', step: '0.5' },
+                    { name: 'work_performed', label: 'Work Performed', type: 'textarea' },
+                    { name: 'areas_worked', label: 'Areas Worked', type: 'text' },
+                    { name: 'issues', label: 'Issues', type: 'textarea' },
+                  ]}
+                  itemData={log}
+                />
                 {log.weather_delay && (
                   <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-medium flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" /> Weather Delay {log.weather_delay_hours}h

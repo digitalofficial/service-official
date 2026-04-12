@@ -44,7 +44,16 @@ export default async function SubmittalsPage({ params }: { params: { id: string 
                   <p className="text-xs text-gray-400 mt-0.5">{formatDate(sub.created_at, { month: 'short', day: 'numeric' })}</p>
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>{sub.status.replace(/_/g, ' ')}</span>
-                <ItemActions itemId={sub.id} itemType="submittal" currentStatus={sub.status} statuses={SUBMITTAL_STATUSES} />
+                <ItemActions itemId={sub.id} itemType="submittal" currentStatus={sub.status} statuses={SUBMITTAL_STATUSES}
+                  editTitle="Submittal"
+                  editFields={[
+                    { name: 'title', label: 'Title', type: 'text' },
+                    { name: 'description', label: 'Description', type: 'textarea' },
+                    { name: 'spec_section', label: 'Spec Section', type: 'text' },
+                    { name: 'due_date', label: 'Due Date', type: 'date' },
+                  ]}
+                  itemData={sub}
+                />
               </div>
             )
           })}

@@ -68,7 +68,17 @@ export default async function PunchListPage({ params }: { params: { id: string }
                   {item.due_date && <span>Due {formatDate(item.due_date, { month: 'short', day: 'numeric' })}</span>}
                 </div>
               </div>
-              <ItemActions itemId={item.id} itemType="punch_list" currentStatus={item.status} statuses={PUNCH_STATUSES} />
+              <ItemActions itemId={item.id} itemType="punch_list" currentStatus={item.status} statuses={PUNCH_STATUSES}
+                editTitle="Punch List Item"
+                editFields={[
+                  { name: 'title', label: 'Title', type: 'text' },
+                  { name: 'description', label: 'Description', type: 'textarea' },
+                  { name: 'location', label: 'Location', type: 'text' },
+                  { name: 'priority', label: 'Priority', type: 'select', options: [{ label: 'Normal', value: 'normal' }, { label: 'High', value: 'high' }, { label: 'Low', value: 'low' }] },
+                  { name: 'due_date', label: 'Due Date', type: 'date' },
+                ]}
+                itemData={item}
+              />
             </div>
           ))}
         </div>

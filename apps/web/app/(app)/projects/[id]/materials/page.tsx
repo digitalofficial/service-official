@@ -72,7 +72,18 @@ export default async function ProjectMaterialsPage({ params }: { params: { id: s
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${colors.bg} ${colors.text}`}>{m.status}</span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <ItemActions itemId={m.id} itemType="material" currentStatus={m.status} statuses={MATERIAL_STATUSES} />
+                      <ItemActions itemId={m.id} itemType="material" currentStatus={m.status} statuses={MATERIAL_STATUSES}
+                        editTitle="Material"
+                        editFields={[
+                          { name: 'name', label: 'Material', type: 'text' },
+                          { name: 'category', label: 'Category', type: 'text' },
+                          { name: 'supplier', label: 'Supplier', type: 'text' },
+                          { name: 'quantity_estimated', label: 'Qty Needed', type: 'number', step: '0.01' },
+                          { name: 'unit', label: 'Unit', type: 'text' },
+                          { name: 'unit_cost', label: 'Unit Cost ($)', type: 'number', step: '0.01' },
+                        ]}
+                        itemData={m}
+                      />
                     </td>
                   </tr>
                 )

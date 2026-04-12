@@ -2,20 +2,32 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Trash2, Loader2 } from 'lucide-react'
+import { Trash2, Loader2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
+import { EditItemModal } from './edit-item-modal'
+
+interface EditField {
+  name: string
+  label: string
+  type: 'text' | 'textarea' | 'number' | 'date' | 'select'
+  options?: { label: string; value: string }[]
+  step?: string
+}
 
 interface ItemActionsProps {
   itemId: string
   itemType: string
   currentStatus: string
   statuses: { value: string; label: string }[]
-  onDeleted?: () => void
+  editFields?: EditField[]
+  editTitle?: string
+  itemData?: Record<string, any>
 }
 
-export function ItemActions({ itemId, itemType, currentStatus, statuses, onDeleted }: ItemActionsProps) {
+export function ItemActions({ itemId, itemType, currentStatus, statuses, editFields, editTitle, itemData }: ItemActionsProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
   async function handleStatusChange(newStatus: string) {
     setLoading(true)
@@ -57,27 +69,46 @@ export function ItemActions({ itemId, itemType, currentStatus, statuses, onDelet
   }
 
   return (
-    <div className="flex items-center gap-2">
-      {statuses.length > 1 && (
-        <select
-          value={currentStatus}
-          onChange={e => handleStatusChange(e.target.value)}
+    <>
+      <div className="flex items-center gap-1.5">
+        {statuses.length > 1 && (
+          <select
+            value={currentStatus}
+            onChange={e => handleStatusChange(e.target.value)}
+            disabled={loading}
+            className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:border-blue-400 disabled:opacity-50"
+          >
+            {statuses.map(s => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        )}
+        {editFields && editFields.length > 0 && (
+          <button onClick={() => setEditOpen(true)} className="p-1 text-gray-400 hover:text-blue-500 transition-colors" title="Edit">
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button
+          onClick={handleDelete}
           disabled={loading}
-          className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-700 focus:outline-none focus:border-blue-400 disabled:opacity-50"
+          className="p-1 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+          title="Delete"
         >
-          {statuses.map(s => (
-            <option key={s.value} value={s.value}>{s.label}</option>
-          ))}
-        </select>
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+
+      {editFields && editFields.length > 0 && (
+        <EditItemModal
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          itemType={itemType}
+          itemId={itemId}
+          title={editTitle || itemType}
+          fields={editFields}
+          initialValues={itemData || {}}
+        />
       )}
-      <button
-        onClick={handleDelete}
-        disabled={loading}
-        className="p-1 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-        title="Delete"
-      >
-        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-      </button>
-    </div>
+    </>
   )
 }

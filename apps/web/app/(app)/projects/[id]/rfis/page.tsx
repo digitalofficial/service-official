@@ -49,7 +49,17 @@ export default async function ProjectRFIsPage({ params }: { params: { id: string
                     {rfi.discipline && <p className="text-xs text-gray-500 capitalize mt-0.5">{rfi.discipline}</p>}
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0 ${colors.bg} ${colors.text}`}>{rfi.status.replace(/_/g, ' ')}</span>
-                  <ItemActions itemId={rfi.id} itemType="rfi" currentStatus={rfi.status} statuses={RFI_STATUSES} />
+                  <ItemActions itemId={rfi.id} itemType="rfi" currentStatus={rfi.status} statuses={RFI_STATUSES}
+                    editTitle="RFI"
+                    editFields={[
+                      { name: 'title', label: 'Subject', type: 'text' },
+                      { name: 'question', label: 'Question', type: 'textarea' },
+                      { name: 'answer', label: 'Answer', type: 'textarea' },
+                      { name: 'discipline', label: 'Discipline', type: 'text' },
+                      { name: 'due_date', label: 'Due Date', type: 'date' },
+                    ]}
+                    itemData={rfi}
+                  />
                 </div>
                 <p className="text-sm text-gray-700 mb-2">{rfi.question}</p>
                 {rfi.answer && (
