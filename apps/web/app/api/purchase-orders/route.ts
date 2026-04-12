@@ -145,6 +145,11 @@ export async function POST(request: NextRequest) {
       supplierName = vendor?.name
     }
 
+    // Map PO status to material and expense status
+    const poStatus = poData.requires_approval ? 'pending_approval' : 'draft'
+    const matStatus = poStatus === 'draft' ? 'pending' : poStatus === 'sent' || poStatus === 'approved' ? 'ordered' : 'pending'
+    const expStatus = poStatus === 'draft' || poStatus === 'pending_approval' ? 'pending' : 'approved'
+
     // Create project materials from each PO line item
     const matRows = items.map(li => ({
       project_id: syncProjectId,
@@ -155,7 +160,7 @@ export async function POST(request: NextRequest) {
       unit: li.unit || 'ea',
       unit_cost: li.unit_cost,
       total_cost: li.total,
-      status: 'ordered' as const,
+      status: matStatus,
       supplier: supplierName || null,
       po_number: poNumber,
     }))
@@ -182,10 +187,10 @@ export async function POST(request: NextRequest) {
       total_amount: total,
       vendor_name: supplierName || null,
       expense_date: poData.issue_date,
-      status: 'approved',
+      status: expStatus,
       submitted_by: user.id,
-      approved_by: user.id,
-      approved_at: new Date().toISOString(),
+      approved_by: expStatus === 'approved' ? user.id : null,
+      approved_at: expStatus === 'approved' ? new Date().toISOString() : null,
       is_billable: false,
     })
     if (expError) console.error('PO expense sync error:', expError.message)
