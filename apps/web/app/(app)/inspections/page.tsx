@@ -206,6 +206,21 @@ export default function InspectionsPage() {
         </>
       ) : (
         /* Templates View */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">{templates.length} template{templates.length !== 1 ? 's' : ''}</p>
+            <button
+              onClick={async () => {
+                const res = await fetch('/api/inspections/templates/seed', { method: 'POST' })
+                const json = await res.json()
+                if (res.ok) { toast.success(`${json.created} ROC templates added`); fetchTemplates() }
+                else toast.error(json.error || 'Failed')
+              }}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 inline-flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" /> Load ROC Templates
+            </button>
+          </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {templates.map(t => (
             <div key={t.id} className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow">
@@ -228,6 +243,7 @@ export default function InspectionsPage() {
               </div>
             </div>
           ))}
+        </div>
         </div>
       )}
 
