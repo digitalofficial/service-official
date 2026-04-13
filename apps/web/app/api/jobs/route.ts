@@ -122,6 +122,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Send customer notifications — wrapped in try/catch so job creation still succeeds
+  const notifications: { email?: any; sms?: any; error?: string } = {}
+
   try {
     if (validated.customer_id) {
       const { data: customer } = await supabase
@@ -166,6 +168,7 @@ export async function POST(request: NextRequest) {
               address: location || undefined,
             },
           })
+          notifications.email = emailResult
 
           await logMessage({
             supabase,
@@ -178,6 +181,8 @@ export async function POST(request: NextRequest) {
             sent_by: user.id,
             status: emailResult.success ? 'sent' : 'failed',
           })
+        } else {
+          notifications.email = { success: false, error: 'No customer email' }
         }
 
         // Send SMS only if opted in
@@ -189,6 +194,7 @@ export async function POST(request: NextRequest) {
             to: customer.phone,
             body: smsBody,
           })
+          notifications.sms = smsResult
 
           await logMessage({
             supabase,
@@ -202,11 +208,16 @@ export async function POST(request: NextRequest) {
             status: smsResult.success ? 'sent' : 'failed',
           })
         }
+      } else {
+        notifications.error = `customer found: ${!!customer}, org found: ${!!org}`
       }
+    } else {
+      notifications.error = 'No customer_id on job'
     }
-  } catch (err) {
+  } catch (err: any) {
+    notifications.error = err.message ?? String(err)
     console.error('Job notification failed (job was still created):', err)
   }
 
-  return NextResponse.json({ data, success: true }, { status: 201 })
+  return NextResponse.json({ data, success: true, notifications }, { status: 201 })
 }

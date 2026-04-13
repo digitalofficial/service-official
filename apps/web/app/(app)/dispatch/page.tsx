@@ -171,7 +171,13 @@ export default function DispatchPage() {
         return
       }
 
-      const { data: job } = await jobRes.json()
+      const { data: job, notifications } = await jobRes.json()
+      if (notifications?.email && !notifications.email.success) {
+        console.warn('Email notification result:', notifications)
+      }
+      if (notifications?.error) {
+        console.warn('Notification error:', notifications.error)
+      }
 
       // Assign employee if selected
       let assignResult = null
