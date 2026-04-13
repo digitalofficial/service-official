@@ -112,7 +112,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Pass activeOrgId as a data attribute so client components can read it
   return (
     <FeatureGuideProvider>
-      <div className="flex h-[100dvh] bg-gray-50 dark:bg-gray-950 overflow-hidden max-w-[100vw]" data-org-id={activeOrgId}>
+      <div className="flex h-[100dvh] bg-gray-50 dark:bg-gray-950 overflow-hidden max-w-[100vw]" data-org-id={activeOrgId} data-timezone={activeOrg?.timezone ?? 'America/Phoenix'}>
         <Sidebar profile={profile} organization={activeOrg} isSuperAdmin={isSuperAdmin} tier={activeOrg?.subscription_tier ?? 'solo'} subscriptionStatus={activeOrg?.subscription_status} />
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <header className="flex items-center justify-between h-14 px-2 sm:px-4 lg:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">

@@ -12,8 +12,17 @@ const INDUSTRIES = [
 ]
 
 const TIMEZONES = [
-  'America/New_York', 'America/Chicago', 'America/Denver', 'America/Phoenix',
-  'America/Los_Angeles', 'America/Anchorage', 'Pacific/Honolulu',
+  { value: 'America/New_York', label: 'Eastern — New York' },
+  { value: 'America/Chicago', label: 'Central — Chicago' },
+  { value: 'America/Denver', label: 'Mountain — Denver' },
+  { value: 'America/Phoenix', label: 'Arizona — Phoenix (no DST)' },
+  { value: 'America/Los_Angeles', label: 'Pacific — Los Angeles' },
+  { value: 'America/Anchorage', label: 'Alaska — Anchorage' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii — Honolulu (no DST)' },
+  { value: 'America/Indiana/Indianapolis', label: 'Eastern — Indianapolis' },
+  { value: 'America/Detroit', label: 'Eastern — Detroit' },
+  { value: 'America/Boise', label: 'Mountain — Boise' },
+  { value: 'America/Puerto_Rico', label: 'Atlantic — Puerto Rico' },
 ]
 
 interface Props {
@@ -91,7 +100,7 @@ export function EditCompanyButton({ org }: Props) {
           <div>
             <label className="text-xs font-medium text-gray-600">Timezone</label>
             <select value={form.timezone} onChange={e => setForm(f => ({ ...f, timezone: e.target.value }))} className="w-full mt-1 px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white">
-              {TIMEZONES.map(t => <option key={t} value={t}>{t.replace('America/', '').replace('Pacific/', '').replace(/_/g, ' ')}</option>)}
+              {TIMEZONES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
             </select>
           </div>
           <div>

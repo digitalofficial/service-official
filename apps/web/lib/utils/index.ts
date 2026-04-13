@@ -7,20 +7,33 @@ export function cn(...inputs: ClassValue[]) {
 
 export { cn as default }
 
-// Default timezone for server-side rendering (Vercel runs in UTC)
-const DEFAULT_TZ = process.env.NEXT_PUBLIC_TIMEZONE ?? 'America/Denver'
+// Timezone resolution: org timezone from DOM > env var > browser timezone > UTC
+function getTimezone(): string {
+  // On client, try to read org timezone from the layout data attribute
+  if (typeof document !== 'undefined') {
+    const orgTz = document.querySelector('[data-timezone]')?.getAttribute('data-timezone')
+    if (orgTz) return orgTz
+  }
+  // Env var (set per deployment or org)
+  if (process.env.NEXT_PUBLIC_TIMEZONE) return process.env.NEXT_PUBLIC_TIMEZONE
+  // Browser timezone
+  if (typeof Intl !== 'undefined') {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch {}
+  }
+  return 'America/Phoenix'
+}
 
 export function formatDate(date: string | Date | null | undefined, options?: Intl.DateTimeFormatOptions): string {
   if (!date || date === '') return ''
   const parsed = typeof date === 'string' ? new Date(date) : date
   if (isNaN(parsed.getTime())) return ''
+  const tz = getTimezone()
   const baseOpts = options ?? { month: 'short' as const, day: 'numeric' as const, year: 'numeric' as const }
   try {
-    const opts: Intl.DateTimeFormatOptions = { timeZone: DEFAULT_TZ, ...baseOpts }
-    if (options && !options.timeZone) opts.timeZone = DEFAULT_TZ
+    const opts: Intl.DateTimeFormatOptions = { timeZone: tz, ...baseOpts }
+    if (options && !options.timeZone) opts.timeZone = tz
     return new Intl.DateTimeFormat('en-US', opts).format(parsed)
   } catch {
-    // Fallback if timezone is not supported in runtime
     return new Intl.DateTimeFormat('en-US', baseOpts).format(parsed)
   }
 }
