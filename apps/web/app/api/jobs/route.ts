@@ -78,7 +78,11 @@ export async function POST(request: NextRequest) {
   const { user, profile, supabase } = result
 
   const body = await request.json()
-  const validated = jobSchema.parse(body)
+  const parsed = jobSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.errors[0]?.message ?? 'Invalid job data' }, { status: 400 })
+  }
+  const validated = parsed.data
 
   const { notify_sms, ...jobFields } = validated
 
@@ -117,87 +121,91 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Send customer notifications
-  if (validated.customer_id) {
-    const { data: customer } = await supabase
-      .from('customers')
-      .select('id, first_name, last_name, company_name, email, phone')
-      .eq('id', validated.customer_id)
-      .single()
+  // Send customer notifications — wrapped in try/catch so job creation still succeeds
+  try {
+    if (validated.customer_id) {
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('id, first_name, last_name, company_name, email, phone')
+        .eq('id', validated.customer_id)
+        .single()
 
-    const { data: org } = await supabase
-      .from('organizations')
-      .select('name')
-      .eq('id', profile!.organization_id)
-      .single()
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('name')
+        .eq('id', profile!.organization_id)
+        .single()
 
-    if (customer && org) {
-      const customerName = `${customer.first_name ?? ''} ${customer.last_name ?? ''}`.trim() || 'there'
-      const location = [data.address_line1, data.city, data.state, data.zip].filter(Boolean).join(', ')
+      if (customer && org) {
+        const customerName = `${customer.first_name ?? ''} ${customer.last_name ?? ''}`.trim() || 'there'
+        const location = [data.address_line1, data.city, data.state, data.zip].filter(Boolean).join(', ')
 
-      // Format schedule for display
-      let scheduledDate: string | undefined
-      let scheduledTime: string | undefined
-      if (data.scheduled_start) {
-        const tz = process.env.NEXT_PUBLIC_TIMEZONE ?? 'America/Denver'
-        const d = new Date(data.scheduled_start)
-        scheduledDate = d.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-        scheduledTime = d.toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' })
-      }
+        // Format schedule for display
+        let scheduledDate: string | undefined
+        let scheduledTime: string | undefined
+        if (data.scheduled_start) {
+          const tz = process.env.NEXT_PUBLIC_TIMEZONE ?? 'America/Denver'
+          const d = new Date(data.scheduled_start)
+          scheduledDate = d.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+          scheduledTime = d.toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' })
+        }
 
-      // Always send email if customer has one
-      if (customer.email) {
-        const emailResult = await sendEmail({
-          to: customer.email,
-          subject: `Your service is booked — ${data.title}`,
-          template: 'job_booked',
-          variables: {
-            customer_name: customerName,
-            company_name: org.name,
-            job_title: data.title,
-            job_number,
-            scheduled_date: scheduledDate,
-            scheduled_time: scheduledTime,
-            address: location || undefined,
-          },
-        })
+        // Always send email if customer has one
+        if (customer.email) {
+          const emailResult = await sendEmail({
+            to: customer.email,
+            subject: `Your service is booked — ${data.title}`,
+            template: 'job_booked',
+            variables: {
+              customer_name: customerName,
+              company_name: org.name,
+              job_title: data.title,
+              job_number,
+              scheduled_date: scheduledDate,
+              scheduled_time: scheduledTime,
+              address: location || undefined,
+            },
+          })
 
-        await logMessage({
-          supabase,
-          organization_id: profile!.organization_id,
-          customer_id: customer.id,
-          channel: 'email',
-          direction: 'outbound',
-          body: `Job booked confirmation sent — ${job_number}: ${data.title}`,
-          email_address: customer.email,
-          sent_by: user.id,
-          status: emailResult.success ? 'sent' : 'failed',
-        })
-      }
+          await logMessage({
+            supabase,
+            organization_id: profile!.organization_id,
+            customer_id: customer.id,
+            channel: 'email',
+            direction: 'outbound',
+            body: `Job booked confirmation sent — ${job_number}: ${data.title}`,
+            email_address: customer.email,
+            sent_by: user.id,
+            status: emailResult.success ? 'sent' : 'failed',
+          })
+        }
 
-      // Send SMS only if opted in
-      if (notify_sms && customer.phone) {
-        const smsBody = `Hi ${customer.first_name ?? 'there'}! Your service with ${org.name} has been booked. "${data.title}"${scheduledDate ? ` 🕐 ${scheduledDate}${scheduledTime ? ` at ${scheduledTime}` : ''}` : ''}${location ? ` 📍 ${location}` : ''}`
+        // Send SMS only if opted in
+        if (notify_sms && customer.phone) {
+          const smsBody = `Hi ${customer.first_name ?? 'there'}! Your service with ${org.name} has been booked. "${data.title}"${scheduledDate ? ` 🕐 ${scheduledDate}${scheduledTime ? ` at ${scheduledTime}` : ''}` : ''}${location ? ` 📍 ${location}` : ''}`
 
-        const smsResult = await sendOrgSms({
-          organizationId: profile!.organization_id,
-          to: customer.phone,
-          body: smsBody,
-        })
+          const smsResult = await sendOrgSms({
+            organizationId: profile!.organization_id,
+            to: customer.phone,
+            body: smsBody,
+          })
 
-        await logMessage({
-          supabase,
-          organization_id: profile!.organization_id,
-          customer_id: customer.id,
-          channel: 'sms',
-          direction: 'outbound',
-          body: smsBody,
-          phone_number: customer.phone,
-          sent_by: user.id,
-          status: smsResult.success ? 'sent' : 'failed',
-        })
+          await logMessage({
+            supabase,
+            organization_id: profile!.organization_id,
+            customer_id: customer.id,
+            channel: 'sms',
+            direction: 'outbound',
+            body: smsBody,
+            phone_number: customer.phone,
+            sent_by: user.id,
+            status: smsResult.success ? 'sent' : 'failed',
+          })
+        }
       }
     }
+  } catch (err) {
+    console.error('Job notification failed (job was still created):', err)
   }
 
   return NextResponse.json({ data, success: true }, { status: 201 })
