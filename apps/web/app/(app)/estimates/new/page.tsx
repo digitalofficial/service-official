@@ -64,42 +64,47 @@ export default function NewEstimatePage() {
     e.preventDefault()
     setLoading(true)
 
-    const fd = new FormData(e.currentTarget)
-    const body: Record<string, any> = {
-      title: fd.get('title'),
-      description: fd.get('description') || undefined,
-      customer_id: fd.get('customer_id') || undefined,
-      project_id: fd.get('project_id') || undefined,
-      job_id: fd.get('job_id') || undefined,
-      issue_date: fd.get('issue_date') || undefined,
-      expiry_date: fd.get('expiry_date') || undefined,
-      terms: fd.get('terms') || undefined,
-      notes: fd.get('notes') || undefined,
-      tax_rate: taxRate,
-      discount_type: discountType,
-      discount_value: discountValue,
-      line_items: items.filter(i => i.name.trim()).map((item, idx) => ({
-        ...item,
-        order_index: idx,
-      })),
-    }
+    try {
+      const fd = new FormData(e.currentTarget)
+      const body: Record<string, any> = {
+        title: fd.get('title'),
+        description: fd.get('description') || undefined,
+        customer_id: fd.get('customer_id') || undefined,
+        project_id: fd.get('project_id') || undefined,
+        job_id: fd.get('job_id') || undefined,
+        issue_date: fd.get('issue_date') || undefined,
+        expiry_date: fd.get('expiry_date') || undefined,
+        terms: fd.get('terms') || undefined,
+        notes: fd.get('notes') || undefined,
+        tax_rate: taxRate,
+        discount_type: discountType,
+        discount_value: discountValue,
+        line_items: items.filter(i => i.name.trim()).map((item, idx) => ({
+          ...item,
+          order_index: idx,
+        })),
+      }
 
-    const res = await fetch('/api/estimates', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+      const res = await fetch('/api/estimates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
 
-    if (!res.ok) {
-      const { error } = await res.json()
-      toast.error(error ?? 'Failed to create estimate')
+      if (!res.ok) {
+        const { error } = await res.json()
+        toast.error(error ?? 'Failed to create estimate')
+        return
+      }
+
+      const { data } = await res.json()
+      toast.success('Estimate created')
+      router.push(`/estimates/${data.id}`)
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
       setLoading(false)
-      return
     }
-
-    const { data } = await res.json()
-    toast.success('Estimate created')
-    router.push(`/estimates/${data.id}`)
   }
 
   return (

@@ -36,9 +36,13 @@ export function InlineCustomerSelect({ name = 'customer_id', defaultValue = '', 
     setSaving(true)
     try {
       // Strip empty strings so they don't fail validation
-      const payload: Record<string, string> = {}
+      const payload: Record<string, any> = {}
       for (const [k, v] of Object.entries(form)) {
-        if (v.trim()) payload[k] = v.trim()
+        if (typeof v === 'string') {
+          if (v.trim()) payload[k] = v.trim()
+        } else {
+          payload[k] = v
+        }
       }
       const res = await fetch('/api/customers', {
         method: 'POST',

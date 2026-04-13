@@ -27,29 +27,34 @@ export default function NewLeadPage() {
     e.preventDefault()
     setLoading(true)
 
-    const fd = new FormData(e.currentTarget)
-    const body: Record<string, any> = {}
-    fd.forEach((v, k) => {
-      if (v === '') return
-      if (k === 'estimated_value') body[k] = Number(v)
-      else body[k] = v
-    })
+    try {
+      const fd = new FormData(e.currentTarget)
+      const body: Record<string, any> = {}
+      fd.forEach((v, k) => {
+        if (v === '') return
+        if (k === 'estimated_value') body[k] = Number(v)
+        else body[k] = v
+      })
 
-    const res = await fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
 
-    if (!res.ok) {
-      const { error } = await res.json()
-      toast.error(error ?? 'Failed to create lead')
+      if (!res.ok) {
+        const { error } = await res.json()
+        toast.error(error ?? 'Failed to create lead')
+        return
+      }
+
+      toast.success('Lead created')
+      router.push('/leads')
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
       setLoading(false)
-      return
     }
-
-    toast.success('Lead created')
-    router.push('/leads')
   }
 
   return (

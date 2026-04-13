@@ -27,25 +27,30 @@ export default function NewCustomerPage() {
     e.preventDefault()
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const body = Object.fromEntries(formData.entries())
+    try {
+      const formData = new FormData(e.currentTarget)
+      const body = Object.fromEntries(formData.entries())
 
-    const res = await fetch('/api/customers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+      const res = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
 
-    if (!res.ok) {
-      const { error } = await res.json()
-      toast.error(error ?? 'Failed to create customer')
+      if (!res.ok) {
+        const { error } = await res.json()
+        toast.error(error ?? 'Failed to create customer')
+        return
+      }
+
+      const { data } = await res.json()
+      toast.success('Customer created')
+      router.push(`/customers/${data.id}`)
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
       setLoading(false)
-      return
     }
-
-    const { data } = await res.json()
-    toast.success('Customer created')
-    router.push(`/customers/${data.id}`)
   }
 
   return (

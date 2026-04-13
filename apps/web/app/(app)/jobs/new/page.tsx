@@ -40,43 +40,48 @@ export default function NewJobPage() {
     e.preventDefault()
     setLoading(true)
 
-    const fd = new FormData(e.currentTarget)
-    const body: Record<string, any> = {}
-    fd.forEach((v, k) => {
-      if (v === '') return
-      body[k] = v
-    })
+    try {
+      const fd = new FormData(e.currentTarget)
+      const body: Record<string, any> = {}
+      fd.forEach((v, k) => {
+        if (v === '') return
+        body[k] = v
+      })
 
-    // Convert checkbox to boolean
-    body.notify_sms = fd.has('notify_sms')
+      // Convert checkbox to boolean
+      body.notify_sms = fd.has('notify_sms')
 
-    // Combine date + time into ISO strings
-    if (body.scheduled_date && body.scheduled_time) {
-      body.scheduled_start = new Date(`${body.scheduled_date}T${body.scheduled_time}:00`).toISOString()
-      delete body.scheduled_date
-      delete body.scheduled_time
-    }
-    if (body.scheduled_end_time && body.scheduled_date) {
-      body.scheduled_end = new Date(`${body.scheduled_date}T${body.scheduled_end_time}:00`).toISOString()
-      delete body.scheduled_end_time
-    }
+      // Combine date + time into ISO strings
+      if (body.scheduled_date && body.scheduled_time) {
+        body.scheduled_start = new Date(`${body.scheduled_date}T${body.scheduled_time}:00`).toISOString()
+        delete body.scheduled_date
+        delete body.scheduled_time
+      }
+      if (body.scheduled_end_time && body.scheduled_date) {
+        body.scheduled_end = new Date(`${body.scheduled_date}T${body.scheduled_end_time}:00`).toISOString()
+        delete body.scheduled_end_time
+      }
 
-    const res = await fetch('/api/jobs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+      const res = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
 
-    if (!res.ok) {
-      const { error } = await res.json()
-      toast.error(error ?? 'Failed to create job')
+      if (!res.ok) {
+        const { error } = await res.json()
+        toast.error(error ?? 'Failed to create job')
+        return
+      }
+
+      const { data } = await res.json()
+      toast.success('Job created')
+      router.push(`/jobs/${data.id}`)
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
       setLoading(false)
-      return
     }
-
-    const { data } = await res.json()
-    toast.success('Job created')
-    router.push(`/jobs/${data.id}`)
   }
 
   return (

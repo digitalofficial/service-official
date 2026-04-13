@@ -99,97 +99,100 @@ export default function DispatchPage() {
 
     setLoading(true)
 
-    let customerId = selectedCustomerId
+    try {
+      let customerId = selectedCustomerId
 
-    // Create new customer if needed
-    if (customerMode === 'new' && (newCustomer.first_name || newCustomer.company_name)) {
-      // Strip empty strings so they don't fail validation
-      const customerPayload: Record<string, any> = {}
-      for (const [k, v] of Object.entries(newCustomer)) {
-        if (typeof v === 'string') {
-          if (v.trim()) customerPayload[k] = v.trim()
+      // Create new customer if needed
+      if (customerMode === 'new' && (newCustomer.first_name || newCustomer.company_name)) {
+        // Strip empty strings so they don't fail validation
+        const customerPayload: Record<string, any> = {}
+        for (const [k, v] of Object.entries(newCustomer)) {
+          if (typeof v === 'string') {
+            if (v.trim()) customerPayload[k] = v.trim()
+          } else {
+            customerPayload[k] = v
+          }
+        }
+        if (leadSource) customerPayload.source = leadSource
+
+        const custRes = await fetch('/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(customerPayload),
+        })
+        if (custRes.ok) {
+          const { data } = await custRes.json()
+          customerId = data.id
         } else {
-          customerPayload[k] = v
+          toast.error('Failed to create customer')
+          return
         }
       }
-      if (leadSource) customerPayload.source = leadSource
 
-      const custRes = await fetch('/api/customers', {
+      // Update existing customer's source if provided and they don't have one
+      if (customerMode === 'existing' && customerId && leadSource) {
+        await fetch(`/api/customers/${customerId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ source: leadSource }),
+        }).catch(() => {}) // Non-blocking
+      }
+
+      // Build job data
+      const jobData: any = {
+        title,
+        priority,
+        customer_id: customerId || undefined,
+        address_line1: address || undefined,
+        city: city || undefined,
+        state: state || undefined,
+        zip: zip || undefined,
+        instructions: instructions || undefined,
+        notify_sms: notifySms,
+      }
+
+      if (date && startTime) {
+        jobData.scheduled_start = new Date(`${date}T${startTime}:00`).toISOString()
+      }
+      if (date && endTime) {
+        jobData.scheduled_end = new Date(`${date}T${endTime}:00`).toISOString()
+      }
+
+      // Create job
+      const jobRes = await fetch('/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(customerPayload),
+        body: JSON.stringify(jobData),
       })
-      if (custRes.ok) {
-        const { data } = await custRes.json()
-        customerId = data.id
-      } else {
-        toast.error('Failed to create customer')
-        setLoading(false)
+
+      if (!jobRes.ok) {
+        const { error } = await jobRes.json()
+        toast.error(error ?? 'Failed to create job')
         return
       }
-    }
 
-    // Update existing customer's source if provided and they don't have one
-    if (customerMode === 'existing' && customerId && leadSource) {
-      await fetch(`/api/customers/${customerId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: leadSource }),
-      }).catch(() => {}) // Non-blocking
-    }
+      const { data: job } = await jobRes.json()
 
-    // Build job data
-    const jobData: any = {
-      title,
-      priority,
-      customer_id: customerId || undefined,
-      address_line1: address || undefined,
-      city: city || undefined,
-      state: state || undefined,
-      zip: zip || undefined,
-      instructions: instructions || undefined,
-      notify_sms: notifySms,
-    }
-
-    if (date && startTime) {
-      jobData.scheduled_start = new Date(`${date}T${startTime}:00`).toISOString()
-    }
-    if (date && endTime) {
-      jobData.scheduled_end = new Date(`${date}T${endTime}:00`).toISOString()
-    }
-
-    // Create job
-    const jobRes = await fetch('/api/jobs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(jobData),
-    })
-
-    if (!jobRes.ok) {
-      const { error } = await jobRes.json()
-      toast.error(error ?? 'Failed to create job')
-      setLoading(false)
-      return
-    }
-
-    const { data: job } = await jobRes.json()
-
-    // Assign employee if selected
-    let assignResult = null
-    if (assignedTo) {
-      const assignRes = await fetch(`/api/jobs/${job.id}/assign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assigned_to: assignedTo }),
-      })
-      if (assignRes.ok) {
-        assignResult = await assignRes.json()
+      // Assign employee if selected
+      let assignResult = null
+      if (assignedTo) {
+        const assignRes = await fetch(`/api/jobs/${job.id}/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assigned_to: assignedTo }),
+        })
+        if (assignRes.ok) {
+          assignResult = await assignRes.json()
+        }
       }
-    }
 
-    setSuccess({ job, assignResult })
-    toast.success('Job dispatched!')
-    setLoading(false)
+      setSuccess({ job, assignResult })
+      toast.success('Job dispatched!')
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (success) {

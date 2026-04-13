@@ -49,33 +49,38 @@ export default function PaymentSettingsPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    const body: Record<string, any> = {
-      payments_enabled: paymentsEnabled,
+    try {
+      const body: Record<string, any> = {
+        payments_enabled: paymentsEnabled,
+      }
+
+      // Only send keys if user entered new ones
+      if (publishableKey) body.stripe_publishable_key = publishableKey
+      if (secretKey) body.stripe_secret_key = secretKey
+      if (webhookSecret) body.stripe_webhook_secret = webhookSecret
+
+      const res = await fetch('/api/settings/payments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+
+      if (res.ok) {
+        toast.success('Payment settings saved')
+        setPublishableKey('')
+        setSecretKey('')
+        setWebhookSecret('')
+        setEditMode(false)
+        fetchSettings()
+      } else {
+        const data = await res.json()
+        toast.error(data.error ?? 'Failed to save')
+      }
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
+      setSaving(false)
     }
-
-    // Only send keys if user entered new ones
-    if (publishableKey) body.stripe_publishable_key = publishableKey
-    if (secretKey) body.stripe_secret_key = secretKey
-    if (webhookSecret) body.stripe_webhook_secret = webhookSecret
-
-    const res = await fetch('/api/settings/payments', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-
-    if (res.ok) {
-      toast.success('Payment settings saved')
-      setPublishableKey('')
-      setSecretKey('')
-      setWebhookSecret('')
-      setEditMode(false)
-      fetchSettings()
-    } else {
-      const data = await res.json()
-      toast.error(data.error ?? 'Failed to save')
-    }
-    setSaving(false)
   }
 
   const handleTestConnection = async () => {

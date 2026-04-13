@@ -269,26 +269,31 @@ function ReceiveModal({ po, onClose, onReceived }: { po: any; onClose: () => voi
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const res = await fetch(`/api/purchase-orders/${po.id}/receive`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: items.map((i: any) => ({
-          po_line_item_id: i.po_line_item_id,
-          quantity_received: parseFloat(i.quantity_received) || 0,
-          condition: i.condition,
-          notes: i.notes || undefined,
-        })),
-        notes: notes || undefined,
-      }),
-    })
-    if (res.ok) {
-      toast.success('Receipt recorded')
-      onReceived()
-    } else {
-      toast.error('Failed to record receipt')
+    try {
+      const res = await fetch(`/api/purchase-orders/${po.id}/receive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((i: any) => ({
+            po_line_item_id: i.po_line_item_id,
+            quantity_received: parseFloat(i.quantity_received) || 0,
+            condition: i.condition,
+            notes: i.notes || undefined,
+          })),
+          notes: notes || undefined,
+        }),
+      })
+      if (res.ok) {
+        toast.success('Receipt recorded')
+        onReceived()
+      } else {
+        toast.error('Failed to record receipt')
+      }
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   return (

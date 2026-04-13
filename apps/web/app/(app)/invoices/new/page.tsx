@@ -62,46 +62,51 @@ export default function NewInvoicePage() {
     e.preventDefault()
     setLoading(true)
 
-    const fd = new FormData(e.currentTarget)
-    const lineItems = items.filter(i => i.name.trim()).map((item, idx) => ({
-      ...item,
-      total: item.quantity * item.unit_cost,
-      order_index: idx,
-    }))
+    try {
+      const fd = new FormData(e.currentTarget)
+      const lineItems = items.filter(i => i.name.trim()).map((item, idx) => ({
+        ...item,
+        total: item.quantity * item.unit_cost,
+        order_index: idx,
+      }))
 
-    const body: Record<string, any> = {
-      title: fd.get('title') || undefined,
-      customer_id: fd.get('customer_id') || undefined,
-      project_id: fd.get('project_id') || undefined,
-      type: fd.get('type') || 'standard',
-      issue_date: fd.get('issue_date') || new Date().toISOString().split('T')[0],
-      due_date: fd.get('due_date') || undefined,
-      terms: fd.get('terms') || undefined,
-      notes: fd.get('notes') || undefined,
-      status: 'draft',
-      subtotal,
-      tax_amount: taxAmount,
-      discount_amount: 0,
-      total,
-      line_items: lineItems,
-    }
+      const body: Record<string, any> = {
+        title: fd.get('title') || undefined,
+        customer_id: fd.get('customer_id') || undefined,
+        project_id: fd.get('project_id') || undefined,
+        type: fd.get('type') || 'standard',
+        issue_date: fd.get('issue_date') || new Date().toISOString().split('T')[0],
+        due_date: fd.get('due_date') || undefined,
+        terms: fd.get('terms') || undefined,
+        notes: fd.get('notes') || undefined,
+        status: 'draft',
+        subtotal,
+        tax_amount: taxAmount,
+        discount_amount: 0,
+        total,
+        line_items: lineItems,
+      }
 
-    const res = await fetch('/api/invoices', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+      const res = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
 
-    if (!res.ok) {
-      const { error } = await res.json()
-      toast.error(error ?? 'Failed to create invoice')
+      if (!res.ok) {
+        const { error } = await res.json()
+        toast.error(error ?? 'Failed to create invoice')
+        return
+      }
+
+      const { data } = await res.json()
+      toast.success('Invoice created')
+      router.push(`/invoices/${data.id}`)
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
       setLoading(false)
-      return
     }
-
-    const { data } = await res.json()
-    toast.success('Invoice created')
-    router.push(`/invoices/${data.id}`)
   }
 
   return (
