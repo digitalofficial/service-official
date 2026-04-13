@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { SendChannelDialog, type SendChannel } from '@/components/ui/send-channel-dialog'
-import { Printer, Copy, Receipt, Loader2, CheckCircle2 } from 'lucide-react'
+import { Printer, Copy, Receipt, Loader2, CheckCircle2, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface EstimateActionsProps {
@@ -17,6 +18,8 @@ interface EstimateActionsProps {
 export function EstimateActions({ estimateId, status, hasEmail, hasPhone }: EstimateActionsProps) {
   const router = useRouter()
   const [converting, setConverting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const handlePrint = () => window.print()
 
@@ -59,11 +62,42 @@ export function EstimateActions({ estimateId, status, hasEmail, hasPhone }: Esti
     }
   }
 
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/estimates/${estimateId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        toast.success('Estimate deleted')
+        router.push('/estimates')
+      } else {
+        const err = await res.json()
+        toast.error(err.error || 'Failed to delete estimate')
+      }
+    } catch {
+      toast.error('Something went wrong')
+    } finally {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
   const canSend = !['converted', 'expired'].includes(status) && (hasEmail || hasPhone)
   const canConvert = ['approved', 'sent', 'viewed'].includes(status)
+  const canEdit = ['draft', 'sent'].includes(status)
+  const canDelete = status === 'draft'
 
   return (
     <div className="flex items-center gap-2 no-print flex-wrap">
+      {/* Edit */}
+      {canEdit && (
+        <Link href={`/estimates/${estimateId}/edit`}>
+          <Button variant="outline" size="sm">
+            <Pencil className="w-4 h-4 mr-1" /> Edit
+          </Button>
+        </Link>
+      )}
       {/* Convert to Invoice — prominent for approved estimates */}
       {canConvert && (
         <Button size="sm" onClick={handleConvertToInvoice} disabled={converting}>
@@ -89,6 +123,23 @@ export function EstimateActions({ estimateId, status, hasEmail, hasPhone }: Esti
           hasPhone={hasPhone}
           label={status === 'draft' ? 'Send Estimate' : 'Resend'}
         />
+      )}
+      {/* Delete */}
+      {canDelete && !showDeleteConfirm && (
+        <Button variant="outline" size="sm" onClick={() => setShowDeleteConfirm(true)} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+          <Trash2 className="w-4 h-4 mr-1" /> Delete
+        </Button>
+      )}
+      {showDeleteConfirm && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
+          <span className="text-sm text-red-700">Are you sure? This cannot be undone.</span>
+          <Button size="sm" variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleDelete} disabled={deleting} className="bg-red-600 hover:bg-red-700 text-white">
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Yes, Delete'}
+          </Button>
+        </div>
       )}
     </div>
   )

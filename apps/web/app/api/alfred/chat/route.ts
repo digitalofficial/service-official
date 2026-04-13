@@ -59,23 +59,47 @@ export async function POST(request: NextRequest) {
     })
 
     // Use non-streaming for reliability on Vercel
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: messages.map((m: any) => ({
-        role: m.role,
-        content: m.content,
-      })),
-    })
+    const apiMessages = messages.map((m: any) => ({
+      role: m.role,
+      content: m.content,
+    }))
 
-    const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
+    let response
+    let retries = 2
+    while (retries >= 0) {
+      try {
+        response = await client.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2048,
+          system: systemPrompt,
+          messages: apiMessages,
+        })
+        break
+      } catch (apiErr: any) {
+        if (apiErr?.status === 529 && retries > 0) {
+          retries--
+          await new Promise(r => setTimeout(r, 2000))
+          continue
+        }
+        throw apiErr
+      }
+    }
+
+    const text = response?.content[0]?.type === 'text' ? response.content[0].text : ''
 
     return NextResponse.json({ content: text })
   } catch (error: any) {
+    const status = error?.status ?? 500
     const errMsg = error?.message ?? String(error)
-    console.error('Alfred chat error:', errMsg)
-    console.error('Alfred chat stack:', error?.stack)
+    console.error('Alfred chat error:', status, errMsg)
+
+    if (status === 529) {
+      return NextResponse.json(
+        { error: 'Alfred is experiencing high demand. Please try again in a moment.' },
+        { status: 529 }
+      )
+    }
+
     return NextResponse.json(
       { error: errMsg },
       { status: 500 }

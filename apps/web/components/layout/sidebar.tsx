@@ -9,7 +9,7 @@ import {
   LayoutDashboard, FolderKanban, Users, UserPlus, Briefcase, Radio,
   Calendar, FileText, Receipt, CreditCard, MessageSquare, Send, Activity,
   Zap, BarChart3, Map, Cpu, Settings, Building2,
-  HardHat, Menu, X, Lock, Truck, ShoppingCart, ClipboardCheck
+  HardHat, Menu, X, Lock, Truck, ShoppingCart, ClipboardCheck, Handshake
 } from 'lucide-react'
 import { tierHasFeature } from '@/lib/auth/tier-access'
 
@@ -18,8 +18,8 @@ import { tierHasFeature } from '@/lib/auth/tier-access'
 const ROLE_ACCESS: Record<string, string[]> = {
   owner: ['*'],
   admin: ['*'],
-  office_manager: ['/dashboard', '/dispatch', '/projects', '/jobs', '/calendar', '/customers', '/leads', '/estimates', '/invoices', '/payments', '/estimator', '/team', '/messages', '/team/messages', '/activity', '/settings'],
-  project_manager: ['/dashboard', '/projects', '/jobs', '/calendar', '/customers', '/estimates', '/team', '/messages', '/team/messages', '/activity'],
+  office_manager: ['/dashboard', '/dispatch', '/projects', '/jobs', '/calendar', '/customers', '/leads', '/estimates', '/invoices', '/payments', '/estimator', '/team', '/team/subcontractors', '/messages', '/team/messages', '/activity', '/settings'],
+  project_manager: ['/dashboard', '/projects', '/jobs', '/calendar', '/customers', '/estimates', '/team', '/team/subcontractors', '/messages', '/team/messages', '/activity'],
   foreman: ['/dashboard', '/jobs', '/calendar', '/team'],
   technician: ['/dashboard', '/jobs', '/calendar'],
   dispatcher: ['/dashboard', '/dispatch', '/jobs', '/calendar', '/customers', '/team', '/team/messages'],
@@ -43,6 +43,7 @@ const NAV_ITEMS = [
   { label: 'Inspections', href: '/inspections', icon: ClipboardCheck },
   { label: 'Estimator', href: '/estimator', icon: Cpu },
   { label: 'Team', href: '/team', icon: HardHat },
+  { label: 'Subcontractors', href: '/team/subcontractors', icon: Handshake },
   { label: 'Messages', href: '/messages', icon: MessageSquare },
   { label: 'Team Messages', href: '/team/messages', icon: Send },
   { label: 'Activity Log', href: '/activity', icon: Activity },
@@ -105,7 +106,12 @@ export function Sidebar({ profile, organization, isSuperAdmin = false, tier = 's
       <nav className="flex-1 overflow-y-auto py-3 px-2 scrollbar-thin">
         {visibleNav.map((item) => {
           const Icon = item.icon
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+          // Check if this nav item matches, but prefer more specific matches
+          const matchesPath = pathname === item.href || pathname.startsWith(item.href + '/')
+          const hasMoreSpecificMatch = matchesPath && visibleNav.some(
+            other => other.href !== item.href && other.href.startsWith(item.href + '/') && (pathname === other.href || pathname.startsWith(other.href + '/'))
+          )
+          const isActive = matchesPath && !hasMoreSpecificMatch
 
           if (item.locked) {
             return (

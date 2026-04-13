@@ -1,17 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select } from '@/components/ui/select'
 import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react'
 import { InlineCustomerSelect } from '@/components/forms/inline-customer-select'
 import { InlineProjectSelect } from '@/components/forms/inline-project-select'
-import { TermsTemplateSelect } from '@/components/forms/terms-template-select'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
 
@@ -31,19 +29,76 @@ const emptyItem = (): LineItem => ({
   unit_cost: 0, markup_percent: 0, is_optional: false, is_taxable: true,
 })
 
-export default function NewEstimatePage() {
+export default function EditEstimatePage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const prefillProjectId = searchParams.get('project_id')
-  const prefillCustomerId = searchParams.get('customer_id')
-  const prefillJobId = searchParams.get('job_id')
+  const params = useParams()
+  const estimateId = params.id as string
 
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
   const [items, setItems] = useState<LineItem[]>([emptyItem()])
   const [taxRate, setTaxRate] = useState(0)
   const [discountValue, setDiscountValue] = useState(0)
   const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent')
+
+  // Prefill fields
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [customerId, setCustomerId] = useState('')
+  const [projectId, setProjectId] = useState('')
+  const [jobId, setJobId] = useState('')
+  const [issueDate, setIssueDate] = useState('')
+  const [expiryDate, setExpiryDate] = useState('')
   const [terms, setTerms] = useState('')
+  const [notes, setNotes] = useState('')
+
+  useEffect(() => {
+    async function fetchEstimate() {
+      try {
+        const res = await fetch(`/api/estimates/${estimateId}`)
+        if (!res.ok) {
+          toast.error('Failed to load estimate')
+          router.push('/estimates')
+          return
+        }
+        const { data } = await res.json()
+
+        setTitle(data.title || '')
+        setDescription(data.description || '')
+        setCustomerId(data.customer_id || '')
+        setProjectId(data.project_id || '')
+        setJobId(data.job_id || '')
+        setIssueDate(data.issue_date || '')
+        setExpiryDate(data.expiry_date || '')
+        setTerms(data.terms || '')
+        setNotes(data.notes || '')
+        setTaxRate(data.tax_rate ?? 0)
+        setDiscountValue(data.discount_value ?? 0)
+        setDiscountType(data.discount_type || 'percent')
+
+        const lineItems = (data.line_items ?? [])
+          .sort((a: any, b: any) => a.order_index - b.order_index)
+          .map((item: any) => ({
+            name: item.name || '',
+            description: item.description || '',
+            quantity: item.quantity ?? 1,
+            unit: item.unit || 'ea',
+            unit_cost: item.unit_cost ?? 0,
+            markup_percent: item.markup_percent ?? 0,
+            is_optional: item.is_optional ?? false,
+            is_taxable: item.is_taxable ?? true,
+          }))
+
+        setItems(lineItems.length > 0 ? lineItems : [emptyItem()])
+      } catch {
+        toast.error('Something went wrong')
+        router.push('/estimates')
+      } finally {
+        setFetching(false)
+      }
+    }
+    fetchEstimate()
+  }, [estimateId, router])
 
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item))
@@ -87,21 +142,20 @@ export default function NewEstimatePage() {
         })),
       }
 
-      const res = await fetch('/api/estimates', {
-        method: 'POST',
+      const res = await fetch(`/api/estimates/${estimateId}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
 
       if (!res.ok) {
         const { error } = await res.json()
-        toast.error(error ?? 'Failed to create estimate')
+        toast.error(error ?? 'Failed to update estimate')
         return
       }
 
-      const { data } = await res.json()
-      toast.success('Estimate created')
-      router.push(`/estimates/${data.id}`)
+      toast.success('Estimate updated')
+      router.push(`/estimates/${estimateId}`)
     } catch {
       toast.error('Something went wrong')
     } finally {
@@ -109,13 +163,21 @@ export default function NewEstimatePage() {
     }
   }
 
+  if (fetching) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/estimates" className="text-gray-400 hover:text-gray-600">
+        <Link href={`/estimates/${estimateId}`} className="text-gray-400 hover:text-gray-600">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-xl font-bold text-gray-900">New Estimate</h1>
+        <h1 className="text-xl font-bold text-gray-900">Edit Estimate</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -123,29 +185,29 @@ export default function NewEstimatePage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="title" required>Estimate Title</Label>
-            <Input id="title" name="title" placeholder="Roof replacement - full tear-off and install" required autoFocus />
+            <Input id="title" name="title" placeholder="Roof replacement - full tear-off and install" required autoFocus value={title} onChange={e => setTitle(e.target.value)} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <InlineCustomerSelect defaultValue={prefillCustomerId ?? ''} />
-            <InlineProjectSelect defaultValue={prefillProjectId ?? ''} />
+            <InlineCustomerSelect defaultValue={customerId} />
+            <InlineProjectSelect defaultValue={projectId} />
           </div>
-          <input type="hidden" name="job_id" value={prefillJobId ?? ''} />
+          <input type="hidden" name="job_id" value={jobId} />
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="issue_date">Issue Date</Label>
-              <Input id="issue_date" name="issue_date" type="date" defaultValue={new Date().toISOString().split('T')[0]} />
+              <Input id="issue_date" name="issue_date" type="date" value={issueDate} onChange={e => setIssueDate(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="expiry_date">Expiry Date</Label>
-              <Input id="expiry_date" name="expiry_date" type="date" />
+              <Input id="expiry_date" name="expiry_date" type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} />
             </div>
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="description">Description</Label>
-            <Textarea id="description" name="description" placeholder="Scope of work..." />
+            <Textarea id="description" name="description" placeholder="Scope of work..." value={description} onChange={e => setDescription(e.target.value)} />
           </div>
         </div>
 
@@ -274,23 +336,20 @@ export default function NewEstimatePage() {
         {/* Terms & Notes */}
         <div className="bg-white rounded-xl border border-gray-200 p-6 grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="terms">Terms & Conditions</Label>
-              <TermsTemplateSelect type="estimate" value={terms} onChange={setTerms} />
-            </div>
-            <Textarea id="terms" name="terms" value={terms} onChange={e => setTerms(e.target.value)} placeholder="Payment terms, warranty info..." className="min-h-[100px]" />
+            <Label htmlFor="terms">Terms & Conditions</Label>
+            <Textarea id="terms" name="terms" placeholder="Payment terms, warranty info..." className="min-h-[100px]" value={terms} onChange={e => setTerms(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Internal Notes</Label>
-            <Textarea id="notes" name="notes" placeholder="Notes (not visible to customer)..." className="min-h-[100px]" />
+            <Textarea id="notes" name="notes" placeholder="Notes (not visible to customer)..." className="min-h-[100px]" value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
         </div>
 
         {/* Submit */}
         <div className="flex justify-end gap-3">
-          <Link href="/estimates"><Button type="button" variant="outline">Cancel</Button></Link>
+          <Link href={`/estimates/${estimateId}`}><Button type="button" variant="outline">Cancel</Button></Link>
           <Button type="submit" disabled={loading}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create Estimate'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
           </Button>
         </div>
       </form>

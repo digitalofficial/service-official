@@ -11,6 +11,7 @@ import { Select } from '@/components/ui/select'
 import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react'
 import { InlineCustomerSelect } from '@/components/forms/inline-customer-select'
 import { InlineProjectSelect } from '@/components/forms/inline-project-select'
+import { TermsTemplateSelect } from '@/components/forms/terms-template-select'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
 
@@ -43,6 +44,7 @@ export default function NewInvoicePage() {
   const [loading, setLoading] = useState(false)
   const [items, setItems] = useState<LineItem[]>([emptyItem()])
   const [taxRate, setTaxRate] = useState(0)
+  const [terms, setTerms] = useState('')
 
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item))
@@ -234,8 +236,11 @@ export default function NewInvoicePage() {
         {/* Terms & Notes */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="terms">Payment Terms</Label>
-            <Textarea id="terms" name="terms" placeholder="Net 30, 2% early payment discount..." />
+            <div className="flex items-center justify-between">
+              <Label htmlFor="terms">Payment Terms</Label>
+              <TermsTemplateSelect type="invoice" value={terms} onChange={setTerms} />
+            </div>
+            <Textarea id="terms" name="terms" value={terms} onChange={e => setTerms(e.target.value)} placeholder="Net 30, 2% early payment discount..." />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Notes</Label>
