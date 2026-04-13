@@ -114,6 +114,29 @@ export default async function DashboardPage() {
   if (isSelfOnly) mapQuery = mapQuery.eq('assigned_to', user.id)
   const { data: activeJobs } = await mapQuery
 
+  // Active projects for map
+  const { data: activeProjects } = await supabase
+    .from('projects')
+    .select('id, name, status, address_line1, city, state, zip, customer:customers(first_name, last_name, company_name)')
+    .eq('organization_id', orgId)
+    .in('status', ['approved', 'in_progress', 'punch_list'])
+    .not('address_line1', 'is', null)
+    .limit(20)
+
+  // Convert projects to job-like pins for the map
+  const projectPins = (activeProjects || []).map((p: any) => ({
+    id: `project-${p.id}`,
+    title: `📋 ${p.name}`,
+    status: p.status,
+    address_line1: p.address_line1,
+    city: p.city,
+    state: p.state,
+    zip: p.zip,
+    customer: p.customer,
+  }))
+
+  const allMapPins = [...(activeJobs || []), ...projectPins]
+
   // Team schedule (this week) — owners/admins only
   let teamSchedule: any[] = []
   if (isOwnerAdmin) {
@@ -199,12 +222,12 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-blue-600" />
-              <h2 className="font-semibold text-gray-900">Jobs Map</h2>
-              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{activeJobs.length} jobs</span>
+              <h2 className="font-semibold text-gray-900">Jobs & Projects Map</h2>
+              <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{allMapPins.length} locations</span>
             </div>
             <Link href="/jobs" className="text-sm text-blue-600 hover:underline">View all</Link>
           </div>
-          <DashboardJobMap jobs={activeJobs as any} orgAddress={orgAddress} />
+          <DashboardJobMap jobs={allMapPins as any} orgAddress={orgAddress} />
         </div>
       )}
 

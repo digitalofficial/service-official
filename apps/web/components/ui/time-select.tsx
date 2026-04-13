@@ -1,8 +1,8 @@
 'use client'
 
-/** Generate time options in 30-minute increments from 6:00 AM to 9:00 PM */
+/** Generate time options in 30-minute increments for full 24 hours */
 const TIME_OPTIONS: { label: string; value: string }[] = []
-for (let h = 6; h <= 21; h++) {
+for (let h = 0; h < 24; h++) {
   for (const m of [0, 30]) {
     const hour24 = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
     const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
@@ -38,10 +38,10 @@ export function TimeSelect({ value, onChange, placeholder = 'Select time...', re
 
 /**
  * Add hours to a time string (HH:MM format).
- * Returns the new time clamped to 23:30.
+ * Wraps around midnight for 24-hour support.
  */
 export function addHoursToTime(time: string, hours: number): string {
   const [h, m] = time.split(':').map(Number)
-  const newH = Math.min(h + hours, 21)
+  const newH = (h + hours) % 24
   return `${String(newH).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
