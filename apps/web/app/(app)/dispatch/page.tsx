@@ -104,9 +104,13 @@ export default function DispatchPage() {
     // Create new customer if needed
     if (customerMode === 'new' && (newCustomer.first_name || newCustomer.company_name)) {
       // Strip empty strings so they don't fail validation
-      const customerPayload: Record<string, string> = {}
+      const customerPayload: Record<string, any> = {}
       for (const [k, v] of Object.entries(newCustomer)) {
-        if (v.trim()) customerPayload[k] = v.trim()
+        if (typeof v === 'string') {
+          if (v.trim()) customerPayload[k] = v.trim()
+        } else {
+          customerPayload[k] = v
+        }
       }
       if (leadSource) customerPayload.source = leadSource
 
