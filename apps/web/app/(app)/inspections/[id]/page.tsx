@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import {
   ArrowLeft, CheckCircle2, XCircle, MinusCircle,
-  ClipboardCheck, Camera, Type, Hash, List, Pen
+  ClipboardCheck, Camera, Type, Hash, List, Pen, Pencil, Save, X
 } from 'lucide-react'
 import type { InspectionItem, ChecklistItemType } from '@service-official/types'
 
@@ -78,6 +78,10 @@ export default function InspectionDetailPage({ params }: { params: { id: string 
     sections.get(key)!.push(item)
   }
 
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState({ title: '', description: '', location: '' })
+  const [statusUpdating, setStatusUpdating] = useState(false)
+
   const passCount = items.filter(i => i.status === 'pass').length
   const failCount = items.filter(i => i.status === 'fail').length
   const naCount = items.filter(i => i.status === 'na').length
@@ -85,6 +89,38 @@ export default function InspectionDetailPage({ params }: { params: { id: string 
   const answeredCount = items.length - pendingCount
   const progress = items.length > 0 ? Math.round(answeredCount / items.length * 100) : 0
   const isComplete = ['completed', 'failed'].includes(inspection.status)
+
+  async function handleStatusChange(newStatus: string) {
+    setStatusUpdating(true)
+    try {
+      const res = await fetch(`/api/inspections/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (res.ok) { toast.success('Status updated'); fetchInspection() }
+      else { const d = await res.json(); toast.error(d.error || 'Failed') }
+    } catch { toast.error('Failed to update') }
+    finally { setStatusUpdating(false) }
+  }
+
+  async function handleEditSave() {
+    try {
+      const updates: Record<string, any> = {}
+      if (editForm.title !== inspection.title) updates.title = editForm.title
+      if (editForm.description !== (inspection.description || '')) updates.description = editForm.description || null
+      if (editForm.location !== (inspection.location || '')) updates.location = editForm.location || null
+      if (Object.keys(updates).length === 0) { setEditing(false); return }
+
+      const res = await fetch(`/api/inspections/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      if (res.ok) { toast.success('Inspection updated'); setEditing(false); fetchInspection() }
+      else { const d = await res.json(); toast.error(d.error || 'Failed') }
+    } catch { toast.error('Failed to update') }
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -97,9 +133,17 @@ export default function InspectionDetailPage({ params }: { params: { id: string 
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-xl font-bold text-gray-900">{inspection.title}</h1>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[inspection.status] || ''}`}>
-                {inspection.status.replace('_', ' ')}
-              </span>
+              <select
+                value={inspection.status}
+                onChange={e => handleStatusChange(e.target.value)}
+                disabled={statusUpdating}
+                className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize border-0 cursor-pointer ${STATUS_COLORS[inspection.status] || 'bg-gray-100 text-gray-700'}`}
+              >
+                <option value="scheduled">Scheduled</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+              </select>
             </div>
             <p className="text-sm text-gray-500">
               {inspection.inspection_number}
@@ -107,13 +151,43 @@ export default function InspectionDetailPage({ params }: { params: { id: string 
             </p>
           </div>
         </div>
-        {!isComplete && (
-          <Button onClick={handleComplete} disabled={pendingCount === items.length}>
-            <CheckCircle2 className="w-4 h-4 mr-2" />
-            Complete Inspection
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setEditForm({ title: inspection.title, description: inspection.description || '', location: inspection.location || '' }); setEditing(!editing) }}
+            className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 inline-flex items-center gap-1"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Edit
+          </button>
+          {!isComplete && (
+            <Button onClick={handleComplete} disabled={pendingCount === items.length}>
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Complete
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Edit Form */}
+      {editing && (
+        <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
+          <div>
+            <label className="text-xs font-medium text-gray-600">Title</label>
+            <Input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600">Description</label>
+            <Input value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} placeholder="Optional" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600">Location</label>
+            <Input value={editForm.location} onChange={e => setEditForm(f => ({ ...f, location: e.target.value }))} placeholder="Optional" />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+            <Button onClick={handleEditSave} size="sm">Save</Button>
+          </div>
+        </div>
+      )}
 
       {/* Progress Bar */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
