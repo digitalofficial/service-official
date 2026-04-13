@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   const { user, profile, supabase } = result
 
   const body = await request.json()
-  const { project_id, job_id, storage_path, public_url, caption, is_before, is_after } = body
+  const { project_id, job_id, estimate_id, storage_path, public_url, caption, is_before, is_after } = body
 
   if (!storage_path || !public_url) {
     return NextResponse.json({ error: 'storage_path and public_url required' }, { status: 400 })
@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       organization_id: profile.organization_id,
       project_id: project_id || null,
       job_id: job_id || null,
+      estimate_id: estimate_id || null,
       storage_path,
       public_url,
       caption: caption || null,

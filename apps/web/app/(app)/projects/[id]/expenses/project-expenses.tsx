@@ -23,6 +23,8 @@ export function AddExpenseButton({ projectId }: { projectId: string }) {
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [scanning, setScanning] = useState(false)
+  const [receiptFileId, setReceiptFileId] = useState<string | null>(null)
   const [form, setForm] = useState({
     title: '',
     category: 'materials',
@@ -33,6 +35,69 @@ export function AddExpenseButton({ projectId }: { projectId: string }) {
     expense_date: new Date().toISOString().split('T')[0],
     is_billable: false,
   })
+
+  const handleReceiptScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+      toast.error('Please upload an image or PDF')
+      return
+    }
+
+    setScanning(true)
+    try {
+      // Upload the receipt file first
+      const uploadData = new FormData()
+      uploadData.append('file', file)
+      uploadData.append('project_id', projectId)
+      uploadData.append('file_type', 'other')
+      uploadData.append('description', 'Receipt')
+
+      const uploadRes = await fetch('/api/files', { method: 'POST', body: uploadData })
+      if (!uploadRes.ok) throw new Error('Upload failed')
+
+      const uploadResult = await uploadRes.json()
+      if (uploadResult?.data?.id) {
+        setReceiptFileId(uploadResult.data.id)
+      }
+
+      // Ask Alfred to extract receipt data
+      const res = await fetch('/api/alfred/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: `I just uploaded a receipt from a project. The file is named "${file.name}". Based on the filename and common receipt patterns, suggest reasonable values for: title (what was purchased), category (one of: materials, labor, equipment, fuel, permits, subcontractor, tools, dump_fees, insurance, overhead, other), vendor_name, and approximate amount. Respond ONLY with JSON like: {"title":"...","category":"...","vendor_name":"...","amount":"...","tax_amount":"..."}. If you can't determine something, use empty string. Keep it brief.`
+          }],
+          currentPage: '/projects/' + projectId,
+        }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        try {
+          const parsed = JSON.parse(data.content.replace(/```json|```/g, '').trim())
+          setForm(prev => ({
+            ...prev,
+            title: parsed.title || prev.title,
+            category: CATEGORIES.find(c => c.value === parsed.category)?.value || prev.category,
+            vendor_name: parsed.vendor_name || prev.vendor_name,
+            amount: parsed.amount || prev.amount,
+            tax_amount: parsed.tax_amount || prev.tax_amount,
+          }))
+          toast.success('Receipt scanned — review and save')
+        } catch {
+          toast.info('Receipt uploaded — fill in details manually')
+        }
+      }
+    } catch {
+      toast.error('Failed to process receipt')
+    } finally {
+      setScanning(false)
+      setShowForm(true)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,11 +118,13 @@ export function AddExpenseButton({ projectId }: { projectId: string }) {
           description: form.description || undefined,
           expense_date: form.expense_date,
           is_billable: form.is_billable,
+          receipt_file_id: receiptFileId || undefined,
         }),
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
       toast.success('Expense added')
       setShowForm(false)
+      setReceiptFileId(null)
       setForm({ title: '', category: 'materials', amount: '', tax_amount: '0', vendor_name: '', description: '', expense_date: new Date().toISOString().split('T')[0], is_billable: false })
       router.refresh()
     } catch (err: any) { toast.error(err.message) }
@@ -66,9 +133,18 @@ export function AddExpenseButton({ projectId }: { projectId: string }) {
 
   if (!showForm) {
     return (
-      <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-        <Plus className="w-4 h-4" /> Add Expense
-      </button>
+      <div className="flex items-center gap-2">
+        <label className="cursor-pointer">
+          <input type="file" accept="image/*,application/pdf" capture="environment" className="hidden" onChange={handleReceiptScan} disabled={scanning} />
+          <span className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+            {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+            {scanning ? 'Scanning...' : 'Scan Receipt'}
+          </span>
+        </label>
+        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <Plus className="w-4 h-4" /> Add Expense
+        </button>
+      </div>
     )
   }
 

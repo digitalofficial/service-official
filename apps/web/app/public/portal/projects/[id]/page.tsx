@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, CheckCircle2, Clock, Image as ImageIcon,
-  FileText, MessageSquare, Send, MapPin, Calendar
+  FileText, MessageSquare, Send, MapPin, Calendar, GitPullRequest
 } from 'lucide-react'
 
 export default function PortalProjectDetailPage({ params }: { params: { id: string } }) {
@@ -76,6 +76,36 @@ export default function PortalProjectDetailPage({ params }: { params: { id: stri
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div className="h-3 rounded-full bg-blue-600 transition-all" style={{ width: `${progress_percent}%` }} />
         </div>
+      </div>
+
+      {/* Quick Links — Messages & Change Requests */}
+      <div className="grid grid-cols-2 gap-3">
+        {perms?.send_messages !== false && (
+          <Link
+            href={`/public/portal/projects/${id}/messages`}
+            className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition-all"
+          >
+            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <MessageSquare className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-900">Messages</p>
+              <p className="text-xs text-gray-500">Chat with your contractor</p>
+            </div>
+          </Link>
+        )}
+        <Link
+          href={`/public/portal/projects/${id}/changes`}
+          className="flex items-center gap-3 bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-sm transition-all"
+        >
+          <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+            <GitPullRequest className="w-5 h-5 text-purple-600" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-900">Change Requests</p>
+            <p className="text-xs text-gray-500">Submit and track changes</p>
+          </div>
+        </Link>
       </div>
 
       {/* Tabs */}

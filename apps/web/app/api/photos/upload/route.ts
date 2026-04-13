@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File
     const job_id = formData.get('job_id') as string | null
     const project_id = formData.get('project_id') as string | null
+    const estimate_id = formData.get('estimate_id') as string | null
     const caption = formData.get('caption') as string | null
     const is_before = formData.get('is_before') === 'true'
     const is_after = formData.get('is_after') === 'true'
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     const ext = file.name.split('.').pop() ?? 'jpg'
     const uniqueName = `${uuidv4()}.${ext}`
-    const entityPath = job_id ? `jobs/${job_id}` : project_id ? `projects/${project_id}` : 'general'
+    const entityPath = job_id ? `jobs/${job_id}` : project_id ? `projects/${project_id}` : estimate_id ? `estimates/${estimate_id}` : 'general'
     const storagePath = `${profile.organization_id}/photos/${entityPath}/${uniqueName}`
 
     // Upload to storage
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
         organization_id: profile.organization_id,
         job_id: job_id || null,
         project_id: project_id || null,
+        estimate_id: estimate_id || null,
         storage_path: storagePath,
         public_url: publicUrl,
         caption: caption || file.name.split('.')[0],

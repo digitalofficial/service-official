@@ -28,6 +28,7 @@ const PROJECT_TABS = [
   { label: 'Submittals', href: '/submittals' },
   { label: 'Inspections', href: '/inspections' },
   { label: 'Safety', href: '/safety' },
+  { label: 'Portal', href: '/portal' },
 ]
 
 interface ProjectLayoutProps {

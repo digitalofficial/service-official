@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getProfile } from '@/lib/auth/get-profile'
 import { EstimateTemplate } from '@/components/estimates/estimate-template'
+import { EstimatePhotos } from '@/components/estimates/estimate-photos'
 import { EstimateActions } from './estimate-actions'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
@@ -33,6 +34,14 @@ export default async function EstimateDetailPage({ params }: { params: { id: str
     .single()
 
   if (!estimate) notFound()
+
+  // Fetch estimate photos
+  const { data: estimatePhotos } = await supabase
+    .from('photos')
+    .select('*')
+    .eq('estimate_id', params.id)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
 
   // Fetch linked invoice if converted
   const { data: linkedInvoice } = estimate.status === 'converted'
@@ -167,6 +176,11 @@ export default async function EstimateDetailPage({ params }: { params: { id: str
           customer={customer}
           lineItems={lineItems}
         />
+      </div>
+
+      {/* Estimate Photos */}
+      <div className="no-print">
+        <EstimatePhotos estimateId={params.id} photos={estimatePhotos ?? []} />
       </div>
 
       {/* Activity Timeline */}
