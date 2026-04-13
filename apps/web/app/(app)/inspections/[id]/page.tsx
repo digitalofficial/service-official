@@ -32,6 +32,9 @@ export default function InspectionDetailPage({ params }: { params: { id: string 
   const [inspection, setInspection] = useState<any>(null)
   const [items, setItems] = useState<InspectionItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState({ title: '', description: '', location: '' })
+  const [statusUpdating, setStatusUpdating] = useState(false)
 
   useEffect(() => { fetchInspection() }, [id])
 
@@ -77,10 +80,6 @@ export default function InspectionDetailPage({ params }: { params: { id: string 
     if (!sections.has(key)) sections.set(key, [])
     sections.get(key)!.push(item)
   }
-
-  const [editing, setEditing] = useState(false)
-  const [editForm, setEditForm] = useState({ title: '', description: '', location: '' })
-  const [statusUpdating, setStatusUpdating] = useState(false)
 
   const passCount = items.filter(i => i.status === 'pass').length
   const failCount = items.filter(i => i.status === 'fail').length
