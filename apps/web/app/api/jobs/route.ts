@@ -5,6 +5,7 @@ import { sendOrgSms } from '@/lib/sms'
 import { logMessage } from '@/lib/log-message'
 import { getApiProfile } from '@/lib/auth/get-api-profile'
 import { z } from 'zod'
+import { resolveTimezone } from '@/lib/utils'
 
 const jobSchema = z.object({
   project_id: z.string().uuid().optional(),
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
         let scheduledDate: string | undefined
         let scheduledTime: string | undefined
         if (data.scheduled_start) {
-          const tz = process.env.NEXT_PUBLIC_TIMEZONE ?? 'America/Denver'
+          const tz = resolveTimezone(process.env.NEXT_PUBLIC_TIMEZONE)
           const d = new Date(data.scheduled_start)
           scheduledDate = d.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
           scheduledTime = d.toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' })

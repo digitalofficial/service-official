@@ -7,15 +7,39 @@ export function cn(...inputs: ClassValue[]) {
 
 export { cn as default }
 
+// Map common abbreviations to valid IANA timezones
+const TZ_ALIASES: Record<string, string> = {
+  MST: 'America/Denver',
+  PST: 'America/Los_Angeles',
+  CST: 'America/Chicago',
+  EST: 'America/New_York',
+  HST: 'Pacific/Honolulu',
+  AKST: 'America/Anchorage',
+}
+
+/** Resolve a timezone string to a valid IANA timezone */
+export function resolveTimezone(tz?: string | null): string {
+  if (!tz) return 'America/Denver'
+  // If it's an alias, map it
+  if (TZ_ALIASES[tz.toUpperCase()]) return TZ_ALIASES[tz.toUpperCase()]
+  // Validate it's a real IANA timezone
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: tz })
+    return tz
+  } catch {
+    return 'America/Denver'
+  }
+}
+
 // Timezone resolution: org timezone from DOM > env var > browser timezone > UTC
 function getTimezone(): string {
   // On client, try to read org timezone from the layout data attribute
   if (typeof document !== 'undefined') {
     const orgTz = document.querySelector('[data-timezone]')?.getAttribute('data-timezone')
-    if (orgTz) return orgTz
+    if (orgTz) return resolveTimezone(orgTz)
   }
   // Env var (set per deployment or org)
-  if (process.env.NEXT_PUBLIC_TIMEZONE) return process.env.NEXT_PUBLIC_TIMEZONE
+  if (process.env.NEXT_PUBLIC_TIMEZONE) return resolveTimezone(process.env.NEXT_PUBLIC_TIMEZONE)
   // Browser timezone
   if (typeof Intl !== 'undefined') {
     try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch {}
