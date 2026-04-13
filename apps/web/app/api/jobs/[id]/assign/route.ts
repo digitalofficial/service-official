@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { notifyCustomer } from '@/lib/sms'
 import { tierHasSms } from '@/lib/auth/tier-access'
 import { getApiProfile } from '@/lib/auth/get-api-profile'
+import { resolveTimezone } from '@/lib/utils'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const result = await getApiProfile()
@@ -79,8 +80,9 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     ? ((job.customer as any).company_name ?? `${(job.customer as any).first_name} ${(job.customer as any).last_name}`)
     : ''
   const location = [job.address_line1, job.city, job.state].filter(Boolean).join(', ')
+  const tz = resolveTimezone(orgData?.timezone)
   const scheduledTime = job.scheduled_start
-    ? new Date(job.scheduled_start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    ? new Date(job.scheduled_start).toLocaleString('en-US', { timeZone: tz, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
     : 'TBD'
 
   const baseMessage = `"${job.title}"${customerName ? ` - ${customerName}` : ''}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getApiProfile } from '@/lib/auth/get-api-profile'
+import { resolveTimezone } from '@/lib/utils'
 
 function csvEscape(val: unknown): string {
   if (val === null || val === undefined) return ''
@@ -18,10 +19,11 @@ function toCSV(columns: { key: string; label: string }[], rows: Record<string, u
   return [header, ...body].join('\n')
 }
 
+let _exportTz = 'America/Denver'
 function flatDate(val: unknown): string {
   if (!val) return ''
   const d = new Date(String(val))
-  return isNaN(d.getTime()) ? String(val) : d.toLocaleDateString('en-US')
+  return isNaN(d.getTime()) ? String(val) : d.toLocaleDateString('en-US', { timeZone: _exportTz })
 }
 
 function customerName(c: any): string {
@@ -46,6 +48,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'You do not have permission to export data' }, { status: 403 })
   }
 
+  _exportTz = resolveTimezone((profile.organization as any)?.timezone)
   const orgId = profile.organization_id
   const entity = request.nextUrl.searchParams.get('entity')
 

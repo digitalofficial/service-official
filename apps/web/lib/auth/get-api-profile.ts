@@ -20,7 +20,7 @@ export async function getApiProfile(options?: { requireRole?: string[] }) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, organization_id, role, first_name, last_name, email, organization:organizations(name, subscription_tier, subscription_status)')
+    .select('id, organization_id, role, first_name, last_name, email, organization:organizations(name, subscription_tier, subscription_status, timezone)')
     .eq('id', user.id)
     .single()
 

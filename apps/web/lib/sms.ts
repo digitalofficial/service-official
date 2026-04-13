@@ -143,8 +143,14 @@ export async function notifyCustomer(
   const orgName = org?.name ?? 'Your contractor'
   const assigneeName = job.assignee ? `${(job.assignee as any).first_name}` : 'Our team'
   const location = [job.address_line1, job.city, job.state].filter(Boolean).join(', ')
+
+  // Get org timezone for date formatting
+  const { data: orgRecord } = await supabase.from('organizations').select('timezone').eq('id', organizationId).single()
+  const { resolveTimezone } = await import('@/lib/utils')
+  const tz = resolveTimezone(orgRecord?.timezone)
+
   const scheduledTime = job.scheduled_start
-    ? new Date(job.scheduled_start).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    ? new Date(job.scheduled_start).toLocaleString('en-US', { timeZone: tz, weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
     : ''
   const customerName = customer.first_name ?? 'there'
 

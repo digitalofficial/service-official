@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
         let scheduledDate: string | undefined
         let scheduledTime: string | undefined
         if (data.scheduled_start) {
-          const tz = resolveTimezone(process.env.NEXT_PUBLIC_TIMEZONE)
+          const tz = resolveTimezone((profile!.organization as any)?.timezone)
           const d = new Date(data.scheduled_start)
           scheduledDate = d.toLocaleDateString('en-US', { timeZone: tz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
           scheduledTime = d.toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' })
