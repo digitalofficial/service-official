@@ -301,7 +301,6 @@ export async function POST(request: NextRequest) {
           .from('template_sections')
           .insert({
             template_id: template.id,
-            organization_id: profile.organization_id,
             name: section.name,
             order_index: si,
           })
@@ -312,7 +311,6 @@ export async function POST(request: NextRequest) {
           await supabase.from('template_items').insert(
             section.items.map((item, ii) => ({
               template_id: template.id,
-              organization_id: profile.organization_id,
               section_id: sec.id,
               label: item.label,
               type: item.type,

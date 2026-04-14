@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       const section = sections[si]
       const { data: sec } = await supabase
         .from('template_sections')
-        .insert({ template_id: template.id, organization_id: profile.organization_id, name: section.name, order_index: si })
+        .insert({ template_id: template.id, name: section.name, order_index: si })
         .select()
         .single()
 
@@ -72,7 +72,6 @@ export async function POST(request: NextRequest) {
         await supabase.from('template_items').insert(
           section.items.map((item, ii) => ({
             template_id: template.id,
-            organization_id: profile.organization_id,
             section_id: sec.id,
             label: item.label,
             type: item.type,
