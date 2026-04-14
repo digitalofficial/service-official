@@ -37,7 +37,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   const result = await getApiProfile()
   if ('error' in result) return result.error
-  const { profile, supabase } = result
+  const { profile, supabase, user } = result
 
   // Verify customer belongs to org
   const { data: customer } = await supabase
@@ -92,6 +92,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   // Sync primary address to customer record
   if (isPrimary) {
     await syncPrimaryToCustomer(supabase, params.id, validated)
+  }
+
+  // If initial notes were provided, seed the note thread so they show up
+  // alongside subsequent notes (not just in the static notes column).
+  if (validated.notes && validated.notes.trim()) {
+    await supabase.from('customer_address_notes').insert({
+      organization_id: profile.organization_id,
+      customer_id: params.id,
+      address_id: data.id,
+      author_id: user.id,
+      body: validated.notes.trim(),
+    })
   }
 
   return NextResponse.json({ data, success: true }, { status: 201 })
