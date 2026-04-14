@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     const project_id = formData.get('project_id') as string | null
     const job_id = formData.get('job_id') as string | null
     const customer_id = formData.get('customer_id') as string | null
+    const subcontractor_id = formData.get('subcontractor_id') as string | null
     const file_type = formData.get('file_type') as string | null
     const description = formData.get('description') as string | null
     const is_public = formData.get('is_public') === 'true'
@@ -42,7 +43,13 @@ export async function POST(request: NextRequest) {
     // Build storage path: org_id/entity_type/entity_id/uuid.ext
     const ext = file.name.split('.').pop()
     const uniqueName = `${uuidv4()}.${ext}`
-    const entityPath = project_id ? `projects/${project_id}` : job_id ? `jobs/${job_id}` : `customers/${customer_id ?? 'general'}`
+    const entityPath = project_id
+      ? `projects/${project_id}`
+      : job_id
+      ? `jobs/${job_id}`
+      : subcontractor_id
+      ? `subcontractors/${subcontractor_id}`
+      : `customers/${customer_id ?? 'general'}`
     const storagePath = `${profile.organization_id}/${entityPath}/${uniqueName}`
 
     // Upload to Supabase Storage using service role (bypasses storage RLS)
@@ -70,6 +77,7 @@ export async function POST(request: NextRequest) {
         project_id,
         job_id,
         customer_id,
+        subcontractor_id,
         name: file.name.split('.')[0],
         original_name: file.name,
         file_type: file_type ?? 'other',
@@ -99,18 +107,23 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const result = await getApiProfile()
   if ('error' in result) return result.error
-  const { supabase } = result
+  const { profile, supabase } = result
 
   const { searchParams } = new URL(request.url)
   const project_id = searchParams.get('project_id')
   const job_id = searchParams.get('job_id')
   const customer_id = searchParams.get('customer_id')
+  const subcontractor_id = searchParams.get('subcontractor_id')
 
-  let query = supabase.from('files').select('*, uploader:profiles!uploaded_by(first_name, last_name)')
+  let query = supabase
+    .from('files')
+    .select('*, uploader:profiles!uploaded_by(first_name, last_name)')
+    .eq('organization_id', profile.organization_id)
 
   if (project_id) query = query.eq('project_id', project_id)
   if (job_id) query = query.eq('job_id', job_id)
   if (customer_id) query = query.eq('customer_id', customer_id)
+  if (subcontractor_id) query = query.eq('subcontractor_id', subcontractor_id)
 
   query = query.order('created_at', { ascending: false })
 

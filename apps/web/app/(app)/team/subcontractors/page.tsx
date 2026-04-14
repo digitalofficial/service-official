@@ -13,6 +13,7 @@ import {
   ChevronDown, ChevronUp, Building2, FileText, CreditCard, StickyNote, Pencil, Trash2
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { SubcontractorFiles } from '@/components/subcontractors/subcontractor-files'
 
 interface Subcontractor {
   id: string
@@ -239,9 +240,11 @@ export default function SubcontractorsPage() {
         return
       }
 
-      toast.success(editingSub ? 'Subcontractor updated' : 'Subcontractor added')
+      toast.success(editingSub ? 'Subcontractor updated' : 'Subcontractor added — upload documents below')
       setShowModal(false)
-      fetchSubs()
+      await fetchSubs()
+      // Auto-expand the new/just-edited sub so the user sees the document upload area
+      if (json?.data?.id) setExpandedId(json.data.id)
     } catch {
       toast.error('Failed to save subcontractor')
     } finally {
@@ -468,6 +471,11 @@ export default function SubcontractorsPage() {
                           <p className="text-gray-700 whitespace-pre-wrap">{sub.notes}</p>
                         </div>
                       )}
+
+                      {/* Documents */}
+                      <div className="sm:col-span-2 lg:col-span-3">
+                        <SubcontractorFiles subcontractorId={sub.id} />
+                      </div>
                     </div>
                   </div>
                 )}
