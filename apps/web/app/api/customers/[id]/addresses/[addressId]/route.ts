@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getApiProfile } from '@/lib/auth/get-api-profile'
+import { geocodeAddress } from '@/lib/geocode'
 
 // PATCH /api/customers/[id]/addresses/[addressId] — update address or set as primary
 export async function PATCH(
@@ -23,6 +24,22 @@ export async function PATCH(
       .eq('is_primary', true)
 
     updates.is_primary = true
+  }
+
+  // Re-geocode when any address field changed
+  const addrFieldsChanged = ['address_line1', 'city', 'state', 'zip'].some(k => k in updates)
+  if (addrFieldsChanged) {
+    const { data: current } = await supabase
+      .from('customer_addresses')
+      .select('address_line1, city, state, zip')
+      .eq('id', params.addressId)
+      .eq('organization_id', profile.organization_id)
+      .single()
+    const merged = { ...current, ...updates }
+    const full = [merged.address_line1, merged.city, merged.state, merged.zip].filter(Boolean).join(', ')
+    const geo = full ? await geocodeAddress(full) : null
+    updates.lat = geo?.lat ?? null
+    updates.lng = geo?.lng ?? null
   }
 
   const { data, error } = await supabase

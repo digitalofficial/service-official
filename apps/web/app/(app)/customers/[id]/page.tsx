@@ -4,6 +4,8 @@ import { getProfile } from '@/lib/auth/get-profile'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency, formatDate, formatPhone, statusColor } from '@/lib/utils'
+import { geocodeAddress } from '@/lib/geocode'
+import { CustomerAddressesPanel } from '@/components/customers/customer-addresses-panel'
 import {
   ArrowLeft, Mail, Phone, MapPin, Building2, User,
   FolderKanban, Receipt, FileText, Briefcase, MessageSquare,
@@ -38,21 +40,65 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
   const jobs = (customer as any).jobs ?? []
   const conversations = (customer as any).conversations ?? []
 
-  const isMultiAddress = ['commercial', 'property_manager', 'hoa'].includes(customer.type)
+  // Load all customer addresses (every type can now have multiple).
+  // If none exist yet but the customer has a legacy address on the record, surface it as a single implicit primary.
+  const { data: addrData } = await supabase
+    .from('customer_addresses')
+    .select('*')
+    .eq('customer_id', customer.id)
+    .order('is_primary', { ascending: false })
+    .order('created_at', { ascending: true })
+  let addresses: any[] = addrData ?? []
 
-  // Fetch additional addresses for multi-address customer types
-  let addresses: any[] = []
-  if (isMultiAddress) {
-    const { data: addrData } = await supabase
+  if (addresses.length === 0 && customer.address_line1) {
+    const legacyFull = [customer.address_line1, customer.city, customer.state, customer.zip].filter(Boolean).join(', ')
+    const geo = legacyFull ? await geocodeAddress(legacyFull) : null
+    const { data: backfilled } = await supabase
       .from('customer_addresses')
-      .select('*')
-      .eq('customer_id', customer.id)
-      .order('is_primary', { ascending: false })
-      .order('created_at', { ascending: true })
-    addresses = addrData ?? []
+      .insert({
+        customer_id: customer.id,
+        organization_id: customer.organization_id,
+        label: 'Main',
+        address_line1: customer.address_line1,
+        address_line2: customer.address_line2,
+        city: customer.city,
+        state: customer.state,
+        zip: customer.zip,
+        country: customer.country ?? 'US',
+        is_primary: true,
+        lat: geo?.lat ?? null,
+        lng: geo?.lng ?? null,
+      })
+      .select()
+      .single()
+    if (backfilled) addresses = [backfilled]
   }
 
-  const address = [customer.address_line1, customer.city, customer.state, customer.zip].filter(Boolean).join(', ')
+  // Load org HQ for map pin; geocode + persist if missing.
+  const { data: org } = await supabase
+    .from('organizations')
+    .select('id, name, address_line1, city, state, zip, lat, lng')
+    .eq('id', customer.organization_id)
+    .single()
+
+  let baseLocation: { lat: number; lng: number; name: string } | null = null
+  if (org) {
+    if (org.lat != null && org.lng != null) {
+      baseLocation = { lat: org.lat, lng: org.lng, name: org.name }
+    } else if (org.address_line1) {
+      const full = [org.address_line1, org.city, org.state, org.zip].filter(Boolean).join(', ')
+      const geo = full ? await geocodeAddress(full) : null
+      if (geo) {
+        await supabase.from('organizations').update({ lat: geo.lat, lng: geo.lng }).eq('id', org.id)
+        baseLocation = { lat: geo.lat, lng: geo.lng, name: org.name }
+      }
+    }
+  }
+
+  const primary = addresses.find(a => a.is_primary) ?? addresses[0]
+  const address = primary
+    ? [primary.address_line1, primary.city, primary.state, primary.zip].filter(Boolean).join(', ')
+    : [customer.address_line1, customer.city, customer.state, customer.zip].filter(Boolean).join(', ')
   const mapQuery = encodeURIComponent(address)
 
   // Build activity timeline from all related data
@@ -147,52 +193,18 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
                   <Phone className="w-4 h-4 text-gray-400" /> {formatPhone(customer.phone)}
                 </a>
               )}
-              {isMultiAddress && addresses.length > 0 ? (
-                <div className="space-y-3">
-                  {addresses.map((addr: any) => {
-                    const addrStr = [addr.address_line1, addr.city, addr.state, addr.zip].filter(Boolean).join(', ')
-                    const addrMapQ = encodeURIComponent(addrStr)
-                    return (
-                      <div key={addr.id} className="flex items-start gap-2.5 text-sm text-gray-600">
-                        <MapPin className={`w-4 h-4 mt-0.5 ${addr.is_primary ? 'text-blue-500' : 'text-gray-400'}`} />
-                        <div>
-                          <p className="flex items-center gap-1.5">
-                            <span className="font-medium text-gray-800">{addr.label}</span>
-                            {addr.is_primary && (
-                              <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">Primary</span>
-                            )}
-                          </p>
-                          <p>{addr.address_line1}</p>
-                          {addr.address_line2 && <p>{addr.address_line2}</p>}
-                          <p>{[addr.city, addr.state, addr.zip].filter(Boolean).join(', ')}</p>
-                          <a
-                            href={`https://maps.google.com/?q=${addrMapQ}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-1"
-                          >
-                            <ExternalLink className="w-3 h-3" /> Open in Maps
-                          </a>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : address ? (
+              {/* Primary address summary (full address mgmt lives in the panel below) */}
+              {primary ? (
                 <div className="flex items-start gap-2.5 text-sm text-gray-600">
-                  <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                  <MapPin className="w-4 h-4 text-blue-500 mt-0.5" />
                   <div>
-                    <p>{customer.address_line1}</p>
-                    {customer.address_line2 && <p>{customer.address_line2}</p>}
-                    <p>{[customer.city, customer.state, customer.zip].filter(Boolean).join(', ')}</p>
-                    <a
-                      href={`https://maps.google.com/?q=${mapQuery}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline mt-1"
-                    >
-                      <ExternalLink className="w-3 h-3" /> Open in Google Maps
-                    </a>
+                    <p className="flex items-center gap-1.5">
+                      <span className="font-medium text-gray-800">{primary.label}</span>
+                      <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">Primary / Billing</span>
+                    </p>
+                    <p>{primary.address_line1}</p>
+                    {primary.address_line2 && <p>{primary.address_line2}</p>}
+                    <p>{[primary.city, primary.state, primary.zip].filter(Boolean).join(', ')}</p>
                   </div>
                 </div>
               ) : null}
@@ -235,20 +247,13 @@ export default async function CustomerDetailPage({ params }: { params: { id: str
             </div>
           </div>
 
-          {/* Map */}
-          {address && (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <iframe
-                width="100%"
-                height="200"
-                style={{ border: 0 }}
-                loading="lazy"
-                allowFullScreen
-                referrerPolicy="no-referrer-when-downgrade"
-                src={`https://maps.google.com/maps?q=${mapQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-              />
-            </div>
-          )}
+          {/* Addresses (map + per-location notes) */}
+          <CustomerAddressesPanel
+            customerId={customer.id}
+            customerName={customer.company_name ?? `${customer.first_name ?? ''} ${customer.last_name ?? ''}`.trim()}
+            initialAddresses={addresses as any}
+            baseLocation={baseLocation}
+          />
 
           {/* Notes */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">

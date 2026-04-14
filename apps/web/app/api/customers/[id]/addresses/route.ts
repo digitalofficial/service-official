@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getApiProfile } from '@/lib/auth/get-api-profile'
+import { geocodeAddress } from '@/lib/geocode'
 import { z } from 'zod'
 
 const addressSchema = z.object({
@@ -69,6 +70,10 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       .eq('is_primary', true)
   }
 
+  // Geocode (best-effort)
+  const fullAddr = [validated.address_line1, validated.city, validated.state, validated.zip].filter(Boolean).join(', ')
+  const geo = fullAddr ? await geocodeAddress(fullAddr) : null
+
   const { data, error } = await supabase
     .from('customer_addresses')
     .insert({
@@ -76,6 +81,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       is_primary: isPrimary,
       customer_id: params.id,
       organization_id: profile.organization_id,
+      lat: geo?.lat ?? null,
+      lng: geo?.lng ?? null,
     })
     .select()
     .single()
