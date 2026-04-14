@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import {
   ClipboardCheck, Plus, Search, AlertTriangle, CheckCircle2, XCircle,
-  Clock, Copy, FileText
+  Clock, Copy, FileText, Trash2
 } from 'lucide-react'
 
 const STATUS_TABS = [
@@ -45,6 +45,7 @@ export default function InspectionsPage() {
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [activeView, setActiveView] = useState<'inspections' | 'templates'>('inspections')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchInspections()
@@ -73,6 +74,43 @@ export default function InspectionsPage() {
       toast.success('Template duplicated')
       fetchTemplates()
     }
+  }
+
+  async function deleteInspection(id: string) {
+    if (!confirm('Delete this inspection?')) return
+    const res = await fetch(`/api/inspections/${id}`, { method: 'DELETE' })
+    if (!res.ok) { toast.error('Failed to delete'); return }
+    toast.success('Inspection deleted')
+    setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n })
+    fetchInspections()
+  }
+
+  async function deleteSelected() {
+    if (selectedIds.size === 0) return
+    if (!confirm(`Delete ${selectedIds.size} inspection${selectedIds.size === 1 ? '' : 's'}?`)) return
+    const res = await fetch('/api/inspections/bulk-delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: Array.from(selectedIds) }),
+    })
+    const json = await res.json()
+    if (!res.ok) { toast.error(json.error || 'Failed to delete'); return }
+    toast.success(`${json.deleted ?? selectedIds.size} deleted`)
+    setSelectedIds(new Set())
+    fetchInspections()
+  }
+
+  function toggleRow(id: string) {
+    setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+  }
+
+  function toggleAllVisible(ids: string[], allSelected: boolean) {
+    setSelectedIds(prev => {
+      const n = new Set(prev)
+      if (allSelected) ids.forEach(id => n.delete(id))
+      else ids.forEach(id => n.add(id))
+      return n
+    })
   }
 
   const today = new Date().toISOString().split('T')[0]
@@ -161,47 +199,90 @@ export default function InspectionsPage() {
               <Button onClick={() => setShowCreateModal(true)}><Plus className="w-4 h-4 mr-2" />New Inspection</Button>
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden overflow-x-auto">
-              <table className="w-full text-sm min-w-[650px]">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Inspection</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Project</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Assigned To</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Result</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-500">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(insp => (
-                    <tr key={insp.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <Link href={`/inspections/${insp.id}`} className="text-blue-600 hover:underline font-medium">{insp.title}</Link>
-                        <p className="text-xs text-gray-400">{insp.inspection_number}</p>
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {insp.project ? <Link href={`/projects/${insp.project.id}`} className="text-blue-600 hover:underline">{insp.project.name}</Link> : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">{insp.assignee ? `${insp.assignee.first_name} ${insp.assignee.last_name}` : '—'}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[insp.status] || ''}`}>
-                          {insp.status.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {insp.overall_result ? (
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize ${RESULT_COLORS[insp.overall_result] || ''}`}>
-                            {insp.overall_result} ({insp.pass_count}/{insp.total_items})
-                          </span>
-                        ) : '—'}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">{insp.scheduled_date || '—'}</td>
+            <>
+              {selectedIds.size > 0 && (
+                <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm">
+                  <span className="text-blue-700 font-medium">{selectedIds.size} selected</span>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setSelectedIds(new Set())} className="text-gray-600 hover:text-gray-800">Clear</button>
+                    <Button variant="destructive" size="sm" onClick={deleteSelected}>
+                      <Trash2 className="w-4 h-4 mr-1" /> Delete selected
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden overflow-x-auto">
+                <table className="w-full text-sm min-w-[720px]">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="w-10 px-3 py-3">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300"
+                          checked={filtered.length > 0 && filtered.every(i => selectedIds.has(i.id))}
+                          onChange={() => {
+                            const ids = filtered.map(i => i.id)
+                            const allSelected = ids.every(id => selectedIds.has(id))
+                            toggleAllVisible(ids, allSelected)
+                          }}
+                        />
+                      </th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-500">Inspection</th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-500">Project</th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-500">Assigned To</th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-500">Status</th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-500">Result</th>
+                      <th className="text-left px-4 py-3 font-medium text-gray-500">Date</th>
+                      <th className="w-10 px-3 py-3"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filtered.map(insp => (
+                      <tr key={insp.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 group">
+                        <td className="px-3 py-3">
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300"
+                            checked={selectedIds.has(insp.id)}
+                            onChange={() => toggleRow(insp.id)}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Link href={`/inspections/${insp.id}`} className="text-blue-600 hover:underline font-medium">{insp.title}</Link>
+                          <p className="text-xs text-gray-400">{insp.inspection_number}</p>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {insp.project ? <Link href={`/projects/${insp.project.id}`} className="text-blue-600 hover:underline">{insp.project.name}</Link> : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{insp.assignee ? `${insp.assignee.first_name} ${insp.assignee.last_name}` : '—'}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_COLORS[insp.status] || ''}`}>
+                            {insp.status.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {insp.overall_result ? (
+                            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium capitalize ${RESULT_COLORS[insp.overall_result] || ''}`}>
+                              {insp.overall_result} ({insp.pass_count}/{insp.total_items})
+                            </span>
+                          ) : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500">{insp.scheduled_date || '—'}</td>
+                        <td className="px-3 py-3">
+                          <button
+                            onClick={() => deleteInspection(insp.id)}
+                            className="p-1 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-600 hover:bg-red-50 rounded"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </>
       ) : (
