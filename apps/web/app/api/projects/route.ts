@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createProject, getProjects } from '@service-official/database/queries/projects'
 import { getApiProfile } from '@/lib/auth/get-api-profile'
+import { getAllowedProjectIds } from '@/lib/auth/project-access'
 import { trigger } from '@service-official/workflows'
 import { z } from 'zod'
 
@@ -30,9 +31,14 @@ export async function GET(request: NextRequest) {
   try {
     const result = await getApiProfile()
     if ('error' in result) return result.error
-    const { profile } = result
+    const { profile, user } = result
 
     const { searchParams } = new URL(request.url)
+
+    const idFilter = await getAllowedProjectIds(user.id, profile.role, profile.organization_id)
+    if (idFilter !== null && idFilter.length === 0) {
+      return NextResponse.json({ data: [], total: 0, page: 1, per_page: 20, total_pages: 0 })
+    }
 
     const data = await getProjects({
       organization_id: profile.organization_id,
@@ -41,6 +47,7 @@ export async function GET(request: NextRequest) {
       search: searchParams.get('search') ?? undefined,
       page: Number(searchParams.get('page') ?? 1),
       per_page: Number(searchParams.get('per_page') ?? 20),
+      id_in: idFilter ?? undefined,
     })
 
     return NextResponse.json(data)

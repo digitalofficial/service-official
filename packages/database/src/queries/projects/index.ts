@@ -9,11 +9,12 @@ export interface GetProjectsOptions {
   search?: string
   page?: number
   per_page?: number
+  id_in?: string[]
 }
 
 export async function getProjects(options: GetProjectsOptions): Promise<PaginatedResponse<Project>> {
   const supabase = createServiceRoleClient()
-  const { organization_id, status, customer_id, search, page = 1, per_page = 20 } = options
+  const { organization_id, status, customer_id, search, page = 1, per_page = 20, id_in } = options
 
   let query = supabase
     .from('projects')
@@ -32,6 +33,7 @@ export async function getProjects(options: GetProjectsOptions): Promise<Paginate
   if (status) query = query.eq('status', status)
   if (customer_id) query = query.eq('customer_id', customer_id)
   if (search) query = query.ilike('name', `%${search}%`)
+  if (id_in) query = query.in('id', id_in)
 
   const { data, error, count } = await query
   if (error) throw new Error(error.message)

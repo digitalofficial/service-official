@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { getProfile } from '@/lib/auth/get-profile'
 import { getProjects } from '@service-official/database/queries/projects'
+import { getAllowedProjectIds } from '@/lib/auth/project-access'
 import { ProjectStatusBadge } from '@/components/projects/status-badge'
 import { ProjectCard } from '@/components/projects/project-card'
 import { Button } from '@/components/ui/button'
@@ -17,13 +18,18 @@ interface ProjectsPageProps {
 }
 
 export default async function ProjectsPage({ searchParams }: ProjectsPageProps) {
-  const { profile } = await getProfile()
+  const { profile, user } = await getProfile()
 
-  const { data: projects, total } = await getProjects({
-    organization_id: profile.organization_id,
-    status: searchParams.status,
-    search: searchParams.search,
-  })
+  const idFilter = await getAllowedProjectIds(user.id, profile.role, profile.organization_id)
+
+  const { data: projects, total } = idFilter !== null && idFilter.length === 0
+    ? { data: [], total: 0 }
+    : await getProjects({
+        organization_id: profile.organization_id,
+        status: searchParams.status,
+        search: searchParams.search,
+        id_in: idFilter ?? undefined,
+      })
 
   const statusGroups = [
     { label: 'All', value: undefined },

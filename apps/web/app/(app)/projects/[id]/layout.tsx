@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getProfile } from '@/lib/auth/get-profile'
 import { getProjectById } from '@service-official/database/queries/projects'
+import { canAccessProject } from '@/lib/auth/project-access'
 import { TabLink } from '@/components/projects/tab-link'
 import { ProjectTour } from '@/components/projects/project-tour'
 import { ProjectHeaderActions } from '@/components/projects/project-header-actions'
@@ -19,6 +20,7 @@ const PROJECT_TABS = [
   { label: 'Blueprints', href: '/blueprints' },
   { label: 'Timeline', href: '/timeline' },
   { label: 'Team', href: '/team' },
+  { label: 'Subcontractors', href: '/subcontractors' },
   { label: 'Expenses', href: '/expenses' },
   { label: 'Materials', href: '/materials' },
   { label: 'Daily Logs', href: '/daily-logs' },
@@ -37,9 +39,12 @@ interface ProjectLayoutProps {
 }
 
 export default async function ProjectDetailLayout({ children, params }: ProjectLayoutProps) {
-  await getProfile()
-  const project = await getProjectById(params.id)
+  const { profile, user } = await getProfile()
+  const project = await getProjectById(params.id, profile.organization_id)
   if (!project) notFound()
+
+  const allowed = await canAccessProject(user.id, profile.role, profile.organization_id, params.id)
+  if (!allowed) notFound()
 
   const baseHref = `/projects/${params.id}`
 

@@ -4,13 +4,21 @@ import { getApiProfile } from '@/lib/auth/get-api-profile'
 export async function POST(request: NextRequest) {
   const result = await getApiProfile()
   if ('error' in result) return result.error
-  const { supabase } = result
+  const { profile, supabase } = result
 
   const { project_id, user_id, role, hourly_rate } = await request.json()
 
   if (!project_id || !user_id) {
     return NextResponse.json({ error: 'project_id and user_id required' }, { status: 400 })
   }
+
+  // Verify both project and user belong to caller's org (prevent cross-org leak)
+  const [{ data: project }, { data: targetUser }] = await Promise.all([
+    supabase.from('projects').select('id').eq('id', project_id).eq('organization_id', profile.organization_id).single(),
+    supabase.from('profiles').select('id').eq('id', user_id).eq('organization_id', profile.organization_id).single(),
+  ])
+  if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+  if (!targetUser) return NextResponse.json({ error: 'User not in your organization' }, { status: 403 })
 
   // Check if already on team
   const { data: existing } = await supabase

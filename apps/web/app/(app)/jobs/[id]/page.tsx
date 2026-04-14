@@ -13,6 +13,7 @@ import { ConvertEstimateButton } from './convert-estimate-button'
 import { WorkflowBar } from './workflow-bar'
 import { ActivityFeed } from './activity-feed'
 import { JobNotes } from './job-notes'
+import { JobSubcontractors } from './job-subcontractors'
 import {
   ArrowLeft, MapPin, Clock, User, Phone, Calendar, FileText,
   Camera, DollarSign, MessageSquare, Briefcase, Mail, ExternalLink,
@@ -153,6 +154,9 @@ export default async function JobDetailPage({ params }: { params: { id: string }
 
           {/* Notes */}
           <JobNotes jobId={params.id} notes={job.description} />
+
+          {/* Subcontractors */}
+          <JobSubcontractors jobId={params.id} />
 
           {/* Crew Instructions */}
           {(job.instructions || job.completion_notes) && (
