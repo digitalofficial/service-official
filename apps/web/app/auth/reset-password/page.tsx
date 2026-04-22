@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@service-official/database/client'
 import { Button } from '@/components/ui/button'
@@ -9,28 +9,52 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
+  const [verifying, setVerifying] = useState(true)
 
   useEffect(() => {
-    // Supabase sets the session from the URL hash automatically
     const supabase = createClient()
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setSessionReady(true)
-      }
-    })
-    // Also check if we already have a session (page refresh after click)
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setSessionReady(true)
-    })
-  }, [])
+    const tokenHash = searchParams.get('token_hash')
+    const type = searchParams.get('type')
+
+    if (tokenHash && type === 'recovery') {
+      // Verify the token directly — no Supabase redirect needed
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+        .then(({ error }) => {
+          if (error) {
+            console.error('Token verification failed:', error.message)
+            setVerifying(false)
+          } else {
+            setSessionReady(true)
+            setVerifying(false)
+          }
+        })
+    } else {
+      // Fallback: listen for PASSWORD_RECOVERY event (hash-based flow)
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setSessionReady(true)
+          setVerifying(false)
+        }
+      })
+      // Also check if we already have a session
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          setSessionReady(true)
+        }
+        setVerifying(false)
+      })
+      return () => subscription.unsubscribe()
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,6 +100,16 @@ export default function ResetPasswordPage() {
         <p className="text-sm text-gray-500 mt-1">
           Redirecting you to the dashboard...
         </p>
+      </div>
+    )
+  }
+
+  if (verifying) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 text-center">
+        <Loader2 className="w-10 h-10 text-blue-500 mx-auto mb-3 animate-spin" />
+        <h2 className="text-lg font-semibold text-gray-900">Verifying your link...</h2>
+        <p className="text-sm text-gray-500 mt-1">Please wait a moment.</p>
       </div>
     )
   }
@@ -143,5 +177,18 @@ export default function ResetPasswordPage() {
         </Button>
       </form>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 text-center">
+        <Loader2 className="w-10 h-10 text-blue-500 mx-auto mb-3 animate-spin" />
+        <h2 className="text-lg font-semibold text-gray-900">Loading...</h2>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }

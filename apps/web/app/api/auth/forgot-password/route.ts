@@ -39,13 +39,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
-    // Build reset link
+    // Build reset link — send token directly to our app (bypasses Supabase redirect issues with PKCE)
     const url = new URL(actionLink)
-    const token = url.searchParams.get('token')
-    const type = url.searchParams.get('type')
+    const tokenHash = url.searchParams.get('token')
 
-    const resetLink = token
-      ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${token}&type=${type}&redirect_to=${encodeURIComponent(`${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`)}`
+    const resetLink = tokenHash
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token_hash=${tokenHash}&type=recovery`
       : actionLink
 
     // Send email directly via Resend REST API — no package dependency
