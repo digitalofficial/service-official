@@ -36,7 +36,7 @@ const NAV_ITEMS = [
   { label: 'Equipment', href: '/equipment', icon: Truck },
   { label: 'Customers', href: '/customers', icon: Users },
   { label: 'Leads', href: '/leads', icon: UserPlus },
-  { label: 'Estimates', href: '/estimates', icon: FileText },
+  { label: 'Estimates / Quotes', href: '/estimates', icon: FileText },
   { label: 'Invoices', href: '/invoices', icon: Receipt },
   { label: 'Purchase Orders', href: '/purchase-orders', icon: ShoppingCart },
   { label: 'Payments', href: '/payments', icon: CreditCard },

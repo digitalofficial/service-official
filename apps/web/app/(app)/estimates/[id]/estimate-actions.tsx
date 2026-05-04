@@ -85,7 +85,7 @@ export function EstimateActions({ estimateId, status, hasEmail, hasPhone }: Esti
 
   const canSend = !['converted', 'expired'].includes(status) && (hasEmail || hasPhone)
   const canConvert = ['approved', 'sent', 'viewed'].includes(status)
-  const canEdit = ['draft', 'sent'].includes(status)
+  const canEdit = !['approved', 'converted'].includes(status)
   const canDelete = status === 'draft'
 
   return (

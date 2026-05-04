@@ -10,12 +10,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react'
 import { InlineCustomerSelect } from '@/components/forms/inline-customer-select'
 import { InlineProjectSelect } from '@/components/forms/inline-project-select'
+import { EstimatePhotos } from '@/components/estimates/estimate-photos'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
+
+const LINE_ITEM_CATEGORIES = ['Materials', 'Labor', 'Parts'] as const
+type LineItemCategory = typeof LINE_ITEM_CATEGORIES[number]
 
 interface LineItem {
   name: string
   description: string
+  category: LineItemCategory
   quantity: number
   unit: string
   unit_cost: number
@@ -24,9 +29,20 @@ interface LineItem {
   is_taxable: boolean
 }
 
+interface ExpenseItem {
+  name: string
+  category: string
+  amount: number
+  notes: string
+}
+
 const emptyItem = (): LineItem => ({
-  name: '', description: '', quantity: 1, unit: 'ea',
+  name: '', description: '', category: 'Materials', quantity: 1, unit: 'ea',
   unit_cost: 0, markup_percent: 0, is_optional: false, is_taxable: true,
+})
+
+const emptyExpense = (): ExpenseItem => ({
+  name: '', category: '', amount: 0, notes: '',
 })
 
 export default function EditEstimatePage() {
@@ -37,6 +53,7 @@ export default function EditEstimatePage() {
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [items, setItems] = useState<LineItem[]>([emptyItem()])
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([])
   const [taxRate, setTaxRate] = useState(0)
   const [discountValue, setDiscountValue] = useState(0)
   const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent')
@@ -51,6 +68,7 @@ export default function EditEstimatePage() {
   const [expiryDate, setExpiryDate] = useState('')
   const [terms, setTerms] = useState('')
   const [notes, setNotes] = useState('')
+  const [photos, setPhotos] = useState<any[]>([])
 
   useEffect(() => {
     async function fetchEstimate() {
@@ -81,6 +99,7 @@ export default function EditEstimatePage() {
           .map((item: any) => ({
             name: item.name || '',
             description: item.description || '',
+            category: item.category || 'Materials',
             quantity: item.quantity ?? 1,
             unit: item.unit || 'ea',
             unit_cost: item.unit_cost ?? 0,
@@ -90,6 +109,22 @@ export default function EditEstimatePage() {
           }))
 
         setItems(lineItems.length > 0 ? lineItems : [emptyItem()])
+
+        // Load expenses
+        const expenseItems = (data.expenses ?? []).map((e: any) => ({
+          name: e.name || '',
+          category: e.category || '',
+          amount: e.amount ?? 0,
+          notes: e.notes || '',
+        }))
+        setExpenses(expenseItems)
+
+        // Load photos
+        const photosRes = await fetch(`/api/photos?estimate_id=${estimateId}`)
+        if (photosRes.ok) {
+          const photosData = await photosRes.json()
+          setPhotos(photosData.data ?? [])
+        }
       } catch {
         toast.error('Something went wrong')
         router.push('/estimates')
@@ -108,6 +143,16 @@ export default function EditEstimatePage() {
     if (items.length === 1) return
     setItems(prev => prev.filter((_, i) => i !== idx))
   }
+
+  const updateExpense = (idx: number, field: keyof ExpenseItem, value: any) => {
+    setExpenses(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item))
+  }
+
+  const removeExpense = (idx: number) => {
+    setExpenses(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
 
   const subtotal = items
     .filter(i => !i.is_optional)
@@ -139,6 +184,9 @@ export default function EditEstimatePage() {
         line_items: items.filter(i => i.name.trim()).map((item, idx) => ({
           ...item,
           order_index: idx,
+        })),
+        expenses: expenses.filter(e => e.name.trim()).map(e => ({
+          ...e,
         })),
       }
 
@@ -177,7 +225,7 @@ export default function EditEstimatePage() {
         <Link href={`/estimates/${estimateId}`} className="text-gray-400 hover:text-gray-600">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-xl font-bold text-gray-900">Edit Estimate</h1>
+        <h1 className="text-xl font-bold text-gray-900">Edit Estimate / Quote</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -224,7 +272,7 @@ export default function EditEstimatePage() {
             {items.map((item, idx) => (
               <div key={idx} className="border border-gray-200 rounded-lg p-4 space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="flex-1 grid grid-cols-6 gap-3">
+                  <div className="flex-1 grid grid-cols-8 gap-3">
                     <div className="col-span-3 space-y-1">
                       <Label>Item Name</Label>
                       <Input
@@ -232,6 +280,18 @@ export default function EditEstimatePage() {
                         onChange={e => updateItem(idx, 'name', e.target.value)}
                         placeholder="Architectural shingles"
                       />
+                    </div>
+                    <div className="col-span-1 space-y-1">
+                      <Label>Category</Label>
+                      <select
+                        value={item.category}
+                        onChange={e => updateItem(idx, 'category', e.target.value)}
+                        className="w-full h-9 text-sm border border-gray-300 rounded-md px-2"
+                      >
+                        {LINE_ITEM_CATEGORIES.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="space-y-1">
                       <Label>Qty</Label>
@@ -247,7 +307,7 @@ export default function EditEstimatePage() {
                         onChange={e => updateItem(idx, 'unit_cost', Number(e.target.value))}
                       />
                     </div>
-                    <div className="space-y-1">
+                    <div className="col-span-2 space-y-1">
                       <Label>Total</Label>
                       <p className="h-9 flex items-center text-sm font-medium text-gray-900">
                         {formatCurrency(item.quantity * item.unit_cost * (1 + item.markup_percent / 100))}
@@ -331,6 +391,69 @@ export default function EditEstimatePage() {
               <span>{formatCurrency(total)}</span>
             </div>
           </div>
+        </div>
+
+        {/* Photos */}
+        <EstimatePhotos estimateId={estimateId} photos={photos} />
+
+        {/* Internal Expenses — not visible to customer */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-gray-900">Internal Expenses</h2>
+              <p className="text-xs text-gray-400 mt-0.5">For internal tracking only — not visible to customer</p>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => setExpenses(prev => [...prev, emptyExpense()])}>
+              <Plus className="w-4 h-4 mr-1" />Add Expense
+            </Button>
+          </div>
+
+          {expenses.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-4">No internal expenses added</p>
+          ) : (
+            <div className="space-y-3">
+              {expenses.map((expense, idx) => (
+                <div key={idx} className="border border-gray-200 rounded-lg p-4 flex items-start gap-3">
+                  <div className="flex-1 grid grid-cols-4 gap-3">
+                    <div className="col-span-2 space-y-1">
+                      <Label>Expense Name</Label>
+                      <Input
+                        value={expense.name}
+                        onChange={e => updateExpense(idx, 'name', e.target.value)}
+                        placeholder="Dumpster rental, permits, etc."
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Category</Label>
+                      <Input
+                        value={expense.category}
+                        onChange={e => updateExpense(idx, 'category', e.target.value)}
+                        placeholder="Overhead, Travel..."
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Amount</Label>
+                      <Input
+                        type="number" step="0.01" value={expense.amount}
+                        onChange={e => updateExpense(idx, 'amount', Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeExpense(idx)}
+                    className="mt-6 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
+                <span className="text-gray-500">Total Internal Expenses</span>
+                <span className="font-medium text-gray-900">{formatCurrency(totalExpenses)}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Terms & Notes */}

@@ -18,6 +18,13 @@ const lineItemSchema = z.object({
   order_index: z.number().default(0),
 })
 
+const expenseSchema = z.object({
+  name: z.string(),
+  category: z.string().optional(),
+  amount: z.number().default(0),
+  notes: z.string().optional(),
+})
+
 const estimateSchema = z.object({
   project_id: z.string().uuid().optional(),
   customer_id: z.string().uuid().optional(),
@@ -33,6 +40,7 @@ const estimateSchema = z.object({
   notes: z.string().optional(),
   sections: z.array(z.object({ name: z.string(), order_index: z.number() })).default([]),
   line_items: z.array(lineItemSchema).default([]),
+  expenses: z.array(expenseSchema).default([]),
 })
 
 function calculateTotals(lineItems: any[], discountType: string | undefined, discountValue: number, taxRate: number) {
@@ -89,7 +97,7 @@ export async function POST(request: NextRequest) {
   if ('error' in result) return result.error
   const { user, profile, supabase } = result
   const body = await request.json()
-  const { sections, line_items, ...estimateData } = estimateSchema.parse(body)
+  const { sections, line_items, expenses, ...estimateData } = estimateSchema.parse(body)
 
   // Auto-number
   const { count } = await supabase
@@ -136,6 +144,17 @@ export async function POST(request: NextRequest) {
         ...item,
         estimate_id: estimate.id,
         total: item.quantity * item.unit_cost * (1 + item.markup_percent / 100),
+      }))
+    )
+  }
+
+  // Insert internal expenses
+  if (expenses.length > 0) {
+    await supabase.from('estimate_expenses').insert(
+      expenses.map(e => ({
+        ...e,
+        estimate_id: estimate.id,
+        organization_id: profile!.organization_id,
       }))
     )
   }

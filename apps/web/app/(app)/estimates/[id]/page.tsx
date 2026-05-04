@@ -7,7 +7,7 @@ import { EstimateActions } from './estimate-actions'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
   ArrowLeft, FileText, Send, Eye, CheckCircle2, XCircle,
-  Clock, Receipt, Pen
+  Clock, Receipt, Pen, DollarSign
 } from 'lucide-react'
 import type { Metadata } from 'next'
 
@@ -42,6 +42,13 @@ export default async function EstimateDetailPage({ params }: { params: { id: str
     .eq('estimate_id', params.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
+
+  // Fetch estimate expenses (internal)
+  const { data: estimateExpenses } = await supabase
+    .from('estimate_expenses')
+    .select('*')
+    .eq('estimate_id', params.id)
+    .order('created_at', { ascending: true })
 
   // Fetch linked invoice if converted
   const { data: linkedInvoice } = estimate.status === 'converted'
@@ -182,6 +189,34 @@ export default async function EstimateDetailPage({ params }: { params: { id: str
       <div className="no-print">
         <EstimatePhotos estimateId={params.id} photos={estimatePhotos ?? []} />
       </div>
+
+      {/* Internal Expenses */}
+      {estimateExpenses && estimateExpenses.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 no-print">
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign className="w-4 h-4 text-gray-400" />
+            <h2 className="font-semibold text-gray-900">Internal Expenses</h2>
+            <span className="text-xs text-gray-400 ml-1">(not visible to customer)</span>
+          </div>
+          <div className="space-y-2">
+            {estimateExpenses.map((expense: any) => (
+              <div key={expense.id} className="flex items-center justify-between text-sm py-2 border-b border-gray-100 last:border-0">
+                <div>
+                  <span className="font-medium text-gray-900">{expense.name}</span>
+                  {expense.category && (
+                    <span className="ml-2 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{expense.category}</span>
+                  )}
+                </div>
+                <span className="font-medium text-gray-900">{formatCurrency(expense.amount)}</span>
+              </div>
+            ))}
+            <div className="flex justify-between text-sm font-bold pt-2 border-t border-gray-200">
+              <span>Total Expenses</span>
+              <span>{formatCurrency(estimateExpenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0))}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Activity Timeline */}
       {activities.length > 0 && (

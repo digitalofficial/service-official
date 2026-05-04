@@ -16,6 +16,13 @@ const lineItemSchema = z.object({
   order_index: z.number().default(0),
 })
 
+const expenseSchema = z.object({
+  name: z.string(),
+  category: z.string().optional(),
+  amount: z.number().default(0),
+  notes: z.string().optional(),
+})
+
 const estimateUpdateSchema = z.object({
   project_id: z.string().uuid().optional().nullable(),
   customer_id: z.string().uuid().optional().nullable(),
@@ -31,6 +38,7 @@ const estimateUpdateSchema = z.object({
   notes: z.string().optional(),
   sections: z.array(z.object({ name: z.string(), order_index: z.number() })).default([]),
   line_items: z.array(lineItemSchema).default([]),
+  expenses: z.array(expenseSchema).default([]),
 })
 
 function calculateTotals(lineItems: any[], discountType: string | undefined, discountValue: number, taxRate: number) {
@@ -69,7 +77,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       customer:customers(id, first_name, last_name, company_name),
       project:projects(id, name),
       line_items:estimate_line_items(*),
-      sections:estimate_sections(*)
+      sections:estimate_sections(*),
+      expenses:estimate_expenses(*)
     `)
     .eq('id', params.id)
     .eq('organization_id', profile!.organization_id)
@@ -97,12 +106,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     .single()
 
   if (!existing) return NextResponse.json({ error: 'Estimate not found' }, { status: 404 })
-  if (!['draft', 'sent'].includes(existing.status)) {
-    return NextResponse.json({ error: 'Only draft or sent estimates can be edited' }, { status: 400 })
+  if (['approved', 'converted'].includes(existing.status)) {
+    return NextResponse.json({ error: 'Approved or converted estimates cannot be edited' }, { status: 400 })
   }
 
   const body = await request.json()
-  const { sections, line_items, ...estimateData } = estimateUpdateSchema.parse(body)
+  const { sections, line_items, expenses, ...estimateData } = estimateUpdateSchema.parse(body)
 
   const totals = calculateTotals(line_items, estimateData.discount_type, estimateData.discount_value, estimateData.tax_rate)
 
@@ -118,9 +127,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
 
-  // Delete existing line items and sections, then re-insert
+  // Delete existing line items, sections, and expenses, then re-insert
   await supabase.from('estimate_line_items').delete().eq('estimate_id', params.id)
   await supabase.from('estimate_sections').delete().eq('estimate_id', params.id)
+  await supabase.from('estimate_expenses').delete().eq('estimate_id', params.id)
 
   // Insert sections
   const sectionMap: Record<string, string> = {}
@@ -139,6 +149,17 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         ...item,
         estimate_id: params.id,
         total: item.quantity * item.unit_cost * (1 + item.markup_percent / 100),
+      }))
+    )
+  }
+
+  // Insert expenses
+  if (expenses.length > 0) {
+    await supabase.from('estimate_expenses').insert(
+      expenses.map(e => ({
+        ...e,
+        estimate_id: params.id,
+        organization_id: profile!.organization_id,
       }))
     )
   }

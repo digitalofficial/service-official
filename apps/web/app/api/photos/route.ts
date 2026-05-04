@@ -1,6 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getApiProfile } from '@/lib/auth/get-api-profile'
 
+export async function GET(request: NextRequest) {
+  const result = await getApiProfile()
+  if ('error' in result) return result.error
+  const { profile, supabase } = result
+
+  const { searchParams } = new URL(request.url)
+  const estimateId = searchParams.get('estimate_id')
+  const projectId = searchParams.get('project_id')
+  const jobId = searchParams.get('job_id')
+
+  let query = supabase
+    .from('photos')
+    .select('*')
+    .eq('organization_id', profile.organization_id)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+
+  if (estimateId) query = query.eq('estimate_id', estimateId)
+  if (projectId) query = query.eq('project_id', projectId)
+  if (jobId) query = query.eq('job_id', jobId)
+
+  const { data, error } = await query
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ data })
+}
+
 export async function POST(request: NextRequest) {
   const result = await getApiProfile()
   if ('error' in result) return result.error

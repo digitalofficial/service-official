@@ -10,7 +10,7 @@ import { HorizontalScroll } from '@/components/ui/horizontal-scroll'
 import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'Estimates' }
+export const metadata: Metadata = { title: 'Estimates / Quotes' }
 
 interface Props {
   searchParams: { status?: string }
@@ -46,7 +46,7 @@ export default async function EstimatesPage({ searchParams }: Props) {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Estimates"
+        title="Estimates / Quotes"
         description={`${estimates?.length ?? 0} total estimates`}
         actions={
           <div className="flex items-center gap-2">
@@ -81,7 +81,7 @@ export default async function EstimatesPage({ searchParams }: Props) {
         <EmptyState
           icon={<FileText className="w-12 h-12" />}
           title="No estimates yet"
-          description="Create your first estimate to start winning jobs."
+          description="Create your first estimate or quote to start winning jobs."
           action={
             <Link href="/estimates/new">
               <Button><Plus className="w-4 h-4 mr-2" />Create Estimate</Button>

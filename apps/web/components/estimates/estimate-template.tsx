@@ -1,3 +1,4 @@
+import React from 'react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 interface EstimateTemplateProps {
@@ -13,6 +14,16 @@ export function EstimateTemplate({ estimate, organization, customer, lineItems }
 
   const optionalItems = lineItems.filter((i: any) => i.is_optional)
   const requiredItems = lineItems.filter((i: any) => !i.is_optional)
+
+  // Group required items by category
+  const categories = ['Materials', 'Labor', 'Parts'] as const
+  const groupedItems = categories.map(cat => ({
+    category: cat,
+    items: requiredItems.filter((i: any) => i.category === cat),
+  })).filter(g => g.items.length > 0)
+  // Items without a known category
+  const uncategorized = requiredItems.filter((i: any) => !i.category || !categories.includes(i.category))
+  const hasCategories = groupedItems.length > 0 && uncategorized.length === 0
 
   return (
     <div className="bg-white max-w-[800px] mx-auto" id="estimate-content">
@@ -44,7 +55,7 @@ export function EstimateTemplate({ estimate, organization, customer, lineItems }
             </div>
           </div>
           <div className="text-left sm:text-right shrink-0">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: primaryColor }}>ESTIMATE</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: primaryColor }}>ESTIMATE / QUOTE</h2>
             <p className="text-sm text-gray-500 mt-0.5">{estimate.estimate_number}</p>
           </div>
         </div>
@@ -108,17 +119,40 @@ export function EstimateTemplate({ estimate, organization, customer, lineItems }
               </tr>
             </thead>
             <tbody>
-              {requiredItems.map((item: any, i: number) => (
-                <tr key={item.id ?? i} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
-                  <td className="px-4 py-3">
-                    <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                    {item.description && <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>}
-                  </td>
-                  <td className="px-4 py-3 text-center text-sm text-gray-700">{item.quantity} {item.unit}</td>
-                  <td className="px-4 py-3 text-right text-sm text-gray-700">{formatCurrency(item.unit_cost)}</td>
-                  <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">{formatCurrency(item.total ?? item.quantity * item.unit_cost)}</td>
-                </tr>
-              ))}
+              {hasCategories ? (
+                <>
+                  {groupedItems.map((group) => (
+                    <React.Fragment key={group.category}>
+                      <tr className="bg-gray-100">
+                        <td colSpan={4} className="px-4 py-2 text-xs font-bold text-gray-600 uppercase tracking-wider">{group.category}</td>
+                      </tr>
+                      {group.items.map((item: any, i: number) => (
+                        <tr key={item.id ?? `${group.category}-${i}`} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                          <td className="px-4 py-3">
+                            <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                            {item.description && <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>}
+                          </td>
+                          <td className="px-4 py-3 text-center text-sm text-gray-700">{item.quantity} {item.unit}</td>
+                          <td className="px-4 py-3 text-right text-sm text-gray-700">{formatCurrency(item.unit_cost)}</td>
+                          <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">{formatCurrency(item.total ?? item.quantity * item.unit_cost)}</td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </>
+              ) : (
+                requiredItems.map((item: any, i: number) => (
+                  <tr key={item.id ?? i} className={i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                    <td className="px-4 py-3">
+                      <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                      {item.description && <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>}
+                    </td>
+                    <td className="px-4 py-3 text-center text-sm text-gray-700">{item.quantity} {item.unit}</td>
+                    <td className="px-4 py-3 text-right text-sm text-gray-700">{formatCurrency(item.unit_cost)}</td>
+                    <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">{formatCurrency(item.total ?? item.quantity * item.unit_cost)}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
